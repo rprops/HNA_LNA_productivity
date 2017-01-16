@@ -1,0 +1,35 @@
+---
+title: "Preprocessing"
+author: "Ruben Props, Marian L. Schmidt"
+date: "16 januari 2017"
+output: html_document
+---
+
+
+  
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = TRUE,
+                      include = TRUE,
+                      collapse = FALSE,
+                      dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/cached/",  # Set the figure options
+                      fig.align = "center"
+)
+```
+
+# Load libraries
+
+```{r load-libraries}
+library("dplyr")
+```
+
+
+```{r preprocess}
+
+```
+
