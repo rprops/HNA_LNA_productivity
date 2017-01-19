@@ -1,8 +1,18 @@
 ---
-title: "Preprocessing"
-author: "Ruben Props, Marian L. Schmidt"
-date: "16 januari 2017"
-output: html_document
+title: "Absolute versus relative abundances"
+author: "Ruben Props & Marian L. Schmidt"
+date: "January 2017"
+output:  
+  html_document:
+    code_folding: show
+    highlight: haddock
+    keep_md: yes
+    theme: readable
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+      toc_depth: 2
 ---
 
 
@@ -12,6 +22,7 @@ output: html_document
 knitr::opts_chunk$set(eval = TRUE, 
                       echo = TRUE, 
                       cache = TRUE,
+                      message = FALSE,
                       include = TRUE,
                       collapse = FALSE,
                       dependson = NULL,
@@ -25,11 +36,67 @@ knitr::opts_chunk$set(eval = TRUE,
 # Load libraries
 
 ```{r load-libraries}
-library("dplyr")
+library(dplyr)
+library(phyloseq)
 ```
 
 
-```{r preprocess}
+# Load in Phyloseq Data
+This phyloseq object will contain all samples from:  
+
+- The inland lakes  
+- Lake Michigan  
+- Muskegon Lake 
+
+```{r load-in-data}
+load("data/phyloseq.RData") # The phyloseq object will be physeq.otu
+
+# Rename to something more intuitive
+raw_physeq <- physeq.otu
+```
+
+
+### Add Proteobacteria to the Phylum level
+```{r proteobacteria-to-phylum}
+# Fix the taxonomy names
+colnames(tax_table(raw_physeq)) <- c("Kingdom","Phylum","Class","Order","Family","Genus","Species")
+
+################################################
+########## ADD THE PROTEOBACTERIA TO THE PHYLA
+phy <- data.frame(tax_table(raw_physeq))
+Phylum <- as.character(phy$Phylum)
+Class <- as.character(phy$Class)
+
+for  (i in 1:length(Phylum)){ 
+  if (Phylum[i] == "Proteobacteria"){
+    Phylum[i] <- Class[i]
+  } 
+}
+
+phy$Phylum <- Phylum
+phy$OTU <- row.names(phy)
+
+t <- tax_table(as.matrix(phy))
+
+tax_table(raw_physeq) <- t
+################################################
+
+# Sample Names
+samp_names <- colnames(otu_table(raw_physeq))
+
+# Create metadata info
+df <- data.frame(matrix(NA, ncol = 1, nrow = length(samp_names)))
+colnames(df) <- c("names")
+df$names <- samp_names
+```
+
+# Metadata Hell
+```{r load-metadata}
+sample_names 
+
 
 ```
+
+
+
 
