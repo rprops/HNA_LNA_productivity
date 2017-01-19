@@ -90,11 +90,8 @@ colnames(df) <- c("names")
 df$names <- samp_names
 ```
 
-# Metadata Hell
+# Load the Metadata
 ```{r load-metadata}
-sample_names 
-
-
 ```
 
 
