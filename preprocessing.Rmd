@@ -55,6 +55,57 @@ load("data/phyloseq.RData") # The phyloseq object will be physeq.otu
 raw_physeq <- physeq.otu
 ```
 
+```{r create abs/rel otu tables}
+load("data/phyloseq.RData")
+physeq.otu@otu_table <- t(physeq.otu@otu_table)
+
+metadata <- read.csv2("data/metadata.csv", stringsAsFactors = FALSE)
+metadata <- metadata[metadata$Platform == "Accuri",]
+metadata$Sample_fcm <- gsub(metadata$Sample_fcm, pattern="_rep.*", replacement="")
+metadata <- do.call(rbind,by(metadata, INDICES = factor(metadata$Sample_fcm), 
+                             FUN = unique))
+metadata$Sample_16S[metadata$Lake=="Inland"] <- gsub(metadata$Sample_16S[metadata$Lake=="Inland"], pattern="-", replacement="")
+
+# Import counts 
+counts <- read.csv2("data/count_total_HNALNA.csv", stringsAsFactors = FALSE)
+counts$samples[125:188] <- paste0(counts$samples[125:188],"-1")
+
+# Merge metadata 
+counts.total <- inner_join(counts, metadata, by=c("samples"="Sample_fcm"))
+  
+# replace unnecessary "-"
+sample_names(physeq.otu) <- gsub(sample_names(physeq.otu),pattern="-",replacement="")
+
+#remove cDNA
+otu_table(physeq.otu) <- otu_table(physeq.otu)[grep(x=sample_names(physeq.otu),pattern="cD.",invert=TRUE), ]
+
+# remove "renamed" tag
+sample_names(physeq.otu) <- gsub(sample_names(physeq.otu),pattern=".renamed",replacement="")
+
+### Select the metadata for which you have sequencing data (876 samples at this point)
+temp1 <- counts.total 
+temp2 <- data.frame(Sample=sample_names(physeq.otu))
+temp3 <- semi_join(temp1,temp2,by=c("Sample_16S"="Sample"))
+rownames(temp3) <- temp3$Sample
+sample_data(physeq.otu) <- temp3
+
+### New phyloseq objects with relative abundances
+physeq.otu.rel <- transform_sample_counts(physeq.otu, function(x) x/sum(x))
+
+### Replacing NA by "Unclassified"
+tax_table(physeq.otu.rel)[is.na(tax_table(physeq.otu.rel))] <- "Unclassified"
+
+### New phyloseq object with absolute abundances in cells/mL
+physeq.otu.abs <- physeq.otu.rel
+otu_table(physeq.otu.abs) <- 1000*otu_table(physeq.otu.rel)*sample_data(physeq.otu.rel)$Total.cells
+
+### Write the tsv files
+write.table(otu_table(physeq.otu.abs), file="data/absolute_otu.tsv", row.names=FALSE)
+write.table(otu_table(physeq.otu.rel), file="data/relative_otu.tsv", row.names=FALSE)
+write.table(sample_data(physeq.otu.rel)[,-1], file="data/HNA_LNA.tsv", row.names=FALSE)
+write.table(tax_table(physeq.otu.rel), file="data/taxonomy_otu.tsv", row.names=FALSE)
+```
+
 
 ### Add Proteobacteria to the Phylum level
 ```{r proteobacteria-to-phylum}
