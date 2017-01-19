@@ -100,10 +100,10 @@ physeq.otu.abs <- physeq.otu.rel
 otu_table(physeq.otu.abs) <- 1000*otu_table(physeq.otu.rel)*sample_data(physeq.otu.rel)$Total.cells
 
 ### Write the tsv files
-write.table(otu_table(physeq.otu.abs), file="data/absolute_otu.tsv", row.names=FALSE)
-write.table(otu_table(physeq.otu.rel), file="data/relative_otu.tsv", row.names=FALSE)
-write.table(sample_data(physeq.otu.rel)[,-1], file="data/HNA_LNA.tsv", row.names=FALSE)
-write.table(tax_table(physeq.otu.rel), file="data/taxonomy_otu.tsv", row.names=FALSE)
+write.table(otu_table(physeq.otu.abs), file="data/final_absolute_otu.tsv", row.names=FALSE)
+write.table(otu_table(physeq.otu.rel), file="data/final_relative_otu.tsv", row.names=FALSE)
+write.table(sample_data(physeq.otu.rel)[,-1], file="data/final_HNA_LNA.tsv", row.names=FALSE)
+write.table(tax_table(physeq.otu.rel), file="data/final_taxonomy_otu.tsv", row.names=FALSE)
 ```
 
 
