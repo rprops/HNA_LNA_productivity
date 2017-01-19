@@ -99,6 +99,10 @@ tax_table(physeq.otu.rel)[is.na(tax_table(physeq.otu.rel))] <- "Unclassified"
 physeq.otu.abs <- physeq.otu.rel
 otu_table(physeq.otu.abs) <- 1000*otu_table(physeq.otu.rel)*sample_data(physeq.otu.rel)$Total.cells
 
+### to cells/mL
+sample_data(physeq.otu.rel)[,c(3:8)] <- sample_data(physeq.otu.rel)[,c(3:8)]*1000
+sample_data(physeq.otu.abs)[,c(3:8)] <- sample_data(physeq.otu.abs)[,c(3:8)]*1000
+
 ### Write the tsv files
 write.table(otu_table(physeq.otu.abs), file="data/final_absolute_otu.tsv", row.names=FALSE)
 write.table(otu_table(physeq.otu.rel), file="data/final_relative_otu.tsv", row.names=FALSE)
