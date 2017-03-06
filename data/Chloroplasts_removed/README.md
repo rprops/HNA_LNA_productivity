@@ -11,4 +11,4 @@
 	- `productivity_data.tsv`: Sample meta-, flow cytometry, **and productivity data.**  
 	- And the figure below
 
-![Relationship between cells and Total Productivity](data/Chloroplasts_removed/HNA_vs_productivity.png)
+![Relationship between cells and Total Productivity](HNA_vs_productivity.png)
