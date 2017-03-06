@@ -54,7 +54,7 @@ lm_HNA <- lm(tot_bacprod ~ HNA.cells, data = muskegon)
 HNA_vs_prod <- ggplot(muskegon, aes(x = HNA.cells, y = tot_bacprod)) + 
   geom_point(size = 3, aes(shape = Site)) + 
   geom_smooth(method = "lm") + 
-  ylab("Bacterial Production (ug C/L/Hr)") +
+  ylab("Bacterial Production") +
   annotate("text", x = 2e+06, y=75, color = "black", fontface = "bold", size = 3.5,
            label = paste("Adj R2 =", round(summary(lm_HNA)$adj.r.squared, digits = 3), "\n", 
                          "p =", round(unname(summary(lm_HNA)$coefficients[,4][2]), digits = 8)))
@@ -63,7 +63,7 @@ lm_LNA <- lm(tot_bacprod ~ LNA.cells, data = muskegon)
 
 LNA_vs_prod <- ggplot(muskegon, aes(x = LNA.cells, y = tot_bacprod)) + 
   geom_point(size = 3, aes(shape = Site)) + 
-  ylab("Bacterial Production (ug C/L/Hr)") +
+  ylab("Bacterial Production") +
   geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "red") + 
   annotate("text", x = 4e+06, y=75, color = "red", fontface = "bold", size = 3.5,
            label = paste("Adj R2 =", round(summary(lm_LNA)$adj.r.squared, digits = 3), "\n", 
@@ -73,7 +73,7 @@ lm_total <- lm(tot_bacprod ~ Total.cells, data = muskegon)
 
 Total_vs_prod <- ggplot(muskegon, aes(x = Total.cells, y = tot_bacprod)) + 
   geom_point(size = 3, aes(shape = Site)) + 
-  ylab("Bacterial Production (ug C/L/Hr)") +
+  ylab("Bacterial Production") +
   geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "red") + 
   annotate("text", x = 7e+06, y=75, color = "red", fontface = "bold", size = 3.5,
            label = paste("Adj R2 =", round(summary(lm_total)$adj.r.squared, digits = 3), "\n", 
