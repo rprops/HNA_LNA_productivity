@@ -35,7 +35,7 @@ combined_data <- left_join(muskegon_data, production, by = "norep_filter_name")
 final_data <- left_join(raw_data, combined_data, by = "norep_filter_name")
 
 # Write out the file 
-write.table(final_data, file="data/Chloroplasts_removed/productivity_data.tsv", row.names=FALSE)
+write.table(final_data, file="data/Chloroplasts_removed/productivity_data.tsv", row.names=TRUE)
 
 
 
