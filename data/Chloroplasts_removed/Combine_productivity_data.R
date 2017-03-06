@@ -3,6 +3,8 @@
 
 # Load libraries
 library(dplyr)
+library(ggplot2)
+library(cowplot)
 
 # Read in the data 
 raw_data <- read.table(file="data/Chloroplasts_removed/nochloro_HNA_LNA.tsv", header = TRUE)  %>%
@@ -32,10 +34,63 @@ stopifnot(muskegon_data$norep_filter_name == production$norep_filter_name)
 combined_data <- left_join(muskegon_data, production, by = "norep_filter_name")
 
 # Merge the combined data back into the original data frame (data)
-final_data <- left_join(raw_data, combined_data, by = "norep_filter_name")
+data <- left_join(raw_data, combined_data, by = "norep_filter_name")
 
 # Write out the file 
-write.table(final_data, file="data/Chloroplasts_removed/productivity_data.tsv", row.names=TRUE)
+#write.table(data, file="data/Chloroplasts_removed/productivity_data.tsv", row.names=TRUE)
 
+
+
+
+####################################################################################
+####################################################################################
+########################  Analysis of HNA/LNA/Total Cells vs Total Productivity
+muskegon <- dplyr::filter(data, Lake == "Muskegon" & Depth == "Surface") %>%
+  mutate(Site = factor(Site, levels = c("MOT", "MDP", "MBR", "MIN"))) 
+
+
+lm_HNA <- lm(tot_bacprod ~ HNA.cells, data = muskegon)
+
+HNA_vs_prod <- ggplot(muskegon, aes(x = HNA.cells, y = tot_bacprod)) + 
+  geom_point(size = 3, aes(shape = Site)) + 
+  geom_smooth(method = "lm") + 
+  ylab("Bacterial Production (ug C/L/Hr)") +
+  annotate("text", x = 2e+06, y=75, color = "black", fontface = "bold", size = 3.5,
+           label = paste("Adj R2 =", round(summary(lm_HNA)$adj.r.squared, digits = 3), "\n", 
+                         "p =", round(unname(summary(lm_HNA)$coefficients[,4][2]), digits = 8)))
+
+lm_LNA <- lm(tot_bacprod ~ LNA.cells, data = muskegon)
+
+LNA_vs_prod <- ggplot(muskegon, aes(x = LNA.cells, y = tot_bacprod)) + 
+  geom_point(size = 3, aes(shape = Site)) + 
+  ylab("Bacterial Production (ug C/L/Hr)") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "red") + 
+  annotate("text", x = 4e+06, y=75, color = "red", fontface = "bold", size = 3.5,
+           label = paste("Adj R2 =", round(summary(lm_LNA)$adj.r.squared, digits = 3), "\n", 
+                         "p =", round(unname(summary(lm_LNA)$coefficients[,4][2]), digits = 3)))
+
+lm_total <- lm(tot_bacprod ~ Total.cells, data = muskegon)
+
+Total_vs_prod <- ggplot(muskegon, aes(x = Total.cells, y = tot_bacprod)) + 
+  geom_point(size = 3, aes(shape = Site)) + 
+  ylab("Bacterial Production (ug C/L/Hr)") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "red") + 
+  annotate("text", x = 7e+06, y=75, color = "red", fontface = "bold", size = 3.5,
+           label = paste("Adj R2 =", round(summary(lm_total)$adj.r.squared, digits = 3), "\n", 
+                         "p =", round(unname(summary(lm_total)$coefficients[,4][2]), digits = 3)))
+
+# Put all three plots together into one 
+totprod_plots <- plot_grid(HNA_vs_prod + theme(legend.position = c(0.84, 0.18),
+                              legend.text = element_text(size = 10),
+                              legend.title = element_text(size = 11, face = "bold")), 
+          LNA_vs_prod + theme(legend.position = "none"), 
+          Total_vs_prod + theme(legend.position = "none"),
+          labels = c("A", "B", "C"), 
+          ncol = 3)
+
+# Save the plot to a file to call in the README
+ggsave(plot = totprod_plots, 
+       filename = "data/Chloroplasts_removed/HNA_vs_productivity.png", 
+       width = 10, height = 4, units = "in", dpi = 500)
 
 
