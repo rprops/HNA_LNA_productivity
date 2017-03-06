@@ -1,6 +1,4 @@
-# Analysis with Removed Choloroplast information  
-
-## Important Files:  
+## Information on the files in this repo:
 
 1. `remove_chloroplasts.R`:  R script for removing chloroplast OTUs and rarefying. Creates the following files: 
   
