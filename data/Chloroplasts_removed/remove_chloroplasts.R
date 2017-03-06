@@ -103,7 +103,7 @@ apply(otu_table(rare_nochloro_rm0_abs), 1, sum)
 
 
 ### Write the tsv files
-write.table(otu_table(rare_nochloro_rm0_abs), file="data/Chloroplasts_removed/nochloro_absolute_otu.tsv", row.names=FALSE)
-write.table(otu_table(rare_nochloro_rm0_rel), file="data/Chloroplasts_removed/nochloro_relative_otu.tsv", row.names=FALSE)
-write.table(sample_data(rare_nochloro_rm0_rel)[,-1], file="data/Chloroplasts_removed/nochloro_HNA_LNA.tsv", row.names=FALSE)
-write.table(tax_table(rare_nochloro_rm0_rel), file="data/Chloroplasts_removed/nochloro_taxonomy_otu.tsv", row.names=FALSE)
+write.table(otu_table(rare_nochloro_rm0_abs), file="data/Chloroplasts_removed/nochloro_absolute_otu.tsv", row.names=TRUE)
+write.table(otu_table(rare_nochloro_rm0_rel), file="data/Chloroplasts_removed/nochloro_relative_otu.tsv", row.names=TRUE)
+write.table(sample_data(rare_nochloro_rm0_rel)[,-1], file="data/Chloroplasts_removed/nochloro_HNA_LNA.tsv", row.names=TRUE)
+write.table(tax_table(rare_nochloro_rm0_rel), file="data/Chloroplasts_removed/nochloro_taxonomy_otu.tsv", row.names=TRUE)
