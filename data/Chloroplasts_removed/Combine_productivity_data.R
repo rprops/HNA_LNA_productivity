@@ -52,10 +52,10 @@ muskegon <- dplyr::filter(data, Lake == "Muskegon" & Depth == "Surface") %>%
 lm_HNA <- lm(tot_bacprod ~ HNA.cells, data = muskegon)
 
 HNA_vs_prod <- ggplot(muskegon, aes(x = HNA.cells, y = tot_bacprod)) + 
-  geom_point(size = 3, aes(shape = Site), fill = "black") + 
-  geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd)) + 
-  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod)) + 
+  geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey") + 
+  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey") + 
   scale_shape_manual(values = c(21, 22, 23, 24)) + 
+  geom_point(size = 3, aes(shape = Site), fill = "black") + 
   geom_smooth(method = "lm") + 
   ylab("Bacterial Production") +
   annotate("text", x = 2e+06, y=75, color = "black", fontface = "bold", size = 3.5,
@@ -65,10 +65,10 @@ HNA_vs_prod <- ggplot(muskegon, aes(x = HNA.cells, y = tot_bacprod)) +
 lm_LNA <- lm(tot_bacprod ~ LNA.cells, data = muskegon)
 
 LNA_vs_prod <- ggplot(muskegon, aes(x = LNA.cells, y = tot_bacprod)) + 
-  geom_point(size = 3, aes(shape = Site), fill = "black") + 
-  geom_errorbarh(aes(xmin = LNA.cells - LNA.sd, xmax = LNA.cells + LNA.sd)) + 
-  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod)) + 
+  geom_errorbarh(aes(xmin = LNA.cells - LNA.sd, xmax = LNA.cells + LNA.sd), color = "grey") + 
+  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey") + 
   scale_shape_manual(values = c(21, 22, 23, 24)) + 
+  geom_point(size = 3, aes(shape = Site), fill = "black") + 
   ylab("Bacterial Production") +
   geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "red") + 
   annotate("text", x = 4e+06, y=75, color = "red", fontface = "bold", size = 3.5,
@@ -78,10 +78,10 @@ LNA_vs_prod <- ggplot(muskegon, aes(x = LNA.cells, y = tot_bacprod)) +
 lm_total <- lm(tot_bacprod ~ Total.cells, data = muskegon)
 
 Total_vs_prod <- ggplot(muskegon, aes(x = Total.cells, y = tot_bacprod)) + 
-  geom_point(size = 3, aes(shape = Site), fill = "black") + 
-  geom_errorbarh(aes(xmin = Total.cells - Total.count.sd, xmax = Total.cells + Total.count.sd)) + 
-  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod)) + 
+  geom_errorbarh(aes(xmin = Total.cells - Total.count.sd, xmax = Total.cells + Total.count.sd), color = "grey") + 
+  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey") + 
   scale_shape_manual(values = c(21, 22, 23, 24)) +
+  geom_point(size = 3, aes(shape = Site), fill = "black") + 
   ylab("Bacterial Production") +
   geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "red") + 
   annotate("text", x = 7e+06, y=75, color = "red", fontface = "bold", size = 3.5,
