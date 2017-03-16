@@ -40,10 +40,10 @@ def preprocess_df(df, threshold, ABS):
         return df.ix[:,(df > threshold).any(axis=0)]
 
 '''Import data'''
-#data_abs = pd.read_csv('data/Chloroplasts_removed/nochloro_absolute_otu.tsv', sep=' ', index_col=None, header=0)
-#data_rel = pd.read_csv('data/Chloroplasts_removed/nochloro_relative_otu.tsv', sep=' ', index_col=None, header=0)
-#target = pd.read_csv('data/Chloroplasts_removed/nochloro_HNA_LNA.tsv', sep=' ', index_col=0, header=0)
-#productivity = pd.read_csv('data/Chloroplasts_removed/productivity_data.tsv', sep=' ', index_col=0, header=0)
+data_abs = pd.read_csv('data/Chloroplasts_removed/nochloro_absolute_otu.tsv', sep=' ', index_col=0, header=0)
+data_rel = pd.read_csv('data/Chloroplasts_removed/nochloro_relative_otu.tsv', sep=' ', index_col=0, header=0)
+target = pd.read_csv('data/Chloroplasts_removed/nochloro_HNA_LNA.tsv', sep=' ', index_col=0, header=0)
+productivity = pd.read_csv('data/Chloroplasts_removed/productivity_data.tsv', sep=' ', index_col=0, header=0)
 
 
 ''' Preprocessing '''
@@ -75,7 +75,7 @@ def get_train_test(df, target):
 
 ''' 2. lassoCV '''        
 def perform_lassoCV(df, target):
-    lassoCV = linear_model.LassoCV(eps=0.001, n_alphas=400, max_iter=20000, cv = 5, normalize = False, random_state=6)
+    lassoCV = linear_model.LassoCV(eps=0.001, n_alphas=400, max_iter=20000, cv = 5, normalize = False)#, random_state=6)
     lassoCV.fit(df, target)
     return lassoCV, lassoCV.mse_path_, lassoCV.alpha_
     
