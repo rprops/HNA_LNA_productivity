@@ -92,7 +92,7 @@ def get_RF():
     return RandomForestRegressor(n_estimators=500, criterion='mse')#, max_features=0.5)  
     
 def get_lassoCV(): 
-    lassoCV =  linear_model.LassoCV(eps=0.0001, n_alphas=400, max_iter=20000, cv=5, normalize=False)
+    lassoCV =  linear_model.LassoCV(eps=0.0001, n_alphas=400, max_iter=50000, cv=5, normalize=False)
     return lassoCV
 
 def get_lasso10CV(): 
