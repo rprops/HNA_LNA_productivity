@@ -26,21 +26,4 @@ OTU   | Phylum | Class | Order | Family  |  Genus  | Species  |
 **Otu000025** | Bacteroidetes | Cytophagia | Cytophagales | bacIII | bacIII-A | Unclassified | 
 
                 
-
-#  
-
-### "Old Analysis" from March 16th, 2017  
-
-Old List that are not included in the new list:  
-
-OTU   | Phylum | Class | Order | Family  |  Genus  | Species  | 
-------------- | ------------- | ------------- |------------- |------------- |------------- |------------- |
-**Otu000004** | Actinobacteria | Actinobacteria | Actinomycetales | acI | acI-A | acI-A6 | 
-**Otu000016** | Proteobacteria | Betaproteobacteria | Burkholderiales | betII | Pnec | PnecB | 
-**Otu000042** | Planctomycetes | Phycisphaerae | Phycisphaerales | Phycisphaeraceae | CL500-3 | Unclassified | 
-**Otu000010** | Proteobacteria | Betaproteobacteria | Methylophilales | betIV | betIV-A | LD28 | 
-**Otu000084** | Bacteroidetes | Flavobacteriia | Flavobacteriales | bacII | bacII-A | Flavo-A3 | 
-**Otu000041** | Verrucomicrobia | [Spartobacteria] | [Chthoniobacterales] | verI-B | Xip-B1 | Unclassified | 
-**Otu000047** | Bacteroidetes | Sphingobacteriia | Sphingobacteriales | env.OPS_17 | Unclassified | Unclassified | 
-**Otu000022** | Proteobacteria  | Alphaproteobacteria | Rickettsiales | alfV | alfV-A | LD12 | 
-**Otu000012** | Verrucomicrobia | OPB35_soil_group | OPB35_soil_group_unclassified | OPB35_soil_group_unclassified | Unclassified | Unclassified | 
+![](OTU_abundance_plot.jpeg)                
