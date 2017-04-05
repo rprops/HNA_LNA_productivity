@@ -40,8 +40,8 @@ On Wednesday, April 5th @prubbens ran an analysis without the three outliers and
                 
 OTU   | Phylum | Class | Order | Family  |  Genus  | Species  | 
 ------------- | ------------- | ------------- |------------- |------------- |------------- |------------- |             
-**Otu000060** | Bacteria | Proteobacteria | Alphaproteobacteria | Sphingomonadales | alfIV | alfIV_unclassified | Unclassified |   
-**Otu000357** | Bacteria | Proteobacteria | Betaproteobacteria | Burkholderiales | betI | betI-B | Rhodo  |   
-**Otu000124** | Bacteria | Verrucomicrobia | Opitutae | Opitutales | Opitutaceae | Opitutus | Unclassified |  
+**Otu000060** | Proteobacteria | Alphaproteobacteria | Sphingomonadales | alfIV | alfIV_unclassified | Unclassified |   
+**Otu000357** | Proteobacteria | Betaproteobacteria | Burkholderiales | betI | betI-B | Rhodo  |   
+**Otu000124** | Verrucomicrobia | Opitutae | Opitutales | Opitutaceae | Opitutus | Unclassified |  
 
 ![](OTU_abundance_plot_corrfilt.jpeg)                
