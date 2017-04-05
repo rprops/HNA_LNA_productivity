@@ -28,8 +28,8 @@ from sklearn.model_selection import KFold
 #import matplotlib.pyplot as plt
 #import seaborn as sns
 
-import time
-start_time = time.time()
+#import time
+#start_time = time.time()
 
 def preprocess_df(df, threshold, ABS): 
     if ABS == True:  
@@ -75,7 +75,7 @@ def get_train_test(df, target):
 
 ''' 2. lassoCV '''        
 def perform_lassoCV(df, target):
-    lassoCV = linear_model.LassoCV(eps=0.001, n_alphas=400, max_iter=20000, cv = 5, normalize = False)#, random_state=6)
+    lassoCV = linear_model.LassoCV(eps=0.0001, n_alphas=400, max_iter=10000, cv = 5, normalize = False)#, random_state=6)
     lassoCV.fit(df, target)
     return lassoCV, lassoCV.mse_path_, lassoCV.alpha_
     
@@ -92,7 +92,7 @@ def get_RF():
     return RandomForestRegressor(n_estimators=500, criterion='mse')#, max_features=0.5)  
     
 def get_lassoCV(): 
-    lassoCV =  linear_model.LassoCV(eps=0.0001, n_alphas=400, max_iter=50000, cv=5, normalize=False)
+    lassoCV =  linear_model.LassoCV(eps=0.001, n_alphas=400, max_iter=100000, cv=5, normalize=False)
     return lassoCV
 
 def get_lasso10CV(): 
@@ -338,4 +338,4 @@ scores3 = pd.Series(perform_randomizedLasso(data_abs_muskegon[features],y_muskeg
 
 '''
 
-print("--- %s seconds ---" % (time.time() - start_time)) 
+#print("--- %s seconds ---" % (time.time() - start_time)) 
