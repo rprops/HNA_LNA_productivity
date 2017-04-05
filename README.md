@@ -1,5 +1,73 @@
-# HNA_LNA_productivity
-Investigate composition of HNA/LNA populations and relate them to the productivity of lake Muskegon
+# Link OTUs in the HNA population to Productivity
+
+Investigate composition of HNA/LNA populations and relate them to the productivity of **Muskegon Lake** 
+
+
+
+## Abundance Filtering:  11 OTUs
+On Wednesday, April 5th @prubbens ran an analysis without the three outliers.  His analysis is in `analysis_prod2_remov_outliers.ipynb` and pulled out the following **11** OTUs that are associated with heterotrophic productivity:
+
+
+
+OTU | Phylum | Class | Order | Family  |  Genus  | Species  | 
+------------- | ------------- | ------------- |------------- |------------- |------------- |------------- |      
+**Otu000016** | Proteobacteria | Betaproteobacteria | Burkholderiales | betII | Pnec | PnecB | 
+**Otu000025** | Bacteroidetes | Cytophagia | Cytophagales | bacIII | bacIII-A | Unclassified | 
+**Otu000034** | Verrucomicrobia | Opitutae | Opitutae_vadinHA64 | Opitutae_vadinHA64_unclassified | Unclassified | Unclassified | 
+**Otu000040** | Verrucomicrobia | Verrucomicrobia_unclassified | Verrucomicrobia_unclassified | Verrucomicrobia_unclassified | Verrucomicrobia_unclassified | Unclassified | 
+**Otu000041** | Verrucomicrobia | [Spartobacteria] | [Chthoniobacterales] | verI-B | Xip-B1 | Unclassified | 
+**Otu000042** | Planctomycetes | Phycisphaerae | Phycisphaerales | Phycisphaeraceae | CL500-3 | Unclassified | 
+**Otu000050** | Planctomycetes | Phycisphaerae | Phycisphaerales | Phycisphaeraceae | CL500-3 | Unclassified | 
+**Otu000067** | Bacteroidetes | Flavobacteriia | Flavobacteriales | bacII | bacII-A | Unclassified | 
+**Otu000082** | Chlorobi | Chlorobia | Chlorobiales | OPB56 | Unclassified | Unclassified | 
+**Otu000176** | Proteobacteria | Deltaproteobacteria | Bdellovibrionales | Bacteriovoracaceae | Peredibacter | Unclassified | 
+**Otu000219** | Proteobacteria | Betaproteobacteria | Burkholderiales | betIII | betIII-A | betIII-A1  | 
+
+
+           
+                
+## CorrFilt: 3 OTUs
+
+On Wednesday, April 5th @prubbens ran an analysis without the three outliers and with an additional correlational filtering step.  His analysis is in `analysis_prod2_corrfiltering.ipynb` and pulled out the following **3** OTUs that are associated with heterotrophic productivity:
+
+![](three-OTUs.png)
+                
+                
+OTU | Phylum | Class | Order | Family  |  Genus  | Species  | 
+------------- | ------------- | ------------- |------------- |------------- |------------- |------------- |             
+**Otu000060** | Proteobacteria | Alphaproteobacteria | Sphingomonadales | alfIV | alfIV_unclassified | Unclassified |   
+**Otu000357** | Proteobacteria | Betaproteobacteria | Burkholderiales | betI | betI-B | Rhodo  |   
+**Otu000124** | Verrucomicrobia | Opitutae | Opitutales | Opitutaceae | Opitutus | Unclassified |  
+
+
+### Figure 1
+![](HNA_pool.jpeg)    
+
+
+### Figure 2
+
+![](OTU_abundance_plot.jpeg)   
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+
+
 
 
 ## Randomized Lasso
@@ -28,20 +96,5 @@ OTU   | Phylum | Class | Order | Family  |  Genus  | Species  |
 **Otu000025** | Bacteroidetes | Cytophagia | Cytophagales | bacIII | bacIII-A | Unclassified | 
 
                 
-                
-                
-                
-## CorrFilt
-
-On Wednesday, April 5th @prubbens ran an analysis without the three outliers and with an additional correlational filtering step.  His analysis is in `analysis_prod2_corrfiltering.ipynb` and pulled out the following **3** OTUs that are associated with heterotrophic productivity:
-
-![](three-OTUs.png)
-                
-                
-OTU   | Phylum | Class | Order | Family  |  Genus  | Species  | 
-------------- | ------------- | ------------- |------------- |------------- |------------- |------------- |             
-**Otu000060** | Proteobacteria | Alphaproteobacteria | Sphingomonadales | alfIV | alfIV_unclassified | Unclassified |   
-**Otu000357** | Proteobacteria | Betaproteobacteria | Burkholderiales | betI | betI-B | Rhodo  |   
-**Otu000124** | Verrucomicrobia | Opitutae | Opitutales | Opitutaceae | Opitutus | Unclassified |  
-
-![](OTU_abundance_plot_corrfilt.jpeg)                
+### Figure 3                
+![](OTU_abundance_12otus.jpeg)      
