@@ -30,7 +30,7 @@ OTU | Phylum | Class | Order | Family  |  Genus  | Species  |
 
 On Wednesday, April 5th @prubbens ran an analysis without the three outliers and with an additional correlational filtering step.  His analysis is in `analysis_prod2_corrfiltering.ipynb` and pulled out the following **3** OTUs that are associated with heterotrophic productivity:
 
-![](three-OTUs.png)
+![](Figures/three-OTUs.png)
                 
                 
 OTU | Phylum | Class | Order | Family  |  Genus  | Species  | 
@@ -41,14 +41,28 @@ OTU | Phylum | Class | Order | Family  |  Genus  | Species  |
 
 
 ### Figure 1
-![](HNA_pool.jpeg)    
+![](Figures/HNA_pool.jpeg)    
+
+From the above plot, it is clear that the 11 otus pulled out with the **abundance filtering** randomized lasso makes up a *larger* fraction of the sample HNA pool (Figure A) compared to the 3 OTUs pulled out with the corr filtering (Figure B).
+
+In fact, the difference in the make up of the HNA pool in the abundance filtering versus the corr filtering approach is an order of magnitude!  
 
 
 ### Figure 2
 
-![](OTU_abundance_plot.jpeg)   
+![](Figures/OTU_abundance_plot.jpeg)   
         
 
+The OTUs in Figure 2 represent different OTUs than had been pulled out from the model before (see 12 OTUs in the analysis below in Figure 3).  Now there are a few new **Phyla** that were not pulled out before at the absence of others:  
+
+- New Phyla:  
+    - *Planctomycetes*  
+    - *Chlorobi*
+    
+- Absent Phyla: 
+    - *Alphaproteobacteria*  
+    - *Cyanobacteria*  
+    - *Gammaproteobacteria*
 
 
 
@@ -74,7 +88,7 @@ OTU | Phylum | Class | Order | Family  |  Genus  | Species  |
 
 On March 17th, @prubbens performed a randomized lasso in *analysis_prod2.ipynb* that pulled out the following **12** OTUs that are associated with heterotrophic productivity:
 
-![](HNA-Prod-OTUs.png)
+![](Figures/HNA-Prod-OTUs.png)
 
 
 The **taxonomy** associated with the above OTUs (from `data/Chloroplasts_removed/nochloro_taxonomy.tsv`) is:  
@@ -97,4 +111,4 @@ OTU   | Phylum | Class | Order | Family  |  Genus  | Species  |
 
                 
 ### Figure 3                
-![](OTU_abundance_12otus.jpeg)      
+![](Figures/OTU_abundance_12otus.jpeg)      

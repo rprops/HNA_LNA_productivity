@@ -9,14 +9,6 @@ output:
     toc_depth: 2
 ---
 
-<style>
-pre code, pre, code {
-  white-space: pre !important;
-  overflow-x: scroll !important;
-  word-break: keep-all !important;
-  word-wrap: initial !important;
-}
-</style>
 
 ```{r setup, include=FALSE}
 # For width of code chunks and scroll bar 
@@ -277,13 +269,12 @@ plot_both_fracHNA <- plot_grid(plot_sum_fracHNA_abundfilt, plot_sum_fracHNA_corr
 plot_both_fracHNA
 
 # Save the plot to a .jpeg file 
-ggsave(plot_both_fracHNA, filename = "HNA_pool.jpeg", dpi = 400, width = 10, height = 7)
+ggsave(plot_both_fracHNA, filename = "Figures/HNA_pool.jpeg", dpi = 400, width = 10, height = 7)
 ```
 
-From the above plot, it is clear that the 11 otus pulled out with the **abundance filtering** randomized lasso make up a *larger* fraction of the sample HNA pool (Figure A) compared to the three OTUs pulled out by the 3 OTUs pulled out with the corr filtering (Figure B).
+From the above plot, it is clear that the 11 otus pulled out with the **abundance filtering** randomized lasso makes up a *larger* fraction of the sample HNA pool (Figure A) compared to the 3 OTUs pulled out with the corr filtering (Figure B).
 
-In fact, the difference in the make up of the HNA pool in the abundance filtering is an order of magnitude larger than the corr filtering approach!  
-
+In fact, the difference in the make up of the HNA pool in the abundance filtering versus the corr filtering approach is an order of magnitude!  
 
 ## Figure 2 
 
@@ -295,7 +286,7 @@ plot_both_abund <- plot_grid(plot_abundfilt_both, plot_corrfilt_both,
 plot_both_abund
 
 # Save the plot to a .jpeg file 
-ggsave(plot_both_abund, filename = "OTU_abundance_plot.jpeg", dpi = 400, width = 10, height = 7)
+ggsave(plot_both_abund, filename = "Figures/OTU_abundance_plot.jpeg", dpi = 400, width = 10, height = 7)
 ```
 
 
@@ -312,8 +303,6 @@ The OTUs in Figure 2 represent different OTUs than had been pulled out from the 
 
 
 
----------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------
 
 #  Original 12 OTUs Without filtering 
 
@@ -405,7 +394,7 @@ plot_grid(plot_absabund + ggtitle("Original 12 OTUs without filtering"),
           labels = c("A", "B", "C"),
           nrow = 3, ncol = 1)
 
-ggsave(filename = "OTU_abundance_12otus.jpeg", dpi = 400, width = 8, height = 10)
+ggsave(filename = "Figures/OTU_abundance_12otus.jpeg", dpi = 400, width = 8, height = 10)
 
 ```
 

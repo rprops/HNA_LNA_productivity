@@ -4,18 +4,9 @@
 -   [Corr Filtering: 3 OTUs](#corr-filtering-3-otus)
     -   [Figure 1](#figure-1)
     -   [Figure 2](#figure-2)
-    -   [---------------------------------------------------------------------------------------------------](#section)
 -   [Original 12 OTUs Without filtering](#original-12-otus-without-filtering)
     -   [Figure 3](#figure-3)
 
-<style>
-pre code, pre, code {
-  white-space: pre !important;
-  overflow-x: scroll !important;
-  word-break: keep-all !important;
-  word-wrap: initial !important;
-}
-</style>
 ### Load the necessary libraries and set colors
 
 ``` r
@@ -282,12 +273,12 @@ plot_both_fracHNA
 
 ``` r
 # Save the plot to a .jpeg file 
-ggsave(plot_both_fracHNA, filename = "HNA_pool.jpeg", dpi = 400, width = 10, height = 7)
+ggsave(plot_both_fracHNA, filename = "Figures/HNA_pool.jpeg", dpi = 400, width = 10, height = 7)
 ```
 
-From the above plot, it is clear that the 11 otus pulled out with the **abundance filtering** randomized lasso make up a *larger* fraction of the sample HNA pool (Figure A) compared to the three OTUs pulled out by the 3 OTUs pulled out with the corr filtering (Figure B).
+From the above plot, it is clear that the 11 otus pulled out with the **abundance filtering** randomized lasso makes up a *larger* fraction of the sample HNA pool (Figure A) compared to the 3 OTUs pulled out with the corr filtering (Figure B).
 
-In fact, the difference in the make up of the HNA pool in the abundance filtering is an order of magnitude larger than the corr filtering approach!
+In fact, the difference in the make up of the HNA pool in the abundance filtering versus the corr filtering approach is an order of magnitude!
 
 Figure 2
 --------
@@ -304,7 +295,7 @@ plot_both_abund
 
 ``` r
 # Save the plot to a .jpeg file 
-ggsave(plot_both_abund, filename = "OTU_abundance_plot.jpeg", dpi = 400, width = 10, height = 7)
+ggsave(plot_both_abund, filename = "Figures/OTU_abundance_plot.jpeg", dpi = 400, width = 10, height = 7)
 ```
 
 The OTUs in Figure 2 represent different OTUs than had been pulled out from the model before (see 12 OTUs in the analysis below in Figure 3). Now there are a few new **Phyla** that were not pulled out before at the absence of others:
@@ -316,9 +307,6 @@ The OTUs in Figure 2 represent different OTUs than had been pulled out from the 
     -   *Alphaproteobacteria*
     -   *Cyanobacteria*
     -   *Gammaproteobacteria*
-
----------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------
 
 Original 12 OTUs Without filtering
 ==================================
@@ -414,5 +402,5 @@ plot_grid(plot_absabund + ggtitle("Original 12 OTUs without filtering"),
 <img src="plot_OTU_abundance_files/figure-markdown_github/figure3-1.png" style="display: block; margin: auto;" />
 
 ``` r
-ggsave(filename = "OTU_abundance_12otus.jpeg", dpi = 400, width = 8, height = 10)
+ggsave(filename = "Figures/OTU_abundance_12otus.jpeg", dpi = 400, width = 8, height = 10)
 ```
