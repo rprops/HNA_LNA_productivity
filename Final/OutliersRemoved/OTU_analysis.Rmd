@@ -119,7 +119,7 @@ AbsAbund_OTUs_26 <-  absolute_otu %>%
 
 
 # Plot the absolute abundance data 
-ggplot(abs_abund_OTUs_26, aes(x = reorder(OTU, Phylum), y = Abs_Abund, fill = Phylum, color = Phylum)) +
+ggplot(AbsAbund_OTUs_26, aes(x = reorder(OTU, Phylum), y = Abs_Abund, fill = Phylum, color = Phylum)) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +
   geom_jitter(width = 0.2, size = 3) +
   #scale_y_continuous(expand = c(0,0), limits = c(0, 2.5e+5)) +
@@ -136,7 +136,7 @@ ggplot(abs_abund_OTUs_26, aes(x = reorder(OTU, Phylum), y = Abs_Abund, fill = Ph
         axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
 
 
-ggplot(abs_abund_OTUs_26, aes(x = reorder(OTU, Phylum), y = OTU_fraction_HNA, fill = Phylum, color = Phylum)) +
+ggplot(AbsAbund_OTUs_26, aes(x = reorder(OTU, Phylum), y = OTU_fraction_HNA, fill = Phylum, color = Phylum)) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +
   geom_jitter(width = 0.2, size = 3) +
   #scale_y_continuous(expand = c(0,0), limits = c(0, 2.5e+5)) +
