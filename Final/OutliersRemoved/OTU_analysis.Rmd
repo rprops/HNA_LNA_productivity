@@ -53,10 +53,10 @@ colors <- c(
 #################################### LOAD DATA ##############################################
 
 # Read in the absolute abundance data 
-absolute_otu <- read.table(file="data/Chloroplasts_removed/nochloro_absolute_otu.tsv", header = TRUE) # Absolute OTU abundance table 
+absolute_otu <- read.table(file="../../data/Chloroplasts_removed/nochloro_absolute_otu.tsv", header = TRUE) # Absolute OTU abundance table 
 
 # Read in the taxonomy data 
-tax <- read.table(file="data/Chloroplasts_removed/nochloro_taxonomy_otu.tsv", header = TRUE) %>%
+tax <- read.table(file="../../data/Chloroplasts_removed/nochloro_taxonomy_otu.tsv", header = TRUE) %>%
   tibble::rownames_to_column() %>%
   dplyr::rename(Kingdom = Rank1,
          Phylum = Rank2, 
@@ -81,7 +81,7 @@ for  (i in 1:length(Phylum)){
 tax$Phylum <- Phylum # Add the new phylum level data back to phy
 
 # Read in the productivity and flow cytometry data 
-productivity <- read.table(file = "data/Chloroplasts_removed/productivity_data.tsv", header = TRUE) # Metadata file
+productivity <- read.table(file = "../../data/Chloroplasts_removed/productivity_data.tsv", header = TRUE) # Metadata file
 ```
 
 
@@ -91,7 +91,7 @@ productivity <- read.table(file = "data/Chloroplasts_removed/productivity_data.t
   
 ```{r HNAotus-26, dependson = "load-data", fig.height=4, fig.width=10}
 # Vector of 3 OTUs pulled out by Peter's model in the above file 
-OTUs_26 <- read.csv("final/OutliersRemoved/HNAscores_prod_outliersremoved_abun0.0075_Thr0.63.csv", header = FALSE) %>%
+OTUs_26 <- read.csv("HNAscores_prod_outliersremoved_abun0.0075_Thr0.63.csv", header = FALSE) %>%
   dplyr::rename(OTU = V1,
                 Corr = V2)
 
@@ -202,7 +202,7 @@ ggplot(all_data, aes(x = sum_abs_abund, y= HNA.cells)) +
 
 
 ```{r otu-prod, fig.height=4, fig.width=10}
-plot_OTU25 <- ggplot(dplyr::filter(threeOTU_data, OTU == "Otu000025"), 
+plot_OTU25 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000025"), 
        aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
   geom_point(size = 3) + ggtitle("Otu000025") +
   scale_color_manual(values = colors) +
@@ -216,7 +216,7 @@ plot_OTU25 <- ggplot(dplyr::filter(threeOTU_data, OTU == "Otu000025"),
 
 
 
-plot_OTU41 <- ggplot(dplyr::filter(threeOTU_data, OTU == "Otu000041"), 
+plot_OTU41 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000041"), 
        aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
   geom_point(size = 3) +  ggtitle("Otu000041") +
   scale_color_manual(values = colors) +
@@ -230,7 +230,7 @@ plot_OTU41 <- ggplot(dplyr::filter(threeOTU_data, OTU == "Otu000041"),
 
 
 
-plot_OTU176 <- ggplot(dplyr::filter(threeOTU_data, OTU == "Otu000176"), 
+plot_OTU176 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000176"), 
        aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
   geom_point(size = 3) + ggtitle("Otu000176") +
   scale_color_manual(values = colors) +
