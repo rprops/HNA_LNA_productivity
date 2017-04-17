@@ -4,6 +4,7 @@
 -   [Proportion of HNA Pool?](#proportion-of-hna-pool)
     -   [WHAT PROPORTION OF THE HNA POOL IS MADE UP BY THE 26 OTUs?](#what-proportion-of-the-hna-pool-is-made-up-by-the-26-otus)
 -   [Sum OTUs vs HNA](#sum-otus-vs-hna)
+-   [Regressions with the 3 OTUs pulled out in both analyses](#regressions-with-the-3-otus-pulled-out-in-both-analyses)
 
 ### Load the necessary libraries and set colors
 
@@ -239,10 +240,14 @@ dplyr::select(all_data, Sample_16S, HNA.cells, pred_totHNA_counts, sum_fracHNA)
 ggplot(all_data, aes(x = sum_abs_abund, y= HNA.cells)) +
   geom_point(size = 3) + ylab("HNA Cell Count") + 
   xlab("Sum(Abs_Abund of 26 OTUs)") + 
-  geom_abline(intercept = 0, slope = 1)
+  geom_abline(intercept = 0, slope = 1) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
 ```
 
 <img src="OTU_analysis_files/figure-markdown_github/pred-HNA-1.png" style="display: block; margin: auto;" />
+
+Regressions with the 3 OTUs pulled out in both analyses
+=======================================================
 
 ``` r
 plot_OTU25 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000025"), 
@@ -254,8 +259,7 @@ plot_OTU25 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000025"),
   geom_smooth(method = "lm", color = "#FFC543") +
   ylab("Total Production (ug C/L/hr)") + 
   theme(legend.position = "bottom",
-        legend.title = element_blank(),
-        axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
+        legend.title = element_blank())
 
 
 
@@ -268,8 +272,7 @@ plot_OTU41 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000041"),
   geom_smooth(method = "lm", color = "#562258") +
   ylab("Total Production (ug C/L/hr)") + 
   theme(legend.position = "bottom",
-        legend.title = element_blank(),
-        axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
+        legend.title = element_blank())
 
 
 
@@ -282,8 +285,7 @@ plot_OTU176 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000176"),
   geom_smooth(method = "lm", color = "#FF2151") +
   ylab("Total Production (ug C/L/hr)") + 
   theme(legend.position = "bottom",
-        legend.title = element_blank(),
-        axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
+        legend.title = element_blank())
 
 
 
