@@ -235,7 +235,7 @@ plot_OTU25 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000025"),
   ylab("Total Production (ug C/L/hr)") + 
   theme(legend.position = "bottom",
         legend.title = element_blank()) +
-  annotate("text", x = 4.3, y=60, color = "#FFC543", fontface = "bold",
+  annotate("text", x = 4.45, y=60, color = "#FFC543", fontface = "bold",
            label = paste("R2 =", round(summary(lm_Otu000025)$adj.r.squared, digits = 2), "\n", 
                          "p =", round(unname(summary(lm_Otu000025)$coefficients[,4][2]), digits = 3)))  
 
@@ -273,7 +273,7 @@ plot_OTU176 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000176"),
   ylab("Total Production (ug C/L/hr)") + 
   theme(legend.position = "bottom",
         legend.title = element_blank())+
-  annotate("text", x = 3.3, y=60, color = "#FF2151", fontface = "bold",
+  annotate("text", x = 3.5, y=60, color = "#FF2151", fontface = "bold",
          label = paste("R2 =", round(summary(lm_Otu000176)$adj.r.squared, digits = 2), "\n", 
                        "p =", round(unname(summary(lm_Otu000176)$coefficients[,4][2]), digits = 3)))  
 
@@ -284,4 +284,4 @@ plot_grid(plot_OTU25, plot_OTU176, plot_OTU41, nrow = 1, ncol = 3,
 
 <img src="OTU_analysis_files/figure-markdown_github/otu-prod-1.png" style="display: block; margin: auto;" />
 
-**Note that All samples with an absolute abundance of 0 were left out of the OLS linear model calculations.**
+**Note that All samples with an absolute abundance of 0 were left out of the above OLS linear model calculations.**
