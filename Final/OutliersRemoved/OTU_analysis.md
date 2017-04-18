@@ -222,6 +222,9 @@ Linear Regressions with the 3 OTUs pulled out in both analyses
 ==============================================================
 
 ``` r
+# Simple OLS regression with Otu000025
+lm_Otu000025 <- lm(tot_bacprod ~ log10(Abs_Abund) , data = dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000025"))
+
 plot_OTU25 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000025"), 
        aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
   geom_point(size = 3) + ggtitle("Otu000025") +
@@ -231,9 +234,15 @@ plot_OTU25 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000025"),
   geom_smooth(method = "lm", color = "#FFC543") +
   ylab("Total Production (ug C/L/hr)") + 
   theme(legend.position = "bottom",
-        legend.title = element_blank())
+        legend.title = element_blank()) +
+  annotate("text", x = 4.3, y=60, color = "#FFC543", fontface = "bold",
+           label = paste("R2 =", round(summary(lm_Otu000025)$adj.r.squared, digits = 2), "\n", 
+                         "p =", round(unname(summary(lm_Otu000025)$coefficients[,4][2]), digits = 3)))  
 
 
+# Simple OLS regression with Otu000041
+lm_Otu000041 <- lm(tot_bacprod ~ log10(Abs_Abund), 
+                   data = dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000041" & Abs_Abund > 0))  # Remove sample that has count of 0
 
 plot_OTU41 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000041"), 
        aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
@@ -244,9 +253,15 @@ plot_OTU41 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000041"),
   geom_smooth(method = "lm", color = "#562258") +
   ylab("Total Production (ug C/L/hr)") + 
   theme(legend.position = "bottom",
-        legend.title = element_blank())
+        legend.title = element_blank()) +
+  annotate("text", x = 5.1, y=60, color = "#562258", fontface = "bold",
+         label = paste("R2 =", round(summary(lm_Otu000041)$adj.r.squared, digits = 2), "\n", 
+                       "p =", round(unname(summary(lm_Otu000041)$coefficients[,4][2]), digits = 3)))  
 
 
+# Simple OLS regression with Otu000176
+lm_Otu000176 <- lm(tot_bacprod ~ log10(Abs_Abund), 
+                   data = dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000176" & Abs_Abund > 0))
 
 plot_OTU176 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000176"), 
        aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
@@ -257,12 +272,16 @@ plot_OTU176 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000176"),
   geom_smooth(method = "lm", color = "#FF2151") +
   ylab("Total Production (ug C/L/hr)") + 
   theme(legend.position = "bottom",
-        legend.title = element_blank())
+        legend.title = element_blank())+
+  annotate("text", x = 3.3, y=60, color = "#FF2151", fontface = "bold",
+         label = paste("R2 =", round(summary(lm_Otu000176)$adj.r.squared, digits = 2), "\n", 
+                       "p =", round(unname(summary(lm_Otu000176)$coefficients[,4][2]), digits = 3)))  
 
-
-
+# Plot all 3 plots at once
 plot_grid(plot_OTU25, plot_OTU176, plot_OTU41, nrow = 1, ncol = 3,
           labels = c("A", "B", "C"))
 ```
 
 <img src="OTU_analysis_files/figure-markdown_github/otu-prod-1.png" style="display: block; margin: auto;" />
+
+**Note that All samples with an absolute abundance of 0 were left out of the OLS linear model calculations.**
