@@ -31,20 +31,8 @@ knitr::opts_chunk$set(eval = TRUE,
 ################################# LOAD LIBRARIES ############################################
 library(tidyverse)
 library(cowplot)
-
-# Set Phylum colors for plotting
-colors <- c(
-  Actinobacteria = "skyblue",
-  Alphaproteobacteria = "#547980",  
-  Bacteroidetes = "#FFC543", 
-  Betaproteobacteria = "#A73E5C", 
-  Chlorobi = "#BEDB39",
-  Cyanobacteria = "forestgreen", 
-  Deltaproteobacteria = "#FF2151", 
-  Gammaproteobacteria = "black", 
-  Planctomycetes = "#FD7400",
-  Proteobacteria_unclassified = "#019879",
-  Verrucomicrobia = "#562258")
+source("set_colors.R")
+source("Functions.R")
 ```
 
 
@@ -120,8 +108,8 @@ AbsAbund_OTUs_26 <-  absolute_otu %>%                                           
 ggplot(AbsAbund_OTUs_26, aes(x = reorder(OTU, Phylum), y = Abs_Abund, fill = Phylum, color = Phylum)) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +
   geom_jitter(width = 0.2, size = 3) +
-  scale_color_manual(values = colors) +
-  scale_fill_manual(values = colors) +
+  scale_color_manual(values = phylum_colors) +
+  scale_fill_manual(values = phylum_colors) +
   ylab("log10(Abundance)") +
   ggtitle("26 HNA OTUs from HNA Prediction") + 
   guides(fill = guide_legend(ncol=2),
@@ -136,8 +124,8 @@ ggplot(AbsAbund_OTUs_26, aes(x = reorder(OTU, Phylum), y = Abs_Abund, fill = Phy
 ggplot(AbsAbund_OTUs_26, aes(x = reorder(OTU, Phylum), y = OTU_fraction_HNA, fill = Phylum, color = Phylum)) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +
   geom_jitter(width = 0.2, size = 3) +
-  scale_color_manual(values = colors) +
-  scale_fill_manual(values = colors) +
+  scale_color_manual(values = phylum_colors) +
+  scale_fill_manual(values = phylum_colors) +
   ylab("Fraction of HNA Cells") +
   ggtitle("26 HNA OTUs from HNA Prediction") + 
   guides(fill = guide_legend(ncol=2),
@@ -205,8 +193,8 @@ lm_Otu000025 <- lm(tot_bacprod ~ log10(Abs_Abund) , data = dplyr::filter(AbsAbun
 plot_OTU25 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000025"), 
        aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
   geom_point(size = 3) + ggtitle("Otu000025") +
-  scale_color_manual(values = colors) +
-  scale_fill_manual(values = colors) +
+  scale_color_manual(values = phylum_colors) +
+  scale_fill_manual(values = phylum_colors) +
   xlab("log10(Abundance)") +
   geom_smooth(method = "lm", color = "#FFC543") +
   ylab("Total Production (ug C/L/hr)") + 
@@ -224,8 +212,8 @@ lm_Otu000041 <- lm(tot_bacprod ~ log10(Abs_Abund),
 plot_OTU41 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000041"), 
        aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
   geom_point(size = 3) +  ggtitle("Otu000041") +
-  scale_color_manual(values = colors) +
-  scale_fill_manual(values = colors) +
+  scale_color_manual(values = phylum_colors) +
+  scale_fill_manual(values = phylum_colors) +
   xlab("log10(Abundance)") +
   geom_smooth(method = "lm", color = "#562258") +
   ylab("Total Production (ug C/L/hr)") + 
@@ -243,8 +231,8 @@ lm_Otu000176 <- lm(tot_bacprod ~ log10(Abs_Abund),
 plot_OTU176 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000176"), 
        aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
   geom_point(size = 3) + ggtitle("Otu000176") +
-  scale_color_manual(values = colors) +
-  scale_fill_manual(values = colors) +
+  scale_color_manual(values = phylum_colors) +
+  scale_fill_manual(values = phylum_colors) +
   xlab("log10(Abundance)") +
   geom_smooth(method = "lm", color = "#FF2151") +
   ylab("Total Production (ug C/L/hr)") + 

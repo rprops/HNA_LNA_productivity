@@ -1,0 +1,224 @@
+---
+author: "Marian L. Schmidt"
+date: "April 28th, 2017"
+output:
+  md_document:
+    variant: markdown_github
+    toc: true
+    toc_depth: 2
+---
+
+
+
+```{r setup, include=FALSE}
+# For width of code chunks and scroll bar 
+options(width=250)
+
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE,
+                      include = TRUE,
+                      warning = FALSE,
+                      collapse = FALSE,
+                      message = FALSE,
+                      error = TRUE,
+                      fig.align = "center")
+```
+
+
+
+### Load the necessary libraries and set colors 
+```{r load-libraries}
+################################# LOAD LIBRARIES ############################################
+library(tidyverse)
+library(cowplot)
+source("../set_colors.R")
+source("Functions.R")
+```
+
+
+### Load in the data
+```{r load-data}
+#################################### LOAD DATA ##############################################
+# Read in the absolute abundance data 
+absolute_otu <- read.table(file="../../../data/Chloroplasts_removed/nochloro_absolute_otu.tsv", header = TRUE) # Absolute OTU abundance table 
+
+# Read in the taxonomy data 
+tax <- read.table(file="../../../data/Chloroplasts_removed/nochloro_taxonomy_otu.tsv", header = TRUE) %>%
+  tibble::rownames_to_column() %>%
+  dplyr::rename(Kingdom = Rank1, Phylum = Rank2, Class = Rank3, Order = Rank4, 
+                Family = Rank5, Genus = Rank6, Species = Rank7, OTU = rowname) # Fix the Taxonomy
+
+# Replace the phylum Proteobacteria with the class level
+Phylum <- as.character(tax$Phylum)
+Class <- as.character(tax$Class)
+
+for  (i in 1:length(Phylum)){ 
+  if (Phylum[i] == "Proteobacteria"){
+    Phylum[i] <- Class[i]
+  } 
+}
+
+# Overwrite the Phylum level with the new phylum classification
+tax$Phylum <- Phylum # Add the new phylum level data back to phy
+
+# Read in the productivity and flow cytometry data 
+prod_fcm_data <- read.table(file = "../../../data/Chloroplasts_removed/productivity_data.tsv", header = TRUE) # Metadata file
+```
+
+
+# Load in selected OTUs
+
+## How many OTUs are present in all each of the analyses?
+
+```{r load-OTUs}
+# Load in the 4 files of OTUs
+
+# Abundance filtering based on All of the sample  data 
+## Abundance cutoff = 1%
+otus_stand_0.01 <- read.csv("HNA_selectedOTUs_stand_abun0.01_R20.959411030714.csv", header = FALSE) %>% rename(OTU = V1, score = V2)
+## How many OTUs are in this dataset?
+nrow(otus_stand_0.01)
+
+## Abundance cutoff = 0.1%
+otus_stand_0.001 <- read.csv("HNA_selectedOTUs_stand_abun0.001_R20.969251756656.csv", header = FALSE) %>% rename(OTU = V1, score = V2)
+## How many OTUs are in this dataset?
+nrow(otus_stand_0.001)
+
+# Abundance filtering based on the Productivity data
+## Abundance cutoff = 1%
+otus_prod_0.001 <- read.csv("HNA_selectedOTUs_prod_stand_abun0.001_R20.928038799058.csv", header = FALSE) %>% rename(OTU = V1, score = V2) 
+## How many OTUs are in this dataset?
+nrow(otus_prod_0.001)
+
+## Abundance cutoff = 0.1%
+otus_prod_0.01 <- read.csv("HNA_selectedOTUs_prod_stand_abun0.01_R20.87968307489.csv", header = FALSE) %>% rename(OTU = V1, score = V2)
+## How many OTUs are in this dataset?
+nrow(otus_prod_0.01)
+```
+
+
+## How many are present in the different types of analyses?
+
+```{r otu-intersection}
+## Standardized analysis with all samples?
+length(intersect(otus_stand_0.001$OTU, otus_stand_0.01$OTU))
+## Standardized analysis with only productivity samples?
+length(intersect(otus_prod_0.001$OTU, otus_prod_0.01$OTU))
+
+# How many OTUs are shared between all 4 approaches?
+otus_in_all_4 <- Reduce(intersect, list(otus_stand_0.001$OTU, otus_stand_0.01$OTU, otus_prod_0.001$OTU, otus_prod_0.01$OTU))
+length(otus_in_all_4)
+
+# What is the taxonomy of the OTUs that are shared between all 4 approaches?
+tax %>% dplyr::filter(OTU %in% otus_in_all_4)
+```
+
+
+# 1% Cutoff from ALL samples 
+
+```{r all-1%-cutoff, dependson = "load-data", fig.height=4, fig.width=3, fig.align='center'}
+# What is the taxonomy of the OTUs?
+tax %>% dplyr::filter(OTU %in% otus_stand_0.01$OTU)
+
+# Put all the data together into one dataframe with only the important OTUs
+AbsAbund_otus_stand_0.01 <- combine_OTU_data(absolute_otu_table = absolute_otu, otu_vector_names = as.vector(otus_stand_0.01$OTU), 
+                                             productivity_fcm_data = prod_fcm_data, taxonomy_table = tax)
+
+
+HNA_frac_otus_stand_0.01 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_stand_0.01)
+
+# Plot the variation in the sum of the HNA fraction with points/boxplot
+plot1 <- ggplot(HNA_frac_otus_stand_0.01, 
+       aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
+  geom_boxplot(alpha = 0.5) +   geom_point(size = 3, position = position_jitterdodge()) +
+  ggtitle("All Samples: 1% Cutoff") + ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
+  scale_color_manual(values = "black") + scale_fill_manual(values = "black") +
+  geom_abline(intercept = 1, slope = 0, color = "red") +                                   # Draw a line at 1 
+  scale_y_continuous(expand = c(0,0),limits = c(0, 2.5), breaks = seq(0, 2.5, by = 0.5)) +
+  theme(legend.position = "none", axis.text.x = element_blank())
+```
+
+# 0.1% Cutoff from ALL samples 
+
+```{r all-0.1%-cutoff, dependson = "load-data", fig.height=4, fig.width=3, fig.align='center'}
+# What is the taxonomy of the OTUs?
+tax %>% dplyr::filter(OTU %in% otus_stand_0.001$OTU)
+
+# Put all the data together into one dataframe with only the important OTUs
+AbsAbund_otus_stand_0.001 <- combine_OTU_data(absolute_otu_table = absolute_otu, otu_vector_names = as.vector(otus_stand_0.001$OTU), 
+                                             productivity_fcm_data = prod_fcm_data, taxonomy_table = tax)
+
+# Calculate the Sum of the HNA fractions
+HNA_frac_otus_stand_0.001 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_stand_0.001)
+
+# Plot the variation in the sum of the HNA fraction with points/boxplot
+plot2 <- ggplot(HNA_frac_otus_stand_0.001, 
+       aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +   geom_point(size = 3, position = position_jitterdodge()) +
+  ggtitle("All Samples: 0.1% Cutoff") + ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
+  scale_color_manual(values = "black") + scale_fill_manual(values = "black") +
+  geom_abline(intercept = 1, slope = 0, color = "red") +                                   # Draw a line at 1 
+  scale_y_continuous(expand = c(0,0),limits = c(0, 2.5), breaks = seq(0, 2.5, by = 0.5)) +
+  theme(legend.position = "none", axis.text.x = element_blank())
+```
+
+
+
+# 1% Cutoff from Productivity samples only 
+
+```{r prod-1%-cutoff, dependson = "load-data", fig.height=4, fig.width=3, fig.align='center'}
+# What is the taxonomy of the OTUs?
+tax %>% dplyr::filter(OTU %in% otus_prod_0.01$OTU)
+
+# Put all the data together into one dataframe with only the important OTUs
+AbsAbund_otus_prod_0.01 <- combine_OTU_data(absolute_otu_table = absolute_otu, otu_vector_names = as.vector(otus_prod_0.01$OTU), 
+                                             productivity_fcm_data = prod_fcm_data, taxonomy_table = tax)
+
+# Calculate the Sum of the HNA fractions
+HNA_frac_otus_prod_0.01 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_prod_0.01)
+
+# Plot the variation in the sum of the HNA fraction with points/boxplot
+plot3 <- ggplot(HNA_frac_otus_prod_0.01, 
+       aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +   geom_point(size = 3, position = position_jitterdodge()) +
+  ggtitle("Productivity Samples: 1% Cutoff") + ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
+  scale_color_manual(values = "black") + scale_fill_manual(values = "black") +
+  geom_abline(intercept = 1, slope = 0, color = "red") +                                   # Draw a line at 1 
+  scale_y_continuous(expand = c(0,0),limits = c(0, 2.5), breaks = seq(0, 2.5, by = 0.5)) +
+  theme(legend.position = "none", axis.text.x = element_blank())
+```
+
+
+# 1% Cutoff from Productivity samples only 
+
+```{r prod-0.1%-cutoff, dependson = "load-data", fig.height=4, fig.width=3, fig.align='center'}
+# What is the taxonomy of the OTUs?
+tax %>% dplyr::filter(OTU %in% otus_prod_0.001$OTU)
+
+# Put all the data together into one dataframe with only the important OTUs
+AbsAbund_otus_prod_0.001 <- combine_OTU_data(absolute_otu_table = absolute_otu, otu_vector_names = as.vector(otus_prod_0.001$OTU), 
+                                             productivity_fcm_data = prod_fcm_data, taxonomy_table = tax)
+
+# Calculate the Sum of the HNA fractions
+HNA_frac_otus_prod_0.001 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_prod_0.001)
+
+# Plot the variation in the sum of the HNA fraction with points/boxplot
+plot4 <- ggplot(HNA_frac_otus_prod_0.001, 
+       aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +   geom_point(size = 3, position = position_jitterdodge()) +
+  ggtitle("Productivity Samples: 0.1% Cutoff") + ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
+  scale_color_manual(values = "black") + scale_fill_manual(values = "black") +
+  geom_abline(intercept = 1, slope = 0, color = "red") +                                   # Draw a line at 1 
+  scale_y_continuous(expand = c(0,0),limits = c(0, 2.5), breaks = seq(0, 2.5, by = 0.5)) +
+  theme(legend.position = "none", axis.text.x = element_blank())
+```
+
+```{r all-plots}
+plot_grid(plot1, plot2, plot3, plot4, align = "h",
+          labels = c("A", "B", "C", "D"),
+          nrow = 1, ncol = 4)
+
+```
+
+
+
