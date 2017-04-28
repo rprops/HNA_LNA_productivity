@@ -32,7 +32,7 @@ knitr::opts_chunk$set(eval = TRUE,
 library(tidyverse)
 library(cowplot)
 source("../set_colors.R")
-source("Functions.R")
+source("../Functions.R")
 ```
 
 

@@ -15,10 +15,8 @@
 library(tidyverse)
 library(cowplot)
 source("../set_colors.R")
-source("Functions.R")
+source("../Functions.R")
 ```
-
-    ## Error in file(filename, "r", encoding = encoding): cannot open the connection
 
 ### Load in the data
 
@@ -240,17 +238,10 @@ tax %>% dplyr::filter(OTU %in% otus_stand_0.01$OTU)
 # Put all the data together into one dataframe with only the important OTUs
 AbsAbund_otus_stand_0.01 <- combine_OTU_data(absolute_otu_table = absolute_otu, otu_vector_names = as.vector(otus_stand_0.01$OTU), 
                                              productivity_fcm_data = prod_fcm_data, taxonomy_table = tax)
-```
 
-    ## Error in combine_OTU_data(absolute_otu_table = absolute_otu, otu_vector_names = as.vector(otus_stand_0.01$OTU), : could not find function "combine_OTU_data"
 
-``` r
 HNA_frac_otus_stand_0.01 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_stand_0.01)
-```
 
-    ## Error in calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_stand_0.01): could not find function "calc_fraction_HNA"
-
-``` r
 # Plot the variation in the sum of the HNA fraction with points/boxplot
 plot1 <- ggplot(HNA_frac_otus_stand_0.01, 
        aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
@@ -261,8 +252,6 @@ plot1 <- ggplot(HNA_frac_otus_stand_0.01,
   scale_y_continuous(expand = c(0,0),limits = c(0, 2.5), breaks = seq(0, 2.5, by = 0.5)) +
   theme(legend.position = "none", axis.text.x = element_blank())
 ```
-
-    ## Error in ggplot(HNA_frac_otus_stand_0.01, aes(y = sum_fracHNA, x = All_Samples, : object 'HNA_frac_otus_stand_0.01' not found
 
 0.1% Cutoff from ALL samples
 ============================
@@ -427,18 +416,10 @@ tax %>% dplyr::filter(OTU %in% otus_stand_0.001$OTU)
 # Put all the data together into one dataframe with only the important OTUs
 AbsAbund_otus_stand_0.001 <- combine_OTU_data(absolute_otu_table = absolute_otu, otu_vector_names = as.vector(otus_stand_0.001$OTU), 
                                              productivity_fcm_data = prod_fcm_data, taxonomy_table = tax)
-```
 
-    ## Error in combine_OTU_data(absolute_otu_table = absolute_otu, otu_vector_names = as.vector(otus_stand_0.001$OTU), : could not find function "combine_OTU_data"
-
-``` r
 # Calculate the Sum of the HNA fractions
 HNA_frac_otus_stand_0.001 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_stand_0.001)
-```
 
-    ## Error in calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_stand_0.001): could not find function "calc_fraction_HNA"
-
-``` r
 # Plot the variation in the sum of the HNA fraction with points/boxplot
 plot2 <- ggplot(HNA_frac_otus_stand_0.001, 
        aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
@@ -449,8 +430,6 @@ plot2 <- ggplot(HNA_frac_otus_stand_0.001,
   scale_y_continuous(expand = c(0,0),limits = c(0, 2.5), breaks = seq(0, 2.5, by = 0.5)) +
   theme(legend.position = "none", axis.text.x = element_blank())
 ```
-
-    ## Error in ggplot(HNA_frac_otus_stand_0.001, aes(y = sum_fracHNA, x = All_Samples, : object 'HNA_frac_otus_stand_0.001' not found
 
 1% Cutoff from Productivity samples only
 ========================================
@@ -494,18 +473,10 @@ tax %>% dplyr::filter(OTU %in% otus_prod_0.01$OTU)
 # Put all the data together into one dataframe with only the important OTUs
 AbsAbund_otus_prod_0.01 <- combine_OTU_data(absolute_otu_table = absolute_otu, otu_vector_names = as.vector(otus_prod_0.01$OTU), 
                                              productivity_fcm_data = prod_fcm_data, taxonomy_table = tax)
-```
 
-    ## Error in combine_OTU_data(absolute_otu_table = absolute_otu, otu_vector_names = as.vector(otus_prod_0.01$OTU), : could not find function "combine_OTU_data"
-
-``` r
 # Calculate the Sum of the HNA fractions
 HNA_frac_otus_prod_0.01 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_prod_0.01)
-```
 
-    ## Error in calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_prod_0.01): could not find function "calc_fraction_HNA"
-
-``` r
 # Plot the variation in the sum of the HNA fraction with points/boxplot
 plot3 <- ggplot(HNA_frac_otus_prod_0.01, 
        aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
@@ -516,8 +487,6 @@ plot3 <- ggplot(HNA_frac_otus_prod_0.01,
   scale_y_continuous(expand = c(0,0),limits = c(0, 2.5), breaks = seq(0, 2.5, by = 0.5)) +
   theme(legend.position = "none", axis.text.x = element_blank())
 ```
-
-    ## Error in ggplot(HNA_frac_otus_prod_0.01, aes(y = sum_fracHNA, x = All_Samples, : object 'HNA_frac_otus_prod_0.01' not found
 
 1% Cutoff from Productivity samples only
 ========================================
@@ -584,18 +553,10 @@ tax %>% dplyr::filter(OTU %in% otus_prod_0.001$OTU)
 # Put all the data together into one dataframe with only the important OTUs
 AbsAbund_otus_prod_0.001 <- combine_OTU_data(absolute_otu_table = absolute_otu, otu_vector_names = as.vector(otus_prod_0.001$OTU), 
                                              productivity_fcm_data = prod_fcm_data, taxonomy_table = tax)
-```
 
-    ## Error in combine_OTU_data(absolute_otu_table = absolute_otu, otu_vector_names = as.vector(otus_prod_0.001$OTU), : could not find function "combine_OTU_data"
-
-``` r
 # Calculate the Sum of the HNA fractions
 HNA_frac_otus_prod_0.001 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_prod_0.001)
-```
 
-    ## Error in calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_prod_0.001): could not find function "calc_fraction_HNA"
-
-``` r
 # Plot the variation in the sum of the HNA fraction with points/boxplot
 plot4 <- ggplot(HNA_frac_otus_prod_0.001, 
        aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
@@ -607,12 +568,10 @@ plot4 <- ggplot(HNA_frac_otus_prod_0.001,
   theme(legend.position = "none", axis.text.x = element_blank())
 ```
 
-    ## Error in ggplot(HNA_frac_otus_prod_0.001, aes(y = sum_fracHNA, x = All_Samples, : object 'HNA_frac_otus_prod_0.001' not found
-
 ``` r
 plot_grid(plot1, plot2, plot3, plot4, align = "h",
           labels = c("A", "B", "C", "D"),
           nrow = 1, ncol = 4)
 ```
 
-    ## Error in plot_grid(plot1, plot2, plot3, plot4, align = "h", labels = c("A", : object 'plot1' not found
+<img src="selected_otu_analysis_files/figure-markdown_github/all-plots-1.png" style="display: block; margin: auto;" />
