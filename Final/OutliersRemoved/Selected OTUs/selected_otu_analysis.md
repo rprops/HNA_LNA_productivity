@@ -7,6 +7,7 @@
 -   [0.1% Cutoff from ALL samples](#cutoff-from-all-samples-1)
 -   [1% Cutoff from Productivity samples only](#cutoff-from-productivity-samples-only)
 -   [0.1% Cutoff from Productivity samples only](#cutoff-from-productivity-samples-only-1)
+-   [All Plots](#all-plots)
 
 ### Load the necessary libraries and set colors
 
@@ -571,6 +572,9 @@ plot4 <- ggplot(HNA_frac_otus_prod_0.001,
   scale_y_continuous(expand = c(0,0),limits = c(0, 2.5), breaks = seq(0, 2.5, by = 0.5)) +
   theme(legend.position = "none", axis.text.x = element_blank())
 ```
+
+All Plots
+=========
 
 ``` r
 plot_grid(plot1, plot2, plot3, plot4, align = "h",
