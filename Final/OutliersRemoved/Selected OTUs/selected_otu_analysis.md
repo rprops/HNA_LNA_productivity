@@ -246,7 +246,7 @@ HNA_frac_otus_stand_0.01 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_stan
 plot1 <- ggplot(HNA_frac_otus_stand_0.01, 
        aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
   geom_boxplot(alpha = 0.5) +   geom_point(size = 3, position = position_jitterdodge()) +
-  ggtitle("All Samples: 1% Cutoff") + ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
+  ggtitle("All\n 1% Cutoff") + ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
   scale_color_manual(values = "black") + scale_fill_manual(values = "black") +
   geom_abline(intercept = 1, slope = 0, color = "red") +                                   # Draw a line at 1 
   scale_y_continuous(expand = c(0,0),limits = c(0, 2.5), breaks = seq(0, 2.5, by = 0.5)) +
@@ -424,7 +424,7 @@ HNA_frac_otus_stand_0.001 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_sta
 plot2 <- ggplot(HNA_frac_otus_stand_0.001, 
        aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +   geom_point(size = 3, position = position_jitterdodge()) +
-  ggtitle("All Samples: 0.1% Cutoff") + ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
+  ggtitle("All\n 0.1% Cutoff") + ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
   scale_color_manual(values = "black") + scale_fill_manual(values = "black") +
   geom_abline(intercept = 1, slope = 0, color = "red") +                                   # Draw a line at 1 
   scale_y_continuous(expand = c(0,0),limits = c(0, 2.5), breaks = seq(0, 2.5, by = 0.5)) +
@@ -481,7 +481,7 @@ HNA_frac_otus_prod_0.01 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_prod_
 plot3 <- ggplot(HNA_frac_otus_prod_0.01, 
        aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +   geom_point(size = 3, position = position_jitterdodge()) +
-  ggtitle("Productivity Samples: 1% Cutoff") + ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
+  ggtitle("Prod\n 1% Cutoff") + ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
   scale_color_manual(values = "black") + scale_fill_manual(values = "black") +
   geom_abline(intercept = 1, slope = 0, color = "red") +                                   # Draw a line at 1 
   scale_y_continuous(expand = c(0,0),limits = c(0, 2.5), breaks = seq(0, 2.5, by = 0.5)) +
@@ -561,7 +561,7 @@ HNA_frac_otus_prod_0.001 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_prod
 plot4 <- ggplot(HNA_frac_otus_prod_0.001, 
        aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +   geom_point(size = 3, position = position_jitterdodge()) +
-  ggtitle("Productivity Samples: 0.1% Cutoff") + ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
+  ggtitle("Prod\n 0.1% Cutoff") + ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
   scale_color_manual(values = "black") + scale_fill_manual(values = "black") +
   geom_abline(intercept = 1, slope = 0, color = "red") +                                   # Draw a line at 1 
   scale_y_continuous(expand = c(0,0),limits = c(0, 2.5), breaks = seq(0, 2.5, by = 0.5)) +
