@@ -213,7 +213,7 @@ plot4 <- ggplot(HNA_frac_otus_prod_0.001,
   theme(legend.position = "none", axis.text.x = element_blank())
 ```
 
-```{r all-plots}
+```{r all-plots, dependson = c("all-1%-cutoff", "all-0.1%-cutoff", "prod-1%-cutoff", "prod-0.1%-cutoff"), fig.height=4, fig.width=10, fig.align='center'}
 plot_grid(plot1, plot2, plot3, plot4, align = "h",
           labels = c("A", "B", "C", "D"),
           nrow = 1, ncol = 4)
