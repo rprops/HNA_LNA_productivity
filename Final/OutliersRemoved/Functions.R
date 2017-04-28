@@ -41,12 +41,10 @@ combine_OTU_data <- function(absolute_otu_table, otu_vector_names, productivity_
     tibble::rownames_to_column() %>%                                         # 3. Change the sample names to be a column
     dplyr::rename(Sample_16S = rowname) %>%                                  # 4. Rename the sample names column to match up with other data frames
     dplyr::left_join(productivity_fcm_data, by = "Sample_16S") %>%           # 5. Join 26 OTU absolute abundance counts with rest of metadata 
-    dplyr::filter(Lake == "Muskegon" & Depth == "Surface") %>%               # 6. Filter out samples that have productivity data (Muskegon & Surface)
-    dplyr::select(-c(Platform, samples, Lake)) %>%                           # 7. Remove unnecessary columns 
-    mutate(Site = factor(Site, levels = c("MOT", "MDP", "MBR", "MIN"))) %>%  # 8. Fix order of factor for lake station
-    gather("OTU", "Abs_Abund", 2:select_cols) %>%                            # 9. Gather only relevant columns, which represent OTU abs abundance counts, and put it in *long* format
-    mutate(OTU_fraction_HNA = Abs_Abund/HNA.cells) %>%                       # 10. Calculate the fraction that each individual OTU takes up within the HNA pool for each sample
-    dplyr::left_join(taxonomy_table, by = "OTU")                             # 11. Add the taxonomic information for each OTU
+    dplyr::select(-c(Platform, samples)) %>%                                 # 6. Remove unnecessary columns 
+    gather("OTU", "Abs_Abund", 2:select_cols) %>%                            # 7. Gather only relevant columns, which represent OTU abs abundance counts, and put it in *long* format
+    mutate(OTU_fraction_HNA = Abs_Abund/HNA.cells) %>%                       # 8. Calculate the fraction that each individual OTU takes up within the HNA pool for each sample
+    dplyr::left_join(taxonomy_table, by = "OTU")                             # 9. Add the taxonomic information for each OTU
   
 }
 

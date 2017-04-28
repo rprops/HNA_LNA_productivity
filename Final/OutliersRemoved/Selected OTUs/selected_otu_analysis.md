@@ -6,7 +6,7 @@
 -   [1% Cutoff from ALL samples](#cutoff-from-all-samples)
 -   [0.1% Cutoff from ALL samples](#cutoff-from-all-samples-1)
 -   [1% Cutoff from Productivity samples only](#cutoff-from-productivity-samples-only)
--   [1% Cutoff from Productivity samples only](#cutoff-from-productivity-samples-only-1)
+-   [0.1% Cutoff from Productivity samples only](#cutoff-from-productivity-samples-only-1)
 
 ### Load the necessary libraries and set colors
 
@@ -245,7 +245,7 @@ HNA_frac_otus_stand_0.01 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_stan
 # Plot the variation in the sum of the HNA fraction with points/boxplot
 plot1 <- ggplot(HNA_frac_otus_stand_0.01, 
        aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
-  geom_boxplot(alpha = 0.5) +   geom_point(size = 3, position = position_jitterdodge()) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +   geom_point(size = 3, position = position_jitterdodge()) +
   ggtitle("All\n 1% Cutoff") + ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
   scale_color_manual(values = "black") + scale_fill_manual(values = "black") +
   geom_abline(intercept = 1, slope = 0, color = "red") +                                   # Draw a line at 1 
@@ -472,7 +472,9 @@ tax %>% dplyr::filter(OTU %in% otus_prod_0.01$OTU)
 ``` r
 # Put all the data together into one dataframe with only the important OTUs
 AbsAbund_otus_prod_0.01 <- combine_OTU_data(absolute_otu_table = absolute_otu, otu_vector_names = as.vector(otus_prod_0.01$OTU), 
-                                             productivity_fcm_data = prod_fcm_data, taxonomy_table = tax)
+                                             productivity_fcm_data = prod_fcm_data, taxonomy_table = tax) %>%
+        dplyr::filter(Lake == "Muskegon" & Depth == "Surface")               # Filter out samples that have productivity data (Muskegon & Surface)
+
 
 # Calculate the Sum of the HNA fractions
 HNA_frac_otus_prod_0.01 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_prod_0.01)
@@ -488,8 +490,8 @@ plot3 <- ggplot(HNA_frac_otus_prod_0.01,
   theme(legend.position = "none", axis.text.x = element_blank())
 ```
 
-1% Cutoff from Productivity samples only
-========================================
+0.1% Cutoff from Productivity samples only
+==========================================
 
 ``` r
 # What is the taxonomy of the OTUs?
@@ -552,7 +554,9 @@ tax %>% dplyr::filter(OTU %in% otus_prod_0.001$OTU)
 ``` r
 # Put all the data together into one dataframe with only the important OTUs
 AbsAbund_otus_prod_0.001 <- combine_OTU_data(absolute_otu_table = absolute_otu, otu_vector_names = as.vector(otus_prod_0.001$OTU), 
-                                             productivity_fcm_data = prod_fcm_data, taxonomy_table = tax)
+                                             productivity_fcm_data = prod_fcm_data, taxonomy_table = tax) %>%
+      dplyr::filter(Lake == "Muskegon" & Depth == "Surface")               # Filter out samples that have productivity data (Muskegon & Surface)
+
 
 # Calculate the Sum of the HNA fractions
 HNA_frac_otus_prod_0.001 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_prod_0.001)
