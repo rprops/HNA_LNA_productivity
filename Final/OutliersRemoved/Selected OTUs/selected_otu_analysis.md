@@ -507,7 +507,7 @@ dat <- prod_fcm_data %>%
 
 p1 <- ggplot(dat, aes(y = HNA_percent, x = Depth, color = Depth, shape = Season, fill = Depth)) + 
   geom_jitter(size = 3) + 
-  ggtitle("All Summertime Samples") +
+  ggtitle("All Summer Samples") +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +
   theme(axis.title.x = element_blank(), 
         legend.position = "none")
@@ -522,7 +522,7 @@ erp$Site <- factor(erp$Site, levels=unique(as.character(erp$Site)) )
 # 
 p2 <- ggplot(erp, aes(x = Site, y = HNA_percent, color = Depth)) + 
   geom_point(size = 3) +
-  ggtitle("Summertime Hypolimnia") + 
+  ggtitle("Summer Hypolimnia") + 
   theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1),
         axis.title.x = element_blank(), legend.position = "none")
 
