@@ -514,18 +514,32 @@ p1 <- ggplot(dat, aes(y = HNA_percent, x = Depth, color = Depth, shape = Season,
   
 erp <- dplyr::filter(dat, Depth == "Deep") %>% 
   dplyr::select(Site,HNA_percent, Depth) %>%
-  arrange(HNA_percent) 
+  arrange(HNA_percent) %>%
+  mutate(Prod_state = ifelse(HNA_percent < 0.4, "Low", "High"))
 
 # Fix the order of the x axis
 erp$Site <- factor(erp$Site, levels=unique(as.character(erp$Site)) )
 
 # 
-p2 <- ggplot(erp, aes(x = Site, y = HNA_percent, color = Depth)) + 
+p2 <- ggplot(erp, aes(x = Site, y = HNA_percent, color = Prod_state)) + 
   geom_point(size = 3) +
   ggtitle("Summer Hypolimnia") + 
+  scale_color_manual(values = c("#C7C12D", "#7EBCE5")) +
   theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1),
-        axis.title.x = element_blank(), legend.position = "none")
+        axis.title.x = element_blank(), legend.position = c(0.2, 0.9))
 
+# Is HNA percent significantly higher in productive hypolimnia?
+wilcox.test(HNA_percent ~ Prod_state, data=erp) 
+```
+
+    ## 
+    ##  Wilcoxon rank sum test
+    ## 
+    ## data:  HNA_percent by Prod_state
+    ## W = 30, p-value = 0.004329
+    ## alternative hypothesis: true location shift is not equal to 0
+
+``` r
 plot_grid(p1, p2, align = "h",
           nrow = 1, ncol = 2,
           labels = c("A", "B"),
