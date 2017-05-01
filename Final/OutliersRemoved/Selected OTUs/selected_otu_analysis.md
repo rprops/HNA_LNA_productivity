@@ -3,8 +3,11 @@
 -   [Load in selected OTUs](#load-in-selected-otus)
     -   [How many OTUs are present in all each of the analyses?](#how-many-otus-are-present-in-all-each-of-the-analyses)
     -   [How many are present in the different types of analyses?](#how-many-are-present-in-the-different-types-of-analyses)
+-   [Analysis of HNA OTUs that are found within **BOTH** of the models](#analysis-of-hna-otus-that-are-found-within-both-of-the-models)
 -   [1% Cutoff from ALL samples](#cutoff-from-all-samples)
 -   [0.1% Cutoff from ALL samples](#cutoff-from-all-samples-1)
+-   [Is the HNA percent higher/lower in the hypolimnion of productvite stratified inland lakes?](#is-the-hna-percent-higherlower-in-the-hypolimnion-of-productvite-stratified-inland-lakes)
+    -   [The HNA percent is much higher in the hypolimnion of productvite stratified lakes!](#the-hna-percent-is-much-higher-in-the-hypolimnion-of-productvite-stratified-lakes)
 -   [1% Cutoff from Productivity samples only](#cutoff-from-productivity-samples-only)
 -   [0.1% Cutoff from Productivity samples only](#cutoff-from-productivity-samples-only-1)
 -   [All Plots](#all-plots)
@@ -47,6 +50,12 @@ tax$Phylum <- Phylum # Add the new phylum level data back to phy
 
 # Read in the productivity and flow cytometry data 
 prod_fcm_data <- read.table(file = "../../../data/Chloroplasts_removed/productivity_data.tsv", header = TRUE) # Metadata file
+
+
+# Read in the metadata for the 
+inland_fcm_data <- read.csv2("../../../data/inland.sam.csv", stringsAsFactors = FALSE) %>%
+  mutate(Sample_16S = paste(substr(SampleID, 1,3), substr(SampleID, 5,7), substr(SampleID, 9,9), sep = "")) %>%
+  dplyr::filter(Fraction == "Free")
 ```
 
 Load in selected OTUs
@@ -143,6 +152,29 @@ tax %>% dplyr::filter(OTU %in% otus_in_all_4)
     ## 15 Otu000098 Bacteria       Bacteroidetes               Flavobacteriia             Flavobacteriales                         bacV            bacV_unclassified Unclassified
     ## 16 Otu000112 Bacteria      Actinobacteria               Actinobacteria              Actinomycetales                          acI                        acI-C       acI-C1
     ## 17 Otu000173 Bacteria       Bacteroidetes               Flavobacteriia             Flavobacteriales                        bacII                      bacII-A Unclassified
+
+Analysis of HNA OTUs that are found within **BOTH** of the models
+=================================================================
+
+``` r
+## Standardized analysis with all samples?
+stand_OTUs <- intersect(otus_stand_0.001$OTU, otus_stand_0.01$OTU)
+
+# Put all the data together into one dataframe with only the important OTUs
+AbsAbund_otus_stand_intersect <- combine_OTU_data(absolute_otu_table = absolute_otu, otu_vector_names = stand_OTUs, 
+                                             productivity_fcm_data = prod_fcm_data, taxonomy_table = tax)
+
+length(unique(AbsAbund_otus_stand_intersect$OTU))
+```
+
+    ## [1] 55
+
+``` r
+ggplot(AbsAbund_otus_stand_intersect, aes(x = Abs_Abund, y = HNA.cells)) + 
+  geom_point() + facet_wrap(~ OTU, scale = "free") 
+```
+
+<img src="selected_otu_analysis_files/figure-markdown_github/intersect-HNA-1.png" style="display: block; margin: auto;" />
 
 1% Cutoff from ALL samples
 ==========================
@@ -241,10 +273,14 @@ AbsAbund_otus_stand_0.01 <- combine_OTU_data(absolute_otu_table = absolute_otu, 
                                              productivity_fcm_data = prod_fcm_data, taxonomy_table = tax)
 
 
-HNA_frac_otus_stand_0.01 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_stand_0.01)
+HNA_frac_otus_stand_0.01 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_stand_0.01) %>%
+  arrange(sum_fracHNA) %>%
+  left_join(inland_fcm_data, by = "Sample_16S") %>%
+  dplyr::select(Sample_16S, sum_fracHNA, sum_abs_abund, All_Samples, Station, Season, Lake, Depth)
+
 
 # Plot the variation in the sum of the HNA fraction with points/boxplot
-plot1 <- ggplot(HNA_frac_otus_stand_0.01, 
+plot1 <-  ggplot(HNA_frac_otus_stand_0.01, 
        aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +   geom_point(size = 3, position = position_jitterdodge()) +
   ggtitle("All\n 1% Cutoff") + ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
@@ -252,7 +288,20 @@ plot1 <- ggplot(HNA_frac_otus_stand_0.01,
   geom_abline(intercept = 1, slope = 0, color = "red") +                                   # Draw a line at 1 
   scale_y_continuous(expand = c(0,0),limits = c(0, 2.5), breaks = seq(0, 2.5, by = 0.5)) +
   theme(legend.position = "none", axis.text.x = element_blank())
+
+# To see the samples at the bottom of the plot?
+head(HNA_frac_otus_stand_0.01)
 ```
+
+    ## # A tibble: 6 × 8
+    ##           Sample_16S sum_fracHNA sum_abs_abund      All_Samples Station Season      Lake  Depth
+    ##                <chr>       <dbl>         <dbl>            <chr>   <chr>  <chr>     <chr>  <chr>
+    ## 1            Z14055F   0.3728832     1141776.0 AllSamps_26_OTUs    Hypo   Fall     Bruin Bottom
+    ## 2            Z14003F   0.3735979     2145305.1 AllSamps_26_OTUs    Hypo Summer    Bishop Bottom
+    ## 3            Z14007F   0.4167907     1933070.2 AllSamps_26_OTUs    Hypo Summer  Woodland Bottom
+    ## 4            Z14023F   0.4265831     1779198.6 AllSamps_26_OTUs    Hypo Summer     North Bottom
+    ## 5            Z14011F   0.4654888     2269587.8 AllSamps_26_OTUs    Hypo Summer Big Seven Bottom
+    ## 6 Fa13.BD.MM110.DN.1   0.6212669      113079.6 AllSamps_26_OTUs    <NA>   <NA>      <NA>   <NA>
 
 0.1% Cutoff from ALL samples
 ============================
@@ -419,7 +468,10 @@ AbsAbund_otus_stand_0.001 <- combine_OTU_data(absolute_otu_table = absolute_otu,
                                              productivity_fcm_data = prod_fcm_data, taxonomy_table = tax)
 
 # Calculate the Sum of the HNA fractions
-HNA_frac_otus_stand_0.001 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_stand_0.001)
+HNA_frac_otus_stand_0.001 <- calc_fraction_HNA(AbsAbund_OTUs = AbsAbund_otus_stand_0.001) %>%
+  arrange(sum_fracHNA) %>%
+  left_join(inland_fcm_data, by = "Sample_16S") %>%
+  dplyr::select(Sample_16S, sum_fracHNA, sum_abs_abund, All_Samples, Station, Season, Lake, Depth)
 
 # Plot the variation in the sum of the HNA fraction with points/boxplot
 plot2 <- ggplot(HNA_frac_otus_stand_0.001, 
@@ -430,7 +482,60 @@ plot2 <- ggplot(HNA_frac_otus_stand_0.001,
   geom_abline(intercept = 1, slope = 0, color = "red") +                                   # Draw a line at 1 
   scale_y_continuous(expand = c(0,0),limits = c(0, 2.5), breaks = seq(0, 2.5, by = 0.5)) +
   theme(legend.position = "none", axis.text.x = element_blank())
+
+# To see the samples at the bottom of the plot?
+head(HNA_frac_otus_stand_0.001)
 ```
+
+    ## # A tibble: 6 × 8
+    ##   Sample_16S sum_fracHNA sum_abs_abund      All_Samples Station Season      Lake  Depth
+    ##        <chr>       <dbl>         <dbl>            <chr>   <chr>  <chr>     <chr>  <chr>
+    ## 1    Z14055F   0.3537484     1083184.8 AllSamps_26_OTUs    Hypo   Fall     Bruin Bottom
+    ## 2    Z14003F   0.3694925     2121730.4 AllSamps_26_OTUs    Hypo Summer    Bishop Bottom
+    ## 3    Z14007F   0.3878825     1798994.2 AllSamps_26_OTUs    Hypo Summer  Woodland Bottom
+    ## 4    Z14023F   0.3991258     1664679.3 AllSamps_26_OTUs    Hypo Summer     North Bottom
+    ## 5    Z14011F   0.4682637     2283117.4 AllSamps_26_OTUs    Hypo Summer Big Seven Bottom
+    ## 6  110S2F915   0.7333798      655412.4 AllSamps_26_OTUs    <NA>   <NA>      <NA>   <NA>
+
+Is the HNA percent higher/lower in the hypolimnion of productvite stratified inland lakes?
+==========================================================================================
+
+``` r
+dat <- prod_fcm_data %>%
+  dplyr::filter(Lake == "Inland" & Season == "Summer") %>%
+  mutate(HNA_percent = HNA.cells/Total.cells)
+
+p1 <- ggplot(dat, aes(y = HNA_percent, x = Depth, color = Depth, shape = Season, fill = Depth)) + 
+  geom_jitter(size = 3) + 
+  ggtitle("All Summertime Samples") +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+  theme(axis.title.x = element_blank(), 
+        legend.position = "none")
+  
+erp <- dplyr::filter(dat, Depth == "Deep") %>% 
+  dplyr::select(Site,HNA_percent, Depth) %>%
+  arrange(HNA_percent) 
+
+# Fix the order of the x axis
+erp$Site <- factor(erp$Site, levels=unique(as.character(erp$Site)) )
+
+# 
+p2 <- ggplot(erp, aes(x = Site, y = HNA_percent, color = Depth)) + 
+  geom_point(size = 3) +
+  ggtitle("Summertime Hypolimnia") + 
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1),
+        axis.title.x = element_blank(), legend.position = "none")
+
+plot_grid(p1, p2, align = "h",
+          nrow = 1, ncol = 2,
+          labels = c("A", "B"),
+          rel_widths = c(1, 2))
+```
+
+<img src="selected_otu_analysis_files/figure-markdown_github/HNA_percent-hypolimnia-1.png" style="display: block; margin: auto;" />
+
+The HNA percent is much higher in the hypolimnion of productvite stratified lakes!
+----------------------------------------------------------------------------------
 
 1% Cutoff from Productivity samples only
 ========================================
