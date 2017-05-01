@@ -244,7 +244,7 @@ plot_grid(p1, p2, align = "h",
           rel_widths = c(1, 2))
 ```
 
-## The HNA percent is significantly higher in the hypolimnion of productvite stratified lakes!
+## The HNA percent is *significantly* higher in the hypolimnion of productvite stratified lakes!
 
 
 

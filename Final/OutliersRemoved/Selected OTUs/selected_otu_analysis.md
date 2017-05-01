@@ -7,7 +7,7 @@
 -   [1% Cutoff from ALL samples](#cutoff-from-all-samples)
 -   [0.1% Cutoff from ALL samples](#cutoff-from-all-samples-1)
 -   [Is the HNA percent higher/lower in the hypolimnion of productvite stratified inland lakes?](#is-the-hna-percent-higherlower-in-the-hypolimnion-of-productvite-stratified-inland-lakes)
-    -   [The HNA percent is much higher in the hypolimnion of productvite stratified lakes!](#the-hna-percent-is-much-higher-in-the-hypolimnion-of-productvite-stratified-lakes)
+    -   [The HNA percent is *significantly* higher in the hypolimnion of productvite stratified lakes!](#the-hna-percent-is-significantly-higher-in-the-hypolimnion-of-productvite-stratified-lakes)
 -   [1% Cutoff from Productivity samples only](#cutoff-from-productivity-samples-only)
 -   [0.1% Cutoff from Productivity samples only](#cutoff-from-productivity-samples-only-1)
 -   [All Plots](#all-plots)
@@ -548,8 +548,8 @@ plot_grid(p1, p2, align = "h",
 
 <img src="selected_otu_analysis_files/figure-markdown_github/HNA_percent-hypolimnia-1.png" style="display: block; margin: auto;" />
 
-The HNA percent is much higher in the hypolimnion of productvite stratified lakes!
-----------------------------------------------------------------------------------
+The HNA percent is *significantly* higher in the hypolimnion of productvite stratified lakes!
+---------------------------------------------------------------------------------------------
 
 1% Cutoff from Productivity samples only
 ========================================
