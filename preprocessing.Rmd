@@ -76,7 +76,7 @@ counts.total <- inner_join(counts, metadata, by=c("samples"="Sample_fcm"))
 # replace unnecessary "-"
 sample_names(physeq.otu) <- gsub(sample_names(physeq.otu),pattern="-",replacement="")
 
-#remove cDNA
+# remove cDNA
 otu_table(physeq.otu) <- otu_table(physeq.otu)[grep(x=sample_names(physeq.otu),pattern="cD.",invert=TRUE), ]
 
 # remove "renamed" tag
@@ -107,7 +107,7 @@ sample_data(physeq.otu.abs)[,c(3:8)] <- sample_data(physeq.otu.abs)[,c(3:8)]*100
 write.table(otu_table(physeq.otu.abs), file="data/final_absolute_otu.tsv", row.names=FALSE)
 write.table(otu_table(physeq.otu.rel), file="data/final_relative_otu.tsv", row.names=FALSE)
 write.table(sample_data(physeq.otu.rel)[,-1], file="data/final_HNA_LNA.tsv", row.names=FALSE)
-write.table(tax_table(physeq.otu.rel), file="data/final_taxonomy_otu.tsv", row.names=FALSE)
+write.table(tax_table(physeq.otu.rel), file="data/final_taxonomy_otu.tsv")
 ```
 
 
