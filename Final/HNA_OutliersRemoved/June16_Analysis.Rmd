@@ -121,8 +121,8 @@ ggplot(AbsAbund_hna_otus, aes(x = reorder(OTU, Phylum), y = log10(Abs_Abund), fi
   ylab("log10(Abundance)") +
   #facet_grid(.~Phylum, scale = "free") +
   ggtitle("HNA OTUs from HNA Prediction") + 
-  guides(fill = guide_legend(ncol=3),
-         color = guide_legend(ncol=3)) +
+  guides(fill = guide_legend(ncol=4),
+         color = guide_legend(ncol=4)) +
   theme(legend.position = "bottom", #c(0.33, 0.85),
         legend.direction = "horizontal",
         legend.title = element_blank(),
@@ -139,7 +139,7 @@ ggplot(AbsAbund_hna_otus, aes(x = reorder(OTU, Phylum), y = OTU_fraction_HNA, fi
   ggtitle("HNA OTUs from HNA Prediction") + 
   guides(fill = guide_legend(ncol=3),
          color = guide_legend(ncol=3)) +
-  theme(legend.position = c(0.4, 0.65),
+  theme(legend.position = c(0.8, 0.85),
         legend.direction = "horizontal",
         legend.title = element_blank(),
         axis.title.x = element_blank(),
@@ -243,8 +243,8 @@ ggplot(AbsAbund_lna_otus, aes(x = reorder(OTU, Phylum), y = log10(Abs_Abund), fi
   ylab("log10(Abundance)") +
  # facet_grid(.~Phylum, scale = "free") +
   ggtitle("LNA OTUs from LNA Prediction") + 
-  guides(fill = guide_legend(ncol=3),
-         color = guide_legend(ncol=3)) +
+  guides(fill = guide_legend(ncol=5),
+         color = guide_legend(ncol=5)) +
   theme(legend.position = "bottom", #c(0.33, 0.85),
         legend.direction = "horizontal",
         legend.title = element_blank(),
@@ -261,7 +261,7 @@ ggplot(AbsAbund_lna_otus, aes(x = reorder(OTU, Phylum), y = OTU_fraction_LNA, fi
   ggtitle("LNA OTUs from LNA Prediction") + 
   guides(fill = guide_legend(ncol=3),
          color = guide_legend(ncol=3)) +
-  theme(legend.position = c(0.5, 0.65),
+  theme(legend.position = c(0.8, 0.85),
         legend.direction = "horizontal",
         legend.title = element_blank(),
         axis.title.x = element_blank(),
