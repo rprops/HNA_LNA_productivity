@@ -1,0 +1,263 @@
+---
+title: "June 16 Analysis"
+author: "Marian L Schmidt"
+date: "6/16/2017"
+output:
+  md_document:
+    variant: markdown_github
+    toc: true
+    toc_depth: 2
+---
+
+
+```{r setup, include=FALSE}
+# For width of code chunks and scroll bar 
+options(width=250)
+
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE,
+                      include = TRUE,
+                      warning = FALSE,
+                      collapse = FALSE,
+                      message = FALSE,
+                      error = TRUE,
+                      fig.align = "center")
+```
+
+
+
+### Load the necessary libraries and set colors 
+```{r load-libraries}
+################################# LOAD LIBRARIES ############################################
+library(tidyverse)
+library(cowplot)
+source("../OutliersRemoved/set_colors.R")
+source("../OutliersRemoved/Functions.R")
+```
+
+
+### Load in the data
+```{r load-data}
+#################################### LOAD DATA ##############################################
+
+# Read in the absolute abundance data 
+absolute_otu <- read.table(file="../../data/Chloroplasts_removed/nochloro_absolute_otu.tsv", header = TRUE) # Absolute OTU abundance table 
+
+# Read in the taxonomy data 
+tax <- read.table(file="../../data/Chloroplasts_removed/nochloro_taxonomy_otu.tsv", header = TRUE) %>%
+  tibble::rownames_to_column() %>%
+  dplyr::rename(Kingdom = Rank1,
+         Phylum = Rank2, 
+         Class = Rank3,
+         Order = Rank4,
+         Family = Rank5,
+         Genus = Rank6,
+         Species = Rank7,
+         OTU = rowname) # Fix the Taxonomy
+
+# Replace the phylum Proteobacteria with the class level
+Phylum <- as.character(tax$Phylum)
+Class <- as.character(tax$Class)
+
+for  (i in 1:length(Phylum)){ 
+  if (Phylum[i] == "Proteobacteria"){
+    Phylum[i] <- Class[i]
+  } 
+}
+
+# Overwrite the Phylum level with the new phylum classification
+tax$Phylum <- Phylum # Add the new phylum level data back to phy
+
+# Read in the productivity and flow cytometry data 
+productivity <- read.table(file = "../../data/Chloroplasts_removed/productivity_data.tsv", header = TRUE) # Metadata file
+```
+
+
+# HNA Pool: 0.1% Filtering
+
+@prubbens performed an analysis where initial filtering was 0.1% (results in `Final/HNA_OutliersRemoved/hna_scores_abun0.001.csv`).  The pipeline is found in `Final/HNA_OutliersRemoved/analysis_final_HNA_LNA_outliersremoved.ipynb`.
+
+
+```{r HNAotus, dependson = "load-data", fig.height=4, fig.width=10}
+# Vector of 3 OTUs pulled out by Peter's model in the above file 
+hna_otus <- read.csv("hna_scores_abun0.001.csv", header = FALSE) %>%   # Gather the 26 OTUs that peter pulled out in his analysis 
+  dplyr::rename(OTU = V1, Corr = V2)                                                               # Rename columns to be more intuitive
+
+# Make a vector of OTU names to pull them out of the larger dataset
+hna_otu_names <- as.character(hna_otus$OTU)
+
+# How many otus are there in the HNA pool?
+length(hna_otu_names)
+
+# What is the taxonomy of these 3 OTUs?
+tax %>% dplyr::filter(OTU %in% hna_otu_names)
+
+# Make it more reproducble below
+pick_columns <- length(hna_otu_names) + 1
+
+# Put all the data together into one dataframe with only the important OTUs
+AbsAbund_hna_otus <-  absolute_otu %>%                                           # Start with the OTU table with absolute abundance counts 
+  dplyr::select(one_of(hna_otu_names)) %>%                                       # Pull out only the relevant OTUs from the above OTU table
+  tibble::rownames_to_column() %>%                                               # Change the sample names to be a column
+  dplyr::rename(Sample_16S = rowname) %>%                                        # Rename the sample names column to match up with other data frames
+  dplyr::left_join(productivity, by = "Sample_16S") %>%                          # Join 26 OTU absolute abundance counts with rest of metadata 
+  dplyr::filter(Lake == "Muskegon" & Depth == "Surface") %>%                     # Filter out samples that have productivity data (Muskegon & Surface)
+  dplyr::select(-c(Platform, samples, Lake)) %>%                                 # Remove unnecessary columns 
+  mutate(Site = factor(Site, levels = c("MOT", "MDP", "MBR", "MIN"))) %>%        # Fix order of factor for lake station
+  gather("OTU", "Abs_Abund", 2:pick_columns) %>%                                 # Gather only columns which represent OTU abs abundance counts, and put it in *long* format
+  dplyr::left_join(tax, by = "OTU") %>%                                          # Add the taxonomic information for each OTU
+  dplyr::filter(tot_bacprod < 90) %>%                                            # Remove outliers to match peter's analysis
+  mutate(OTU_fraction_HNA = Abs_Abund/HNA.cells)                                 # Calculate the fraction that each individual OTU takes up within the HNA pool for each sample
+
+
+
+# Plot the absolute abundance data for each OTU
+ggplot(AbsAbund_hna_otus, aes(x = reorder(OTU, Phylum), y = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+  geom_jitter(width = 0.2, size = 3) +
+  scale_color_manual(values = phylum_colors) +
+  scale_fill_manual(values = phylum_colors) +
+  ylab("log10(Abundance)") +
+  #facet_grid(.~Phylum, scale = "free") +
+  ggtitle("HNA OTUs from HNA Prediction") + 
+  guides(fill = guide_legend(ncol=3),
+         color = guide_legend(ncol=3)) +
+  theme(legend.position = "bottom", #c(0.33, 0.85),
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
+
+# Plot the fraction of the HNA pool for each OTU
+ggplot(AbsAbund_hna_otus, aes(x = reorder(OTU, Phylum), y = OTU_fraction_HNA, fill = Phylum, color = Phylum)) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+  geom_jitter(width = 0.2, size = 3) +
+  scale_color_manual(values = phylum_colors) +
+  scale_fill_manual(values = phylum_colors) +
+  ylab("Fraction of HNA Cells") +
+  ggtitle("HNA OTUs from HNA Prediction") + 
+  guides(fill = guide_legend(ncol=2),
+         color = guide_legend(ncol=2)) +
+  theme(legend.position = c(0.33, 0.85),
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
+```
+
+# Proportion of HNA Pool?
+
+### What proportion of the HNA pool is taken up by the 26 OTUs?
+
+```{r propostion-sum-abundance, fig.height=4, fig.width=3, fig.align='center'}
+# Calculate the sum of the HNA pool, the max of the HNA pool, and the median/mean
+frac_HNA_stats_AbsAbund_hna_otus <- AbsAbund_hna_otus %>%                        # Take the dataframe from above
+  dplyr::select(Sample_16S, OTU, OTU_fraction_HNA, Abs_Abund, HNA.cells) %>%   # Select only relevant columns
+  group_by(Sample_16S) %>%                                                     # Make a data frame for each of the individual samples
+  summarise(sum_fracHNA = sum(OTU_fraction_HNA),                               # Calculate the sum of the fraction of each OTU from the HNA pool (total HNA pool represented by each OTU)
+            max_fracHNA = max(OTU_fraction_HNA),                               # Calculate the max the the line above
+            median_fracHNA = median(OTU_fraction_HNA),                         # Calculate the median of 2 lines above
+            mean_fracHNA = mean(OTU_fraction_HNA),                             # Calculate the mean of 3 lines above
+            sum_abs_abund = sum(Abs_Abund)) %>%                                # What's the sum of the absolute abundance of the 26 OTUs within each sample? 
+  mutate(All_Samples = "AllSamps_26_OTUs")
+
+
+# Plot the variation in the sum of the HNA fraction with points/boxplot
+ggplot(frac_HNA_stats_AbsAbund_hna_otus, 
+       aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) + 
+  geom_point(size = 3, position = position_jitterdodge()) +
+  ggtitle("HNA OTUs from HNA Prediction") + 
+  xlab("All Samples") + scale_color_manual(values = "black") +
+  scale_fill_manual(values = "black") +
+  geom_abline(intercept = 1, slope = 0, color = "grey") +                                   # Draw a line at 1 
+  scale_y_continuous(expand = c(0,0),
+                     limits = c(0, max(frac_HNA_stats_AbsAbund_hna_otus$sum_fracHNA) + 0.2), 
+                     breaks = seq(0,  max(frac_HNA_stats_AbsAbund_hna_otus$sum_fracHNA) + 0.2, by = 0.1)) +
+  ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
+  theme(legend.position = "none", axis.text.x = element_blank())
+```
+
+
+# Sum OTUs vs HNA
+```{r pred-HNA, fig.height=4, fig.width=4, fig.align='center'}
+all_data <- inner_join(frac_HNA_stats_AbsAbund_hna_otus, productivity, by = "Sample_16S") %>%    # Combine calculated stats above with rest of metadata
+  dplyr::select(-c(Platform, All_Samples, samples, Lake, Fraction, Depth)) %>%                  # Remove futile columns
+  mutate(pred_totHNA_counts = sum_fracHNA*HNA.cells)                                            # Sanity Check:  Back calculate the number of HNA cells 
+
+# Plot the correlation between the HNA counts from the flow cytometer and the sum of the counts from the 26 OTUs
+ggplot(all_data, aes(x = sum_abs_abund, y= HNA.cells)) +
+  geom_point(size = 3) + ylab("HNA Cell Count") + 
+  xlab("Sum(Abs_Abund of 26 OTUs)") + 
+  geom_abline(intercept = 0, slope = 1) +                                   # Draw a 1:1 line 
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
+```
+
+
+
+```{r otu-prod, fig.height=4, fig.width=10, eval = FALSE, echo = FALSE}
+
+# Linear Regressions with the 3 OTUs pulled out in both analyses
+
+# Simple OLS regression with Otu000025
+lm_Otu000025 <- lm(tot_bacprod ~ log10(Abs_Abund) , data = dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000025"))
+
+plot_OTU25 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000025"), 
+       aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
+  geom_point(size = 3) + ggtitle("Otu000025") +
+  scale_color_manual(values = phylum_colors) +
+  scale_fill_manual(values = phylum_colors) +
+  xlab("log10(Abundance)") +
+  geom_smooth(method = "lm", color = "#FFC543") +
+  ylab("Total Production (ug C/L/hr)") + 
+  theme(legend.position = "bottom",
+        legend.title = element_blank()) +
+  annotate("text", x = 4.45, y=60, color = "#FFC543", fontface = "bold",
+           label = paste("R2 =", round(summary(lm_Otu000025)$adj.r.squared, digits = 2), "\n", 
+                         "p =", round(unname(summary(lm_Otu000025)$coefficients[,4][2]), digits = 3)))  
+
+
+# Simple OLS regression with Otu000041
+lm_Otu000041 <- lm(tot_bacprod ~ log10(Abs_Abund), 
+                   data = dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000041" & Abs_Abund > 0))  # Remove sample that has count of 0
+
+plot_OTU41 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000041"), 
+       aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
+  geom_point(size = 3) +  ggtitle("Otu000041") +
+  scale_color_manual(values = phylum_colors) +
+  scale_fill_manual(values = phylum_colors) +
+  xlab("log10(Abundance)") +
+  geom_smooth(method = "lm", color = "#562258") +
+  ylab("Total Production (ug C/L/hr)") + 
+  theme(legend.position = "bottom",
+        legend.title = element_blank()) +
+  annotate("text", x = 5.1, y=60, color = "#562258", fontface = "bold",
+         label = paste("R2 =", round(summary(lm_Otu000041)$adj.r.squared, digits = 2), "\n", 
+                       "p =", round(unname(summary(lm_Otu000041)$coefficients[,4][2]), digits = 3)))  
+
+
+# Simple OLS regression with Otu000176
+lm_Otu000176 <- lm(tot_bacprod ~ log10(Abs_Abund), 
+                   data = dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000176" & Abs_Abund > 0))
+
+plot_OTU176 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000176"), 
+       aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
+  geom_point(size = 3) + ggtitle("Otu000176") +
+  scale_color_manual(values = phylum_colors) +
+  scale_fill_manual(values = phylum_colors) +
+  xlab("log10(Abundance)") +
+  geom_smooth(method = "lm", color = "#FF2151") +
+  ylab("Total Production (ug C/L/hr)") + 
+  theme(legend.position = "bottom",
+        legend.title = element_blank())+
+  annotate("text", x = 3.5, y=60, color = "#FF2151", fontface = "bold",
+         label = paste("R2 =", round(summary(lm_Otu000176)$adj.r.squared, digits = 2), "\n", 
+                       "p =", round(unname(summary(lm_Otu000176)$coefficients[,4][2]), digits = 3)))  
+
+# Plot all 3 plots at once
+plot_grid(plot_OTU25, plot_OTU176, plot_OTU41, nrow = 1, ncol = 3,
+          labels = c("A", "B", "C"))
+```
+
+**Note that All samples with an absolute abundance of 0 were left out of the above OLS linear model calculations.**
+
