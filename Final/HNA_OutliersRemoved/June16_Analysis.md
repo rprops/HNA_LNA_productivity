@@ -194,9 +194,9 @@ ggplot(AbsAbund_hna_otus, aes(x = reorder(OTU, Phylum), y = OTU_fraction_HNA, fi
   scale_fill_manual(values = phylum_colors) +
   ylab("Fraction of HNA Cells") +
   ggtitle("HNA OTUs from HNA Prediction") + 
-  guides(fill = guide_legend(ncol=2),
-         color = guide_legend(ncol=2)) +
-  theme(legend.position = c(0.33, 0.85),
+  guides(fill = guide_legend(ncol=3),
+         color = guide_legend(ncol=3)) +
+  theme(legend.position = c(0.4, 0.65),
         legend.direction = "horizontal",
         legend.title = element_blank(),
         axis.title.x = element_blank(),
@@ -228,13 +228,13 @@ ggplot(frac_HNA_stats_AbsAbund_hna_otus,
        aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) + 
   geom_point(size = 3, position = position_jitterdodge()) +
-  ggtitle("HNA OTUs from HNA Prediction") + 
+  ggtitle("HNA OTUs from \nHNA Prediction") + 
   xlab("All Samples") + scale_color_manual(values = "black") +
   scale_fill_manual(values = "black") +
   geom_abline(intercept = 1, slope = 0, color = "grey") +                                   # Draw a line at 1 
   scale_y_continuous(expand = c(0,0),
                      limits = c(0, max(frac_HNA_stats_AbsAbund_hna_otus$sum_fracHNA) + 0.2), 
-                     breaks = seq(0,  max(frac_HNA_stats_AbsAbund_hna_otus$sum_fracHNA) + 0.2, by = 0.1)) +
+                     breaks = seq(0,  max(frac_HNA_stats_AbsAbund_hna_otus$sum_fracHNA) + 0.2, by = 0.2)) +
   ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
   theme(legend.position = "none", axis.text.x = element_blank())
 ```
@@ -532,7 +532,7 @@ ggplot(AbsAbund_lna_otus, aes(x = reorder(OTU, Phylum), y = OTU_fraction_LNA, fi
   ggtitle("LNA OTUs from LNA Prediction") + 
   guides(fill = guide_legend(ncol=3),
          color = guide_legend(ncol=3)) +
-  theme(legend.position = c(0.5, 0.85),
+  theme(legend.position = c(0.5, 0.65),
         legend.direction = "horizontal",
         legend.title = element_blank(),
         axis.title.x = element_blank(),
@@ -564,7 +564,7 @@ ggplot(frac_HNA_stats_AbsAbund_lna_otus,
        aes(y = sum_fracLNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) + 
   geom_point(size = 3, position = position_jitterdodge()) +
-  ggtitle("HNA OTUs from HNA Prediction") + 
+  ggtitle("LNA OTUs from \n LNA Prediction") + 
   xlab("All Samples") + scale_color_manual(values = "black") +
   scale_fill_manual(values = "black") +
   geom_abline(intercept = 1, slope = 0, color = "grey") +                                   # Draw a line at 1 
@@ -596,5 +596,3 @@ ggplot(all_lna_data, aes(x = sum_abs_abund, y= LNA.cells)) +
 <img src="June16_Analysis_files/figure-markdown_github/pred-LNA-1.png" style="display: block; margin: auto;" />
 
 Quite a nice correlation with the LNA OTUS!
-
-**Note that All samples with an absolute abundance of 0 were left out of the above OLS linear model calculations.**

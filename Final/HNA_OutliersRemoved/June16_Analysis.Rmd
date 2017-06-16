@@ -79,7 +79,7 @@ productivity <- read.table(file = "../../data/Chloroplasts_removed/productivity_
 @prubbens performed an analysis where initial filtering was 0.1% (results in `Final/HNA_OutliersRemoved/hna_scores_abun0.001.csv`).  The pipeline is found in `Final/HNA_OutliersRemoved/analysis_final_HNA_LNA_outliersremoved.ipynb`.
 
 
-```{r HNAotus, dependson = "load-data", fig.height=4, fig.width=10}
+```{r HNAotus, dependson = "load-data", fig.height=5, fig.width=10}
 # Vector of 3 OTUs pulled out by Peter's model in the above file 
 hna_otus <- read.csv("hna_scores_abun0.001.csv", header = FALSE) %>%   # Gather the 26 OTUs that peter pulled out in his analysis 
   dplyr::rename(OTU = V1, Corr = V2)                                                               # Rename columns to be more intuitive
@@ -137,9 +137,9 @@ ggplot(AbsAbund_hna_otus, aes(x = reorder(OTU, Phylum), y = OTU_fraction_HNA, fi
   scale_fill_manual(values = phylum_colors) +
   ylab("Fraction of HNA Cells") +
   ggtitle("HNA OTUs from HNA Prediction") + 
-  guides(fill = guide_legend(ncol=2),
-         color = guide_legend(ncol=2)) +
-  theme(legend.position = c(0.33, 0.85),
+  guides(fill = guide_legend(ncol=3),
+         color = guide_legend(ncol=3)) +
+  theme(legend.position = c(0.4, 0.65),
         legend.direction = "horizontal",
         legend.title = element_blank(),
         axis.title.x = element_blank(),
@@ -168,13 +168,13 @@ ggplot(frac_HNA_stats_AbsAbund_hna_otus,
        aes(y = sum_fracHNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) + 
   geom_point(size = 3, position = position_jitterdodge()) +
-  ggtitle("HNA OTUs from HNA Prediction") + 
+  ggtitle("HNA OTUs from \nHNA Prediction") + 
   xlab("All Samples") + scale_color_manual(values = "black") +
   scale_fill_manual(values = "black") +
   geom_abline(intercept = 1, slope = 0, color = "grey") +                                   # Draw a line at 1 
   scale_y_continuous(expand = c(0,0),
                      limits = c(0, max(frac_HNA_stats_AbsAbund_hna_otus$sum_fracHNA) + 0.2), 
-                     breaks = seq(0,  max(frac_HNA_stats_AbsAbund_hna_otus$sum_fracHNA) + 0.2, by = 0.1)) +
+                     breaks = seq(0,  max(frac_HNA_stats_AbsAbund_hna_otus$sum_fracHNA) + 0.2, by = 0.2)) +
   ylab("\n Sum(Abundance/HNA.cells)") + xlab("Sample") +
   theme(legend.position = "none", axis.text.x = element_blank())
 ```
@@ -201,7 +201,7 @@ ggplot(all_data, aes(x = sum_abs_abund, y= HNA.cells)) +
 @prubbens performed an analysis where initial filtering was 0.1% (results in `Final/HNA_OutliersRemoved/lna_scores_abun0.001.csv`).  The pipeline is found in `Final/HNA_OutliersRemoved/analysis_final_HNA_LNA_outliersremoved.ipynb`.
 
 
-```{r LNAotus, dependson = "load-data", fig.height=4, fig.width=10}
+```{r LNAotus, dependson = "load-data", fig.height=6, fig.width=16}
 # Vector of LNA OTUs 
 lna_otus <- read.csv("lna_scores_abun0.001.csv", header = FALSE) %>%   # Gather the LNA OTUs that peter pulled out in his analysis 
   dplyr::rename(OTU = V1, Corr = V2)                                                               # Rename columns to be more intuitive
@@ -261,7 +261,7 @@ ggplot(AbsAbund_lna_otus, aes(x = reorder(OTU, Phylum), y = OTU_fraction_LNA, fi
   ggtitle("LNA OTUs from LNA Prediction") + 
   guides(fill = guide_legend(ncol=3),
          color = guide_legend(ncol=3)) +
-  theme(legend.position = c(0.5, 0.85),
+  theme(legend.position = c(0.5, 0.65),
         legend.direction = "horizontal",
         legend.title = element_blank(),
         axis.title.x = element_blank(),
@@ -292,7 +292,7 @@ ggplot(frac_HNA_stats_AbsAbund_lna_otus,
        aes(y = sum_fracLNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) + 
   geom_point(size = 3, position = position_jitterdodge()) +
-  ggtitle("HNA OTUs from HNA Prediction") + 
+  ggtitle("LNA OTUs from \n LNA Prediction") + 
   xlab("All Samples") + scale_color_manual(values = "black") +
   scale_fill_manual(values = "black") +
   geom_abline(intercept = 1, slope = 0, color = "grey") +                                   # Draw a line at 1 
@@ -382,7 +382,10 @@ plot_OTU176 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000176"),
 # Plot all 3 plots at once
 plot_grid(plot_OTU25, plot_OTU176, plot_OTU41, nrow = 1, ncol = 3,
           labels = c("A", "B", "C"))
+
+
+#**Note that All samples with an absolute abundance of 0 were left out of the above OLS linear model calculations.**
 ```
 
-**Note that All samples with an absolute abundance of 0 were left out of the above OLS linear model calculations.**
+
 
