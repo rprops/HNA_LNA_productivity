@@ -8,6 +8,10 @@
 -   [LNA Pool: 0.1% Filtering](#lna-pool-0.1-filtering)
     -   [Proportion of LNA Pool?](#proportion-of-lna-pool)
     -   [Sum OTUs vs LNA](#sum-otus-vs-lna)
+-   [Overlap in OTUs](#overlap-in-otus)
+-   [Correlation of OTUs with Productivity](#correlation-of-otus-with-productivity)
+    -   [No transformation of the absolute abundances](#no-transformation-of-the-absolute-abundances)
+    -   [log10 transform the abundances](#log10-transform-the-abundances)
 
 ### Load the necessary libraries and set colors
 
@@ -196,7 +200,7 @@ ggplot(AbsAbund_hna_otus, aes(x = reorder(OTU, Phylum), y = OTU_fraction_HNA, fi
   ggtitle("HNA OTUs from HNA Prediction") + 
   guides(fill = guide_legend(ncol=3),
          color = guide_legend(ncol=3)) +
-  theme(legend.position = c(0.8, 0.85),
+  theme(legend.position = c(0.7, 0.85),
         legend.direction = "horizontal",
         legend.title = element_blank(),
         axis.title.x = element_blank(),
@@ -548,7 +552,7 @@ Proportion of LNA Pool?
 
 ``` r
 # Calculate the sum of the HNA pool, the max of the HNA pool, and the median/mean
-frac_HNA_stats_AbsAbund_lna_otus <- AbsAbund_lna_otus %>%                        # Take the dataframe from above
+frac_LNA_stats_AbsAbund_lna_otus <- AbsAbund_lna_otus %>%                        # Take the dataframe from above
   dplyr::select(Sample_16S, OTU, OTU_fraction_LNA, Abs_Abund, LNA.cells) %>%   # Select only relevant columns
   group_by(Sample_16S) %>%                                                     # Make a data frame for each of the individual samples
   summarise(sum_fracLNA = sum(OTU_fraction_LNA),                               # Calculate the sum of the fraction of each OTU from the HNA pool (total HNA pool represented by each OTU)
@@ -560,7 +564,7 @@ frac_HNA_stats_AbsAbund_lna_otus <- AbsAbund_lna_otus %>%                       
 
 
 # Plot the variation in the sum of the HNA fraction with points/boxplot
-ggplot(frac_HNA_stats_AbsAbund_lna_otus, 
+ggplot(frac_LNA_stats_AbsAbund_lna_otus, 
        aes(y = sum_fracLNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) + 
   geom_point(size = 3, position = position_jitterdodge()) +
@@ -569,8 +573,8 @@ ggplot(frac_HNA_stats_AbsAbund_lna_otus,
   scale_fill_manual(values = "black") +
   geom_abline(intercept = 1, slope = 0, color = "grey") +                                   # Draw a line at 1 
   scale_y_continuous(expand = c(0,0),
-                     limits = c(0, max(frac_HNA_stats_AbsAbund_lna_otus$sum_fracLNA) + 0.2), 
-                     breaks = seq(0,  max(frac_HNA_stats_AbsAbund_lna_otus$sum_fracLNA) + 0.2, by = 0.1)) +
+                     limits = c(0, 1.8), 
+                     breaks = seq(0,  1.8 + 0.2, by = 0.2)) +
   ylab("\n Sum(Abundance/LNA.cells)") + xlab("Sample") +
   theme(legend.position = "none", axis.text.x = element_blank())
 ```
@@ -584,7 +588,11 @@ Sum OTUs vs LNA
 all_lna_data <- inner_join(frac_HNA_stats_AbsAbund_lna_otus, productivity, by = "Sample_16S") %>%    # Combine calculated stats above with rest of metadata
   dplyr::select(-c(Platform, All_Samples, samples, Lake, Fraction, Depth)) %>%                  # Remove futile columns
   mutate(pred_totLNA_counts = sum_fracLNA*LNA.cells)                                            # Sanity Check:  Back calculate the number of HNA cells 
+```
 
+    ## Error in inner_join(frac_HNA_stats_AbsAbund_lna_otus, productivity, by = "Sample_16S"): object 'frac_HNA_stats_AbsAbund_lna_otus' not found
+
+``` r
 # Plot the correlation between the HNA counts from the flow cytometer and the sum of the counts from the LNA OTUs
 ggplot(all_lna_data, aes(x = sum_abs_abund, y= LNA.cells)) +
   geom_point(size = 3) + ylab("LNA Cell Count") + 
@@ -593,6 +601,156 @@ ggplot(all_lna_data, aes(x = sum_abs_abund, y= LNA.cells)) +
   theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
 ```
 
-<img src="June16_Analysis_files/figure-markdown_github/pred-LNA-1.png" style="display: block; margin: auto;" />
+    ## Error in ggplot(all_lna_data, aes(x = sum_abs_abund, y = LNA.cells)): object 'all_lna_data' not found
 
 Quite a nice correlation with the LNA OTUS!
+
+Overlap in OTUs
+===============
+
+The number of OTUs that are:
+
+-   Unique to the HNA pool: 60
+-   Unique to the LNA pool: 193
+-   Shared between both pools: 27
+
+``` r
+OTUs_in_both <- intersect(hna_otu_names, lna_otu_names); sort(OTUs_in_both)
+```
+
+    ##  [1] "Otu000004" "Otu000005" "Otu000007" "Otu000009" "Otu000011" "Otu000016" "Otu000025" "Otu000029" "Otu000030" "Otu000047" "Otu000048" "Otu000050" "Otu000057" "Otu000104" "Otu000106" "Otu000124" "Otu000139" "Otu000152" "Otu000209" "Otu000227"
+    ## [21] "Otu000319" "Otu000382" "Otu000487" "Otu000765" "Otu003229" "Otu007625" "Otu008167"
+
+Correlation of OTUs with Productivity
+=====================================
+
+### No transformation of the absolute abundances
+
+``` r
+summary(lm(tot_bacprod ~ Abs_Abund/OTU , data = dplyr::filter(AbsAbund_hna_otus, OTU %in% OTUs_in_both)))
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = tot_bacprod ~ Abs_Abund/OTU, data = dplyr::filter(AbsAbund_hna_otus, 
+    ##     OTU %in% OTUs_in_both))
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -26.652 -11.904  -1.034  12.179  32.458 
+    ## 
+    ## Coefficients: (6 not defined because of singularities)
+    ##                          Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)             3.038e+01  8.649e-01  35.129   <2e-16 ***
+    ## Abs_Abund               5.167e-06  6.120e-06   0.844   0.3989    
+    ## Abs_Abund:OTUOtu000005  6.953e-06  9.947e-06   0.699   0.4848    
+    ## Abs_Abund:OTUOtu000007  2.958e-05  1.947e-05   1.519   0.1294    
+    ## Abs_Abund:OTUOtu000009  1.364e-05  1.480e-05   0.922   0.3570    
+    ## Abs_Abund:OTUOtu000011 -6.420e-07  1.139e-05  -0.056   0.9551    
+    ## Abs_Abund:OTUOtu000016  4.041e-05  2.466e-05   1.639   0.1019    
+    ## Abs_Abund:OTUOtu000025  3.866e-05  2.811e-05   1.375   0.1697    
+    ## Abs_Abund:OTUOtu000029  2.095e-05  5.386e-05   0.389   0.6975    
+    ## Abs_Abund:OTUOtu000030  1.127e-04  6.343e-05   1.777   0.0762 .  
+    ## Abs_Abund:OTUOtu000047 -2.151e-05  5.730e-05  -0.375   0.7075    
+    ## Abs_Abund:OTUOtu000048  1.236e-04  7.453e-05   1.659   0.0977 .  
+    ## Abs_Abund:OTUOtu000050  1.375e-04  6.672e-05   2.061   0.0398 *  
+    ## Abs_Abund:OTUOtu000057  6.346e-05  5.912e-05   1.073   0.2836    
+    ## Abs_Abund:OTUOtu000104  4.570e-05  8.180e-05   0.559   0.5766    
+    ## Abs_Abund:OTUOtu000106  2.685e-04  1.755e-04   1.530   0.1266    
+    ## Abs_Abund:OTUOtu000124  3.056e-04  1.336e-04   2.288   0.0225 *  
+    ## Abs_Abund:OTUOtu000139  7.422e-05  8.794e-05   0.844   0.3991    
+    ## Abs_Abund:OTUOtu000152  1.059e-04  5.665e-05   1.869   0.0622 .  
+    ## Abs_Abund:OTUOtu000209         NA         NA      NA       NA    
+    ## Abs_Abund:OTUOtu000227  8.164e-04  7.741e-04   1.055   0.2921    
+    ## Abs_Abund:OTUOtu000319  9.700e-05  2.926e-04   0.332   0.7404    
+    ## Abs_Abund:OTUOtu000382         NA         NA      NA       NA    
+    ## Abs_Abund:OTUOtu000487  1.910e-04  3.578e-04   0.534   0.5936    
+    ## Abs_Abund:OTUOtu000765         NA         NA      NA       NA    
+    ## Abs_Abund:OTUOtu003229         NA         NA      NA       NA    
+    ## Abs_Abund:OTUOtu007625         NA         NA      NA       NA    
+    ## Abs_Abund:OTUOtu008167         NA         NA      NA       NA    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 15.23 on 518 degrees of freedom
+    ## Multiple R-squared:  0.05537,    Adjusted R-squared:  0.01707 
+    ## F-statistic: 1.446 on 21 and 518 DF,  p-value: 0.09116
+
+``` r
+ggplot(dplyr::filter(AbsAbund_hna_otus, OTU %in% OTUs_in_both), 
+       aes(y = tot_bacprod,x = Abs_Abund, fill = Phylum, color = Phylum)) +
+  geom_point(size = 3) + 
+  scale_color_manual(values = phylum_colors) +
+  scale_fill_manual(values = phylum_colors) +
+  xlab("Absolute Abundance (cells/mL)") +
+  facet_wrap(~OTU, scale = "free_x") + 
+  geom_smooth(method = "lm") +
+  ylab("Total Production (ug C/L/hr)") + 
+  theme(legend.position = "bottom",
+        legend.title = element_blank())  
+```
+
+<img src="June16_Analysis_files/figure-markdown_github/otu-prod-1.png" style="display: block; margin: auto;" />
+
+### log10 transform the abundances
+
+``` r
+# Remove OTUs samples that have an abundance of 0
+summary(lm(tot_bacprod ~ log10(Abs_Abund)/OTU , data = dplyr::filter(AbsAbund_hna_otus, OTU %in% OTUs_in_both & Abs_Abund > 0)))
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = tot_bacprod ~ log10(Abs_Abund)/OTU, data = dplyr::filter(AbsAbund_hna_otus, 
+    ##     OTU %in% OTUs_in_both & Abs_Abund > 0))
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -25.947 -12.178  -0.993  12.079  31.738 
+    ## 
+    ## Coefficients:
+    ##                               Estimate Std. Error t value Pr(>|t|)   
+    ## (Intercept)                     5.2501     7.5847   0.692  0.48925   
+    ## log10(Abs_Abund)                4.8604     1.4742   3.297  0.00107 **
+    ## log10(Abs_Abund):OTUOtu000005   0.5902     0.9808   0.602  0.54772   
+    ## log10(Abs_Abund):OTUOtu000007   0.6134     0.9336   0.657  0.51161   
+    ## log10(Abs_Abund):OTUOtu000009   0.3410     0.9058   0.376  0.70680   
+    ## log10(Abs_Abund):OTUOtu000011   0.1877     0.8947   0.210  0.83399   
+    ## log10(Abs_Abund):OTUOtu000016   0.8717     0.9846   0.885  0.37654   
+    ## log10(Abs_Abund):OTUOtu000025   0.7952     0.9597   0.829  0.40790   
+    ## log10(Abs_Abund):OTUOtu000029   1.0279     1.0167   1.011  0.31269   
+    ## log10(Abs_Abund):OTUOtu000030   1.6581     1.2232   1.356  0.17610   
+    ## log10(Abs_Abund):OTUOtu000047   1.5444     1.1275   1.370  0.17161   
+    ## log10(Abs_Abund):OTUOtu000048   1.2148     1.1545   1.052  0.29340   
+    ## log10(Abs_Abund):OTUOtu000050   1.8085     1.1542   1.567  0.11804   
+    ## log10(Abs_Abund):OTUOtu000057   2.3703     1.2711   1.865  0.06302 . 
+    ## log10(Abs_Abund):OTUOtu000104   1.2219     1.0508   1.163  0.24566   
+    ## log10(Abs_Abund):OTUOtu000106   2.7704     1.2498   2.217  0.02727 * 
+    ## log10(Abs_Abund):OTUOtu000124   2.0012     1.1649   1.718  0.08666 . 
+    ## log10(Abs_Abund):OTUOtu000139   1.7390     1.1271   1.543  0.12372   
+    ## log10(Abs_Abund):OTUOtu000152   1.0438     1.1982   0.871  0.38429   
+    ## log10(Abs_Abund):OTUOtu000227   3.0308     1.4633   2.071  0.03905 * 
+    ## log10(Abs_Abund):OTUOtu000319   2.0351     1.2741   1.597  0.11107   
+    ## log10(Abs_Abund):OTUOtu000487   2.2724     1.2875   1.765  0.07841 . 
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 15.64 on 362 degrees of freedom
+    ## Multiple R-squared:  0.0401, Adjusted R-squared:  -0.01559 
+    ## F-statistic: 0.7201 on 21 and 362 DF,  p-value: 0.8128
+
+``` r
+ggplot(dplyr::filter(AbsAbund_hna_otus, OTU %in% OTUs_in_both & Abs_Abund > 0), 
+       aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
+  geom_point(size = 3) + 
+  scale_color_manual(values = phylum_colors) +
+  scale_fill_manual(values = phylum_colors) +
+  xlab("log10(Abundance)") +
+  facet_wrap(~OTU, scale = "free_x") + 
+  geom_smooth(method = "lm") +
+  ylab("Total Production (ug C/L/hr)") + 
+  theme(legend.position = "bottom",
+        legend.title = element_blank())  
+```
+
+<img src="June16_Analysis_files/figure-markdown_github/log10-otu-prod-1.png" style="display: block; margin: auto;" />

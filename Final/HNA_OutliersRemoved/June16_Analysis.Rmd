@@ -139,7 +139,7 @@ ggplot(AbsAbund_hna_otus, aes(x = reorder(OTU, Phylum), y = OTU_fraction_HNA, fi
   ggtitle("HNA OTUs from HNA Prediction") + 
   guides(fill = guide_legend(ncol=3),
          color = guide_legend(ncol=3)) +
-  theme(legend.position = c(0.8, 0.85),
+  theme(legend.position = c(0.7, 0.85),
         legend.direction = "horizontal",
         legend.title = element_blank(),
         axis.title.x = element_blank(),
@@ -276,7 +276,7 @@ ggplot(AbsAbund_lna_otus, aes(x = reorder(OTU, Phylum), y = OTU_fraction_LNA, fi
 
 ```{r lna-sum-abundance, fig.height=4, fig.width=3, fig.align='center'}
 # Calculate the sum of the HNA pool, the max of the HNA pool, and the median/mean
-frac_HNA_stats_AbsAbund_lna_otus <- AbsAbund_lna_otus %>%                        # Take the dataframe from above
+frac_LNA_stats_AbsAbund_lna_otus <- AbsAbund_lna_otus %>%                        # Take the dataframe from above
   dplyr::select(Sample_16S, OTU, OTU_fraction_LNA, Abs_Abund, LNA.cells) %>%   # Select only relevant columns
   group_by(Sample_16S) %>%                                                     # Make a data frame for each of the individual samples
   summarise(sum_fracLNA = sum(OTU_fraction_LNA),                               # Calculate the sum of the fraction of each OTU from the HNA pool (total HNA pool represented by each OTU)
@@ -288,7 +288,7 @@ frac_HNA_stats_AbsAbund_lna_otus <- AbsAbund_lna_otus %>%                       
 
 
 # Plot the variation in the sum of the HNA fraction with points/boxplot
-ggplot(frac_HNA_stats_AbsAbund_lna_otus, 
+ggplot(frac_LNA_stats_AbsAbund_lna_otus, 
        aes(y = sum_fracLNA, x = All_Samples, color = "All_Samples", fill = "All_Samples")) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) + 
   geom_point(size = 3, position = position_jitterdodge()) +
@@ -297,8 +297,8 @@ ggplot(frac_HNA_stats_AbsAbund_lna_otus,
   scale_fill_manual(values = "black") +
   geom_abline(intercept = 1, slope = 0, color = "grey") +                                   # Draw a line at 1 
   scale_y_continuous(expand = c(0,0),
-                     limits = c(0, max(frac_HNA_stats_AbsAbund_lna_otus$sum_fracLNA) + 0.2), 
-                     breaks = seq(0,  max(frac_HNA_stats_AbsAbund_lna_otus$sum_fracLNA) + 0.2, by = 0.1)) +
+                     limits = c(0, 1.8), 
+                     breaks = seq(0,  1.8 + 0.2, by = 0.2)) +
   ylab("\n Sum(Abundance/LNA.cells)") + xlab("Sample") +
   theme(legend.position = "none", axis.text.x = element_blank())
 ```
@@ -320,71 +320,60 @@ ggplot(all_lna_data, aes(x = sum_abs_abund, y= LNA.cells)) +
 
 Quite a nice correlation with the LNA OTUS!
 
-```{r otu-prod, fig.height=4, fig.width=10, eval = FALSE, echo = FALSE}
 
-# Linear Regressions with the 3 OTUs pulled out in both analyses
 
-# Simple OLS regression with Otu000025
-lm_Otu000025 <- lm(tot_bacprod ~ log10(Abs_Abund) , data = dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000025"))
+# Overlap in OTUs
 
-plot_OTU25 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000025"), 
+The number of OTUs that are:  
+
+- Unique to the HNA pool: `r length(hna_otu_names)`  
+- Unique to the LNA pool: `r length(lna_otu_names)`  
+- Shared between both pools: `r length(intersect(hna_otu_names, lna_otu_names))`
+
+
+```{r}
+OTUs_in_both <- intersect(hna_otu_names, lna_otu_names); sort(OTUs_in_both)
+```
+ 
+ 
+# Correlation of OTUs with Productivity  
+
+
+### No transformation of the absolute abundances
+
+```{r otu-prod, fig.height=15, fig.width=18, eval = TRUE, echo = TRUE}
+summary(lm(tot_bacprod ~ Abs_Abund/OTU , data = dplyr::filter(AbsAbund_hna_otus, OTU %in% OTUs_in_both)))
+
+ggplot(dplyr::filter(AbsAbund_hna_otus, OTU %in% OTUs_in_both), 
+       aes(y = tot_bacprod,x = Abs_Abund, fill = Phylum, color = Phylum)) +
+  geom_point(size = 3) + 
+  scale_color_manual(values = phylum_colors) +
+  scale_fill_manual(values = phylum_colors) +
+  xlab("Absolute Abundance (cells/mL)") +
+  facet_wrap(~OTU, scale = "free_x") + 
+  geom_smooth(method = "lm") +
+  ylab("Total Production (ug C/L/hr)") + 
+  theme(legend.position = "bottom",
+        legend.title = element_blank())  
+```
+
+
+### log10 transform the abundances 
+```{r log10-otu-prod, fig.height=15, fig.width=18, eval = TRUE, echo = TRUE}
+# Remove OTUs samples that have an abundance of 0
+summary(lm(tot_bacprod ~ log10(Abs_Abund)/OTU , data = dplyr::filter(AbsAbund_hna_otus, OTU %in% OTUs_in_both & Abs_Abund > 0)))
+
+ggplot(dplyr::filter(AbsAbund_hna_otus, OTU %in% OTUs_in_both & Abs_Abund > 0), 
        aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
-  geom_point(size = 3) + ggtitle("Otu000025") +
+  geom_point(size = 3) + 
   scale_color_manual(values = phylum_colors) +
   scale_fill_manual(values = phylum_colors) +
   xlab("log10(Abundance)") +
-  geom_smooth(method = "lm", color = "#FFC543") +
+  facet_wrap(~OTU, scale = "free_x") + 
+  geom_smooth(method = "lm") +
   ylab("Total Production (ug C/L/hr)") + 
   theme(legend.position = "bottom",
-        legend.title = element_blank()) +
-  annotate("text", x = 4.45, y=60, color = "#FFC543", fontface = "bold",
-           label = paste("R2 =", round(summary(lm_Otu000025)$adj.r.squared, digits = 2), "\n", 
-                         "p =", round(unname(summary(lm_Otu000025)$coefficients[,4][2]), digits = 3)))  
-
-
-# Simple OLS regression with Otu000041
-lm_Otu000041 <- lm(tot_bacprod ~ log10(Abs_Abund), 
-                   data = dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000041" & Abs_Abund > 0))  # Remove sample that has count of 0
-
-plot_OTU41 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000041"), 
-       aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
-  geom_point(size = 3) +  ggtitle("Otu000041") +
-  scale_color_manual(values = phylum_colors) +
-  scale_fill_manual(values = phylum_colors) +
-  xlab("log10(Abundance)") +
-  geom_smooth(method = "lm", color = "#562258") +
-  ylab("Total Production (ug C/L/hr)") + 
-  theme(legend.position = "bottom",
-        legend.title = element_blank()) +
-  annotate("text", x = 5.1, y=60, color = "#562258", fontface = "bold",
-         label = paste("R2 =", round(summary(lm_Otu000041)$adj.r.squared, digits = 2), "\n", 
-                       "p =", round(unname(summary(lm_Otu000041)$coefficients[,4][2]), digits = 3)))  
-
-
-# Simple OLS regression with Otu000176
-lm_Otu000176 <- lm(tot_bacprod ~ log10(Abs_Abund), 
-                   data = dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000176" & Abs_Abund > 0))
-
-plot_OTU176 <- ggplot(dplyr::filter(AbsAbund_OTUs_26, OTU == "Otu000176"), 
-       aes(y = tot_bacprod,x = log10(Abs_Abund), fill = Phylum, color = Phylum)) +
-  geom_point(size = 3) + ggtitle("Otu000176") +
-  scale_color_manual(values = phylum_colors) +
-  scale_fill_manual(values = phylum_colors) +
-  xlab("log10(Abundance)") +
-  geom_smooth(method = "lm", color = "#FF2151") +
-  ylab("Total Production (ug C/L/hr)") + 
-  theme(legend.position = "bottom",
-        legend.title = element_blank())+
-  annotate("text", x = 3.5, y=60, color = "#FF2151", fontface = "bold",
-         label = paste("R2 =", round(summary(lm_Otu000176)$adj.r.squared, digits = 2), "\n", 
-                       "p =", round(unname(summary(lm_Otu000176)$coefficients[,4][2]), digits = 3)))  
-
-# Plot all 3 plots at once
-plot_grid(plot_OTU25, plot_OTU176, plot_OTU41, nrow = 1, ncol = 3,
-          labels = c("A", "B", "C"))
-
-
-#**Note that All samples with an absolute abundance of 0 were left out of the above OLS linear model calculations.**
+        legend.title = element_blank())  
 ```
 
 
