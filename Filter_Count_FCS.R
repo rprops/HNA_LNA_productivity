@@ -152,3 +152,21 @@ df_results[, c(2,3,4)] <- df_results[, c(2,3,4)] * df_results$dilution
 write.csv(df_results[, c(1:4)], file = "recalculated_HNA_LNA.csv", quote = FALSE,
            row.names = FALSE)
 
+df_results <- read.csv("recalculated_HNA_LNA.csv", stringsAsFactors = FALSE)
+
+tmp <- strsplit(df_results$Samples, "_rep*")
+df_results$Samples <- do.call(rbind, lapply(tmp, rbind))[,1]
+
+df_final_results <- data.frame(
+  aggregate(Total.cells~Samples, data = df_results, FUN = mean),
+  HNA.cells= aggregate(HNA.cells~Samples, data = df_results, FUN = mean)[,2],
+  LNA.cells= aggregate(LNA.cells~Samples, data = df_results, FUN = mean)[,2],
+  sd.Total.cells = aggregate(Total.cells~Samples, data = df_results, FUN = sd)[,2],
+  sd.HNA.cells = aggregate(HNA.cells~Samples, data = df_results, FUN = sd)[,2],
+  sd.LNA.cells = aggregate(LNA.cells~Samples, data = df_results, FUN = sd)[,2]
+)
+
+# Export final mean result table to CSV
+write.csv(df_final_results, file = "recalculated_mean_HNA_LNA.csv", quote = FALSE,
+          row.names = FALSE)
+
