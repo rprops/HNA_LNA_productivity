@@ -36,6 +36,11 @@ flist <- list(filters)
 # Parameters of interest
 param=c("FL1-H", "FL3-H","SSC-H","FSC-H")
 
+# Go through directorires in ./data and analyze folders with .fcs files in them.
+# The data can be found on flowRepository:
+# Lake Michigan 2013/2015 + Muskegon Lake 2014/2015: FR-FCM-ZYZN
+# Inland Lakes: FR-FCM-ZY9J
+
 teller <- 1
 for(dir in list.dirs("./data")){
   files <- list.files(dir, pattern = "*.fcs")
