@@ -175,3 +175,29 @@ df_final_results <- data.frame(
 write.csv(df_final_results, file = "recalculated_mean_HNA_LNA.csv", quote = FALSE,
           row.names = FALSE)
 
+
+### Rename all sample names to the same list
+file1 <- read.table("./data/Chloroplasts_removed/nochloro_absolute_otu.tsv")
+file2 <- read.table("./data/Chloroplasts_removed/nochloro_relative_otu.tsv")
+file3 <- read.table("./data/Chloroplasts_removed/nochloro_HNA_LNA.tsv", 
+                    sep = " ", header = TRUE)
+file4 <- read.table("./data/Chloroplasts_removed/productivity_data.tsv", 
+                    sep = " ", header = TRUE)
+
+file5 <- read.table("./recalculated_mean_HNA_LNA.csv", sep = ",", header = TRUE)
+
+names_16S <- data.frame(name_new = rownames(file3), name_old = file3$samples)
+
+# Use dplyr to include this correct sample name column into all previous files 
+# (file 1 and file 2 are OK already, they have the sequencing names)
+file3$samples <- rownames(file3)
+write.table(file3, file = "./data/Chloroplasts_removed/nochloro_HNA_LNA_v2.tsv", sep = "\t", row.names = FALSE)
+
+file4b <- dplyr::left_join(file4, names_16S, by = c("samples" = "name_old"))
+file4b$samples <- file4b$name_new; file4b <- file4b[, -(ncol(file4b))]
+write.table(file4b, file = "./data/Chloroplasts_removed/productivity_data_v2.tsv", sep = "\t", row.names = FALSE)
+
+file5b <- dplyr::inner_join(file5, names_16S, by = c("Samples" =  "name_old"))
+file5b$Samples <- file5b$name_new; file5b <- file5b[, -(ncol(file5b))]
+file5b[, c(2:ncol(file5b))] <- file5b[, c(2:ncol(file5b))]*1000
+write.table(file5b, file = "./data/Chloroplasts_removed/recalculated_mean_HNA_LNA_v2.tsv", sep = "\t", row.names = FALSE)
