@@ -5,6 +5,8 @@ Spyder Editor
 
 import numpy as np
 import pandas as pd
+from scipy.stats import pearsonr
+
 from sklearn import linear_model
 from sklearn.cross_validation import train_test_split 
 from sklearn.ensemble import RandomForestRegressor
@@ -15,6 +17,7 @@ from sklearn.ensemble import RandomForestRegressor
 #from sklearn.decomposition import PCA
 from sklearn.linear_model import Lasso
 from sklearn.linear_model import lasso_stability_path
+from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import cross_val_predict
@@ -24,7 +27,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import KFold
 #from sklearn.preprocessing import LabelEncoder
 #from sklearn.preprocessing import OneHotEncoder
-#from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler
 #import matplotlib.pyplot as plt
 #import seaborn as sns
 
@@ -38,12 +41,22 @@ def preprocess_df(df, threshold, ABS):
         return df.ix[:,(df_relabs > threshold).any(axis=0)]
     else: 
         return df.ix[:,(df > threshold).any(axis=0)]
+    
+def preprocess_df_meanabun(df, threshold, ABS): 
+    if ABS == True:  
+        df_sum = df.sum(axis=1)
+        df_relabs = df.divide(df_sum, axis='rows')
+        return df.ix[:,(df_relabs.mean() > threshold)]
+    else: 
+        return df.ix[:,(df.mean() > threshold)]
 
 '''Import data'''
-data_abs = pd.read_csv('data/Chloroplasts_removed/nochloro_absolute_otu.tsv', sep=' ', index_col=0, header=0)
-data_rel = pd.read_csv('data/Chloroplasts_removed/nochloro_relative_otu.tsv', sep=' ', index_col=0, header=0)
-target = pd.read_csv('data/Chloroplasts_removed/nochloro_HNA_LNA.tsv', sep=' ', index_col=0, header=0)
-productivity = pd.read_csv('data/Chloroplasts_removed/productivity_data.tsv', sep=' ', index_col=0, header=0)
+#data_abs = pd.read_csv('data/Chloroplasts_removed/nochloro_absolute_otu.tsv', sep=' ', index_col=0, header=0)
+#data_rel = pd.read_csv('data/Chloroplasts_removed/nochloro_relative_otu.tsv', sep=' ', index_col=0, header=0)
+
+#df = preprocess_df_meanabun(data_rel, 0.001, False)
+#target = pd.read_csv('data/Chloroplasts_removed/nochloro_HNA_LNA.tsv', sep=' ', index_col=0, header=0)
+#productivity = pd.read_csv('data/Chloroplasts_removed/productivity_data.tsv', sep=' ', index_col=0, header=0)
 
 
 ''' Preprocessing '''
@@ -74,8 +87,8 @@ def get_train_test(df, target):
     return x_train, x_test, y_train, y_test
 
 ''' 2. lassoCV '''        
-def perform_lassoCV(df, target):
-    lassoCV = linear_model.LassoCV(eps=0.0001, n_alphas=400, max_iter=10000, cv = 5, normalize = False)#, random_state=6)
+def perform_lassoCV(df, target, cv):
+    lassoCV = linear_model.LassoCV(eps=0.0001, n_alphas=200, max_iter=10000, cv = cv, normalize = False, random_state=6)
     lassoCV.fit(df, target)
     return lassoCV, lassoCV.mse_path_, lassoCV.alpha_
     
@@ -84,23 +97,27 @@ def get_lassoCV_scores(df, target, alpha):
     return cross_val_predict(lasso, df, target, cv=5)
     
 def perform_randomizedLasso(df, target, alpha): 
-    randomLasso = linear_model.RandomizedLasso(alpha=alpha, sample_fraction=0.75, n_resampling=500, normalize=False, random_state=33)
+    randomLasso = linear_model.RandomizedLasso(alpha=alpha, sample_fraction=0.75, n_resampling=300, normalize=False, random_state=36)
     randomLasso.fit(df, target)
     return randomLasso.scores_
     
 def get_RF(): 
     return RandomForestRegressor(n_estimators=500, criterion='mse')#, max_features=0.5)  
     
-def get_lassoCV(): 
-    lassoCV =  linear_model.LassoCV(eps=0.001, n_alphas=400, max_iter=100000, cv=5, normalize=False)
+def get_lassoCV(cv): 
+    lassoCV = linear_model.LassoCV(eps=0.0001, n_alphas=400, max_iter=200000, cv=cv, normalize=False, random_state=9)
     return lassoCV
 
 def get_lasso10CV(): 
     lassoCV = linear_model.LassoCV(eps=0.0001, n_alphas=200, max_iter=200000, cv=10, normalize=False)
     return lassoCV
+
+def get_lr(): 
+    lr = LinearRegression()
+    return lr
     
-def get_ridgeCV(): 
-    return linear_model.RidgeCV(alphas=(0.0001,1,400), cv=5, normalize=False)  
+def get_ridgeCV(cv): 
+    return linear_model.RidgeCV(alphas=(0.0001,1,400), cv=cv, normalize=False)  
 
 def get_ridge10CV(): 
     return linear_model.RidgeCV(alphas=(0.0001,1,400), cv=10, normalize=False)   
@@ -117,10 +134,10 @@ def perform_nested_RF_loocv(df, target):
     nested_pred = cross_val_predict(clf, df, target, cv=df.shape[0])
     return nested_pred
       
-def perform_nested_lasso_cv(df, target): 
-    lassoCV = get_lassoCV()
-    outer_cv = KFold(n_splits=4, shuffle=False)
-    alphas = np.zeros(4)
+def perform_nested_lasso_cv(df, target, cv_out, cv_in): 
+    lassoCV = get_lassoCV(cv_in)
+    outer_cv = KFold(n_splits=cv_out, shuffle=False)
+    alphas = np.zeros(cv_out)
     t = 0
     pred = pd.Series(index=df.index)
     for idx_train, idx_test in outer_cv.split(df, target): 
@@ -132,18 +149,23 @@ def perform_nested_lasso_cv(df, target):
     return alphas, pred  
 
 def perform_nested_lasso_loocv(df, target): 
-    lassoCV = get_lasso10CV()
+    lassoCV = get_lassoCV(int(df.shape[0]-1))
     outer_cv = KFold(n_splits=df.shape[0], shuffle=False)
     alphas = np.zeros(df.shape[0])
+    features = list(df.columns)
+    corr = np.zeros((df.shape[0],len(features)))
     t = 0
     pred = pd.Series(index=df.index)
     for idx_train, idx_test in outer_cv.split(df, target): 
         lassoCV.fit(df.iloc[idx_train,:], target[idx_train])
+        for u in np.arange(0,len(features)): 
+            corr[t,u] = linregress(df.iloc[idx_train,u], target[idx_train])[2]
         #lassoCV.predict(df.iloc[idx_test,:], target[idx_test])
         alphas[t] = lassoCV.alpha_
         pred.iloc[idx_test] = lassoCV.predict(df.iloc[idx_test,:])
         t+=1
-    return alphas, pred 
+    corr = pd.DataFrame(corr, columns=features)
+    return alphas, pred, corr
 
 def perform_nested_randomized_lasso_cv(df, target, alpha): 
     outer_cv = KFold(n_splits=4, shuffle=False)
@@ -158,7 +180,7 @@ def perform_lasso_stability_path(df, target):
     return  lasso_stability_path(df, target, scaling=0.5, random_state=2703, n_resampling=1000, n_grid=300, sample_fraction=0.75)
     
 def perform_nested_ridge_cv(df, target): 
-    ridgeCV = get_ridgeCV()
+    ridgeCV = get_ridgeCV(5)
     outer_cv = KFold(n_splits=4, shuffle=False, random_state=2)
     alphas = np.zeros(4)
     t = 0
@@ -199,6 +221,56 @@ def get_r2_adj(r2, n, k):
     
 def get_mse(true, pred): 
     return mean_squared_error(true, pred)
+
+def standardize_df(df,features): 
+    scaler = StandardScaler()
+    scaler.fit(df.loc[:,features])
+    df_stand = pd.DataFrame(scaler.transform(df.loc[:,features]),index=df.index,columns=features)    
+    return df_stand, scaler    
+
+def get_lassoCV_alpha(df,target,features,cv): 
+    lassoCV = get_lassoCV(cv)
+    lassoCV.fit(df.loc[:,features],target)
+    #mse = np.sum(lassoCV.mse_path_, axis=1)
+    return lassoCV.alpha_
+
+def get_r2_scores(df,target,features,scores,cv):
+    thr_score = 0.
+    thr = []
+    r2 = []
+    features = scores.index
+    while len(features) > 0:
+        alpha = get_lassoCV_alpha(df,target,features,cv)
+        lasso = Lasso(alpha,max_iter=20000,normalize=False)
+        pred = cross_val_predict(lasso, df.loc[:, features], target, cv=cv)
+        r2.append(get_r2(target,pred))
+        thr_score = scores.values[scores.shape[0]-1]
+        thr.append(thr_score)
+        scores = scores[scores.values > thr_score]
+        features = scores.index
+    return np.array(thr), np.array(r2)
+
+def get_r2_corr_scores(df,target,features,scores,cv, prod, idx_prod):
+    thr_score = 0.
+    thr = []
+    r2 = []
+    r2_prod = []
+    #pearson = []
+    features = scores.index
+    while len(features) > 0:
+        alpha = get_lassoCV_alpha(df,target,features,cv)
+        lasso = Lasso(alpha,max_iter=20000,normalize=False)
+        pred = pd.DataFrame(cross_val_predict(lasso, df.loc[:, features], target, cv=cv), index=df.index)
+        r2.append(get_r2(target,pred))
+        #pearson.append(pearsonr(pred.loc[idx_prod],prod)[0])
+        lr = get_lr()
+        pred_prod = cross_val_predict(lr, pred.loc[idx_prod], prod.loc[idx_prod], cv=prod.shape[0])
+        r2_prod.append(get_r2(prod, pred_prod))
+        thr_score = scores.values[scores.shape[0]-1]
+        thr.append(thr_score)
+        scores = scores[scores.values > thr_score]
+        features = scores.index
+    return np.array(thr), np.array(r2), np.array(r2_prod)# np.array(pearson)
 
 ''' Univariate feature selection methods '''
 '''
