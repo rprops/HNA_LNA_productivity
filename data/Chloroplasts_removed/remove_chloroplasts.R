@@ -9,6 +9,7 @@ library("phyloseq")
 load("data/phyloseq.RData")
 physeq.otu@otu_table <- t(physeq.otu@otu_table)
 
+# Clean up the metadata file
 metadata <- read.csv2("data/metadata.csv", stringsAsFactors = FALSE)
 metadata <- metadata[metadata$Platform == "Accuri",]
 metadata$Sample_fcm <- gsub(metadata$Sample_fcm, pattern="_rep.*", replacement="")
@@ -54,6 +55,8 @@ sample_data(no_chloro_physeq_pruned) <- sums_data
 
 # Remove samples with low sequencing depth 
 no_chloro_physeq_pruned_seqs <- subset_samples(no_chloro_physeq_pruned, Total_Sequences > 4700)
+# Now we have removed samples that have 4700 sequences or less 
+
 # Remove OTUs with counts 0 and less
 no_chloro_physeq_pruned_seqs_rm0 <- prune_taxa(taxa_sums(no_chloro_physeq_pruned_seqs) > 0, no_chloro_physeq_pruned_seqs) 
   
@@ -63,7 +66,7 @@ no_chloro_physeq_pruned_seqs_rm0 <- prune_taxa(taxa_sums(no_chloro_physeq_pruned
 ############## RELATIVE ABUNDANCES VIA RAREFY-ING
 ## RAREFY EVEN DEPTH 
 min_lib_rm0 <- min(sample_sums(no_chloro_physeq_pruned_seqs_rm0)) - 1
-min_lib_rm0
+min_lib_rm0 # 4760 is the smallest library size
 
 # Set the seed for the randomization of rarefy-ing
 set.seed(777)
@@ -72,8 +75,36 @@ set.seed(777)
 rare_nochloro_rm0 <- rarefy_even_depth(no_chloro_physeq_pruned_seqs_rm0, sample.size = min_lib_rm0,
                                         verbose = FALSE, replace = TRUE)
 
-# Sanity Check
+# Sanity Check - Samples all have sample counts of 4760
 apply(otu_table(rare_nochloro_rm0), 1, sum)
+
+# Filter the taxa that have less than 30 counts in 25% of the samples
+#rare_nochloro_rm0_filtered <- 
+  
+#test30 <- filter_taxa(rare_nochloro_rm0, function(x) sum(x > 30) > (0.05*length(x)), TRUE)
+#test25 <- filter_taxa(rare_nochloro_rm0, function(x) sum(x > 25) > (0.05*length(x)), TRUE)
+#test20 <- filter_taxa(rare_nochloro_rm0, function(x) sum(x > 20) > (0.05*length(x)), TRUE)
+#test15 <- filter_taxa(rare_nochloro_rm0, function(x) sum(x > 15) > (0.05*length(x)), TRUE)
+#test10 <- filter_taxa(rare_nochloro_rm0, function(x) sum(x > 10) > (0.05*length(x)), TRUE)
+#test05 <- filter_taxa(rare_nochloro_rm0, function(x) sum(x > 05) > (0.05*length(x)), TRUE) 
+#test03 <- filter_taxa(rare_nochloro_rm0, function(x) sum(x > 03) > (0.05*length(x)), TRUE)
+#test02 <- filter_taxa(rare_nochloro_rm0, function(x) sum(x > 02) > (0.05*length(x)), TRUE)
+#test01 <- filter_taxa(rare_nochloro_rm0, function(x) sum(x > 01) > (0.05*length(x)), TRUE)
+
+num_taxa <- c(ntaxa(test30), ntaxa(test25), ntaxa(test20), ntaxa(test15), ntaxa(test10), ntaxa(test05), ntaxa(test03), ntaxa(test02), ntaxa(test01))
+cut_off <- c(30, 25, 20, 15, 10, 5, 3, 2, 1)
+
+tested_physeqs <- data.frame(num_taxa, cut_off)
+
+ggplot(tested_physeqs, aes(x = cut_off, y = num_taxa)) +
+  geom_bar(stat = "identity", color = "black", fill = "#00ADA7", alpha = 0.6) + 
+  theme_bw() + scale_y_continuous(expand = c(0,0), limits = c(0, max(tested_physeqs$num_taxa + 25))) +
+  labs(x = "Cutoff Number of Sequences", y = "Number of Taxa Across All Samples") + 
+  scale_x_continuous(expand = c(0,0), limits = c(0, 32), breaks = seq(0, 32, by = 5)) +
+  ggtitle("In at least 5% of Samples")
+#ggsave("data/Chloroplasts_removed/Cutoff_05percent.png", dpi = 300, width = 4, height = 3)
+
+
 
 ### New phyloseq objects with relative abundances
 rare_nochloro_rm0_rel <- transform_sample_counts(rare_nochloro_rm0, function(x) x/sum(x))
