@@ -83,57 +83,99 @@ no_chloro_physeq_pruned_seqs_rm5_in_10percent <- filter_taxa(no_chloro_physeq_pr
 ############## RELATIVE ABUNDANCES VIA RAREFY-ING
 ## RAREFY EVEN DEPTH 
 min_lib_rm1in3 <- min(sample_sums(no_chloro_physeq_pruned_seqs_rm_1in3)) - 1
-min_lib_rm_5in10percent <- min(sample_sums(no_chloro_physeq_pruned_seqs_rm5_in_10percent)) - 1
 min_lib_rm1in3 # 4726 is the smallest library size
-min_lib_rm_5in10percent # 4482 is the smallest library size 
-
-
-#################################################################################################
-#################################################################################################
-################################################################################################# YOU ARE HERE MARIAN 
-#################################################################################################
-#################################################################################################
 
 # Set the seed for the randomization of rarefy-ing
 set.seed(777)
-
 # Rarefy to the even depth 
-rare_nochloro_rm0 <- rarefy_even_depth(no_chloro_physeq_pruned_seqs_rm0, sample.size = min_lib_rm0,
-                                        verbose = FALSE, replace = TRUE)
+rare_nochloro_rm1in3 <- rarefy_even_depth(no_chloro_physeq_pruned_seqs_rm_1in3, sample.size = min_lib_rm1in3,
+                                       verbose = FALSE, replace = TRUE)
 
 # Sanity Check - Samples all have sample counts of 4760
-apply(otu_table(rare_nochloro_rm0), 1, sum)
-
+apply(otu_table(rare_nochloro_rm1in3), 1, sum)
 
 ### New phyloseq objects with relative abundances
-rare_nochloro_rm0_rel <- transform_sample_counts(rare_nochloro_rm0, function(x) x/sum(x))
+rare_nochloro_rm1in3_rel <- transform_sample_counts(rare_nochloro_rm1in3, function(x) x/sum(x))
 
 # Sanity Check
-apply(otu_table(rare_nochloro_rm0_rel), 1, sum)
+apply(otu_table(rare_nochloro_rm1in3_rel), 1, sum)
 
 ### Replacing NA by "Unclassified"
-tax_table(rare_nochloro_rm0_rel)[is.na(tax_table(rare_nochloro_rm0_rel))] <- "Unclassified"
+tax_table(rare_nochloro_rm1in3_rel)[is.na(tax_table(rare_nochloro_rm1in3_rel))] <- "Unclassified"
 
 # Final Relative Abundance Phyloseq Object 
-rare_nochloro_rm0_rel
+rare_nochloro_rm1in3_rel
+
+
+###  NOW FOR THE TAXA THAT ARE 5 COUNTS IN AT 10% OF SAMPLES 
+min_lib_rm_5in10percent <- min(sample_sums(no_chloro_physeq_pruned_seqs_rm5_in_10percent)) - 1
+min_lib_rm_5in10percent # 4482 is the smallest library size 
+
+# Rarefy to the even depth 
+rare_nochloro_5in10percent <- rarefy_even_depth(no_chloro_physeq_pruned_seqs_rm5_in_10percent, sample.size = min_lib_rm_5in10percent,
+                                          verbose = FALSE, replace = TRUE)
+
+# Sanity Check - Samples all have sample counts of 4760
+apply(otu_table(rare_nochloro_5in10percent), 1, sum)
+
+### New phyloseq objects with relative abundances
+rare_nochloro_5in10percent_rel <- transform_sample_counts(rare_nochloro_5in10percent, function(x) x/sum(x))
+
+# Sanity Check
+apply(otu_table(rare_nochloro_5in10percent_rel), 1, sum)
+
+### Replacing NA by "Unclassified"
+tax_table(rare_nochloro_5in10percent_rel)[is.na(tax_table(rare_nochloro_5in10percent_rel))] <- "Unclassified"
+
+# Final Relative Abundance Phyloseq Object 
+rare_nochloro_5in10percent_rel
 
 
 #################################################################################################
 ############## ABSOLUTE ABUNDANCES
 ### New phyloseq object with absolute abundances in cells/mL
-rare_nochloro_rm0_abs <- rare_nochloro_rm0_rel
-otu_table(rare_nochloro_rm0_abs) <- 1000*otu_table(rare_nochloro_rm0_rel)*sample_data(rare_nochloro_rm0_rel)$Total.cells
+rare_nochloro_rm1in3_abs <- rare_nochloro_rm1in3_rel
+# Replace the OTU table 
+otu_table(rare_nochloro_rm1in3_abs) <- 1000*otu_table(rare_nochloro_rm1in3_rel)*sample_data(rare_nochloro_rm1in3_rel)$Total.cells
 
 ### to cells/mL
-sample_data(rare_nochloro_rm0_rel)[,c(3:8)] <- sample_data(rare_nochloro_rm0_rel)[,c(3:8)]*1000
-sample_data(rare_nochloro_rm0_abs)[,c(3:8)] <- sample_data(rare_nochloro_rm0_abs)[,c(3:8)]*1000
+sample_data(rare_nochloro_rm1in3_rel)[,c(3:8)] <- sample_data(rare_nochloro_rm1in3_rel)[,c(3:8)]*1000
+sample_data(rare_nochloro_rm1in3_abs)[,c(3:8)] <- sample_data(rare_nochloro_rm1in3_abs)[,c(3:8)]*1000
 
 # Sanity Check
-apply(otu_table(rare_nochloro_rm0_abs), 1, sum)
-
+apply(otu_table(rare_nochloro_rm1in3_abs), 1, sum)
 
 ### Write the tsv files
-write.table(otu_table(rare_nochloro_rm0_abs), file="data/Chloroplasts_removed/nochloro_absolute_otu.tsv", row.names=TRUE)
-write.table(otu_table(rare_nochloro_rm0_rel), file="data/Chloroplasts_removed/nochloro_relative_otu.tsv", row.names=TRUE)
-write.table(sample_data(rare_nochloro_rm0_rel)[,-1], file="data/Chloroplasts_removed/nochloro_HNA_LNA.tsv", row.names=TRUE)
-write.table(tax_table(rare_nochloro_rm0_rel), file="data/Chloroplasts_removed/nochloro_taxonomy_otu.tsv", row.names=TRUE)
+write.table(otu_table(rare_nochloro_rm1in3_abs), 
+            file="data/Chloroplasts_removed/Nov2017_Filtering/1seq_in_3samples/nochloro_absolute_otu_1seqin3samps.tsv", row.names=TRUE)
+write.table(otu_table(rare_nochloro_rm1in3_rel), 
+            file="data/Chloroplasts_removed/Nov2017_Filtering/1seq_in_3samples/nochloro_relative_1seqin3samps.tsv", row.names=TRUE)
+write.table(sample_data(rare_nochloro_rm1in3_rel)[,-1], 
+            file="data/Chloroplasts_removed/Nov2017_Filtering/1seq_in_3samples/nochloro_HNA_LNA_1seqin3samps.tsv", row.names=TRUE)
+write.table(tax_table(rare_nochloro_rm1in3_rel), 
+            file="data/Chloroplasts_removed/Nov2017_Filtering/1seq_in_3samples/nochloro_taxonomy_otu_1seqin3samps.tsv", row.names=TRUE)
+
+
+
+########################################################################### 5 seqs in 10%
+### New phyloseq object with absolute abundances in cells/mL
+rare_nochloro_5in10percent_abs <- rare_nochloro_5in10percent_rel
+# Replace the OTU table 
+otu_table(rare_nochloro_5in10percent_abs) <- 1000*otu_table(rare_nochloro_5in10percent_rel)*sample_data(rare_nochloro_5in10percent_rel)$Total.cells
+
+### to cells/mL
+sample_data(rare_nochloro_5in10percent_rel)[,c(3:8)] <- sample_data(rare_nochloro_5in10percent_rel)[,c(3:8)]*1000
+sample_data(rare_nochloro_5in10percent_abs)[,c(3:8)] <- sample_data(rare_nochloro_5in10percent_abs)[,c(3:8)]*1000
+
+# Sanity Check
+apply(otu_table(rare_nochloro_5in10percent_abs), 1, sum)
+
+### Write the tsv files
+write.table(otu_table(rare_nochloro_5in10percent_abs), 
+            file="data/Chloroplasts_removed/Nov2017_Filtering/5seqs_in_10percent_samples/nochloro_absolute_otu_5in10percent.tsv", row.names=TRUE)
+write.table(otu_table(rare_nochloro_5in10percent_rel), 
+            file="data/Chloroplasts_removed/Nov2017_Filtering/5seqs_in_10percent_samples/nochloro_relative_5in10percent.tsv", row.names=TRUE)
+write.table(sample_data(rare_nochloro_5in10percent_rel)[,-1], 
+            file="data/Chloroplasts_removed/Nov2017_Filtering/5seqs_in_10percent_samples/nochloro_HNA_LNA_5in10percent.tsv", row.names=TRUE)
+write.table(tax_table(rare_nochloro_5in10percent_rel), 
+            file="data/Chloroplasts_removed/Nov2017_Filtering/5seqs_in_10percent_samples/nochloro_taxonomy_otu_5in10percent.tsv", row.names=TRUE)
