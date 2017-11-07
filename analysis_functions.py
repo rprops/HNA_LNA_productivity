@@ -244,7 +244,8 @@ def get_r2_scores(df,target,features,scores,cv):
         lasso = Lasso(alpha,max_iter=20000,normalize=False)
         pred = cross_val_predict(lasso, df.loc[:, features], target, cv=cv)
         r2.append(get_r2(target,pred))
-        thr_score = scores.values[scores.shape[0]-1]
+        #thr_score = scores.values[scores.shape[0]-1]
+        thr_score += 0.01
         thr.append(thr_score)
         scores = scores[scores.values > thr_score]
         features = scores.index
