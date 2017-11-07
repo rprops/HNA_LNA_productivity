@@ -62,36 +62,19 @@ no_chloro_physeq_pruned_seqs_rm0 <- prune_taxa(taxa_sums(no_chloro_physeq_pruned
   
 #################################################################################################
 ############## PREVALENCE FILTERING
+## On November 6th we decided to run the analysis 2 ways:
+     # 1. Liberal Cutoff: Remove OTUs that have only one sequence in three samples 
+     # 2. Conservative Cutoff: Remove OTUs that have less than 5 sequences in 10% of samples
+### WILL HAVE 2 PHYLOSEQ OBJECTS FROM NOW ON!
 
-# Filter the taxa that have less than 30 counts in 25% of the samples
-#rare_nochloro_rm0_filtered <- 
+# Remove OTUs that have only one sequence in three samples 
+filter_val_1 <- 3/173
+no_chloro_physeq_pruned_seqs_rm_1in3 <- filter_taxa(no_chloro_physeq_pruned_seqs_rm0, function(x) sum(x > 1) > (filter_val_1*length(x)), TRUE)
 
-cutoff_value <- 0.05
 
-test30 <- filter_taxa(no_chloro_physeq_pruned_seqs_rm0, function(x) sum(x > 30) > (cutoff_value*length(x)), TRUE)
-test25 <- filter_taxa(no_chloro_physeq_pruned_seqs_rm0, function(x) sum(x > 25) > (cutoff_value*length(x)), TRUE)
-test20 <- filter_taxa(no_chloro_physeq_pruned_seqs_rm0, function(x) sum(x > 20) > (cutoff_value*length(x)), TRUE)
-test15 <- filter_taxa(no_chloro_physeq_pruned_seqs_rm0, function(x) sum(x > 15) > (cutoff_value*length(x)), TRUE)
-test10 <- filter_taxa(no_chloro_physeq_pruned_seqs_rm0, function(x) sum(x > 10) > (cutoff_value*length(x)), TRUE)
-test05 <- filter_taxa(no_chloro_physeq_pruned_seqs_rm0, function(x) sum(x > 05) > (cutoff_value*length(x)), TRUE) 
-test03 <- filter_taxa(no_chloro_physeq_pruned_seqs_rm0, function(x) sum(x > 03) > (cutoff_value*length(x)), TRUE)
-test02 <- filter_taxa(no_chloro_physeq_pruned_seqs_rm0, function(x) sum(x > 02) > (cutoff_value*length(x)), TRUE)
-test01 <- filter_taxa(no_chloro_physeq_pruned_seqs_rm0, function(x) sum(x > 01) > (cutoff_value*length(x)), TRUE)
-
-num_taxa <- c(ntaxa(test30), ntaxa(test25), ntaxa(test20), ntaxa(test15), ntaxa(test10), ntaxa(test05), ntaxa(test03), ntaxa(test02), ntaxa(test01))
-cut_off <- c(30, 25, 20, 15, 10, 5, 3, 2, 1)
-
-tested_physeqs <- data.frame(num_taxa, cut_off)
-
-ggplot(tested_physeqs, aes(x = cut_off, y = num_taxa)) +
-  geom_bar(stat = "identity", color = "black", fill = "firebrick", alpha = 0.6) + 
-  theme_bw() + scale_y_continuous(expand = c(0,0), limits = c(0, max(tested_physeqs$num_taxa + 100)),
-                                  breaks = seq(0, max(tested_physeqs$num_taxa + 100), by = 200)) + # MODIFY ME BASED ON CUTOFF
-  labs(x = "Cutoff Number of Sequences", y = "Number of Taxa Across All Samples") + 
-  scale_x_continuous(expand = c(0,0), limits = c(0, 32), breaks = seq(0, 32, by = 5)) +
-  ggtitle("Pre-Rarefy: In at least 5% of Samples")
-#ggsave("data/Chloroplasts_removed/PreRare_Cutoff_05percent.png", dpi = 300, width = 4, height = 3)
-
+# Remove OTUs that have less than 5 sequences in 10% of samples
+filter_val_2 <- 0.10
+no_chloro_physeq_pruned_seqs_rm5_in_10percent <- filter_taxa(no_chloro_physeq_pruned_seqs_rm0, function(x) sum(x > 5) > (filter_val_2*length(x)), TRUE)
 
 
 
@@ -99,8 +82,17 @@ ggplot(tested_physeqs, aes(x = cut_off, y = num_taxa)) +
 #################################################################################################
 ############## RELATIVE ABUNDANCES VIA RAREFY-ING
 ## RAREFY EVEN DEPTH 
-min_lib_rm0 <- min(sample_sums(no_chloro_physeq_pruned_seqs_rm0)) - 1
-min_lib_rm0 # 4760 is the smallest library size
+min_lib_rm1in3 <- min(sample_sums(no_chloro_physeq_pruned_seqs_rm_1in3)) - 1
+min_lib_rm_5in10percent <- min(sample_sums(no_chloro_physeq_pruned_seqs_rm5_in_10percent)) - 1
+min_lib_rm1in3 # 4726 is the smallest library size
+min_lib_rm_5in10percent # 4482 is the smallest library size 
+
+
+#################################################################################################
+#################################################################################################
+################################################################################################# YOU ARE HERE MARIAN 
+#################################################################################################
+#################################################################################################
 
 # Set the seed for the randomization of rarefy-ing
 set.seed(777)
