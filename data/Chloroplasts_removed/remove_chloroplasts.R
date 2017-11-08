@@ -41,6 +41,17 @@ rownames(temp3) <- temp3$Sample
 sample_data(physeq.otu) <- temp3
 
 #################################################################################################
+############## REMOVE OUTLIER SAMPLES
+
+outlier_samples <- c("Z14055F", "Z14003F", "Z14007F", "Z14023F", "Z14011F")
+
+# Function to do 'is not in'
+'%!in%' <- function(x,y)!('%in%'(x,y))
+physeq.otu <- subset_samples(physeq.otu, sample_names(physeq.otu) %!in% outlier_samples)
+
+
+
+#################################################################################################
 ############## REMOVE CHLOROPLASTS
 no_chloro_physeq <- subset_taxa(physeq.otu, Rank3 != "Chloroplast")
 no_chloro_physeq_pruned <- prune_taxa(taxa_sums(no_chloro_physeq) > 0, no_chloro_physeq) 
@@ -68,7 +79,7 @@ no_chloro_physeq_pruned_seqs_rm0 <- prune_taxa(taxa_sums(no_chloro_physeq_pruned
 ### WILL HAVE 2 PHYLOSEQ OBJECTS FROM NOW ON!
 
 # Remove OTUs that have only one sequence in three samples 
-filter_val_1 <- 3/173
+filter_val_1 <- 3/nsamples(no_chloro_physeq_pruned_seqs_rm0)
 no_chloro_physeq_pruned_seqs_rm_1in3 <- filter_taxa(no_chloro_physeq_pruned_seqs_rm0, function(x) sum(x > 1) > (filter_val_1*length(x)), TRUE)
 
 
@@ -83,7 +94,7 @@ no_chloro_physeq_pruned_seqs_rm5_in_10percent <- filter_taxa(no_chloro_physeq_pr
 ############## RELATIVE ABUNDANCES VIA RAREFY-ING
 ## RAREFY EVEN DEPTH 
 min_lib_rm1in3 <- min(sample_sums(no_chloro_physeq_pruned_seqs_rm_1in3)) - 1
-min_lib_rm1in3 # 4726 is the smallest library size
+min_lib_rm1in3 # 4711 is the smallest library size
 
 # Set the seed for the randomization of rarefy-ing
 set.seed(777)
@@ -97,8 +108,8 @@ apply(otu_table(rare_nochloro_rm1in3), 1, sum)
 ### New phyloseq objects with relative abundances
 rare_nochloro_rm1in3_rel <- transform_sample_counts(rare_nochloro_rm1in3, function(x) x/sum(x))
 
-# Sanity Check
-apply(otu_table(rare_nochloro_rm1in3_rel), 1, sum)
+# Sanity Check to make sure all relative abundances are 1
+stopifnot(sum(apply(otu_table(rare_nochloro_rm1in3_rel), 1, sum)) == nsamples(rare_nochloro_rm1in3_rel))
 
 ### Replacing NA by "Unclassified"
 tax_table(rare_nochloro_rm1in3_rel)[is.na(tax_table(rare_nochloro_rm1in3_rel))] <- "Unclassified"
@@ -121,8 +132,8 @@ apply(otu_table(rare_nochloro_5in10percent), 1, sum)
 ### New phyloseq objects with relative abundances
 rare_nochloro_5in10percent_rel <- transform_sample_counts(rare_nochloro_5in10percent, function(x) x/sum(x))
 
-# Sanity Check
-apply(otu_table(rare_nochloro_5in10percent_rel), 1, sum)
+# Sanity Check to make sure all relative abundances are 1
+stopifnot(sum(apply(otu_table(rare_nochloro_5in10percent_rel), 1, sum)) == nsamples(rare_nochloro_5in10percent_rel))
 
 ### Replacing NA by "Unclassified"
 tax_table(rare_nochloro_5in10percent_rel)[is.na(tax_table(rare_nochloro_5in10percent_rel))] <- "Unclassified"
@@ -144,6 +155,7 @@ sample_data(rare_nochloro_rm1in3_abs)[,c(3:8)] <- sample_data(rare_nochloro_rm1i
 
 # Sanity Check
 apply(otu_table(rare_nochloro_rm1in3_abs), 1, sum)
+sort(apply(otu_table(rare_nochloro_rm1in3_abs), 2, sum)) # Check out the counts of each OTU
 
 ### Write the tsv files
 write.table(otu_table(rare_nochloro_rm1in3_abs), 
@@ -169,6 +181,8 @@ sample_data(rare_nochloro_5in10percent_abs)[,c(3:8)] <- sample_data(rare_nochlor
 
 # Sanity Check
 apply(otu_table(rare_nochloro_5in10percent_abs), 1, sum)
+sort(apply(otu_table(rare_nochloro_5in10percent_abs), 2, sum)) # Check out the counts of each OTU
+
 
 ### Write the tsv files
 write.table(otu_table(rare_nochloro_5in10percent_abs), 
