@@ -4,8 +4,8 @@
 
 
 # Fix header names in fasta file 
-## Rename file
-cp ../total.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.an.unique_list.0.03.rep.fasta rep_16s_seqs.fasta
+## Copy and Rename original fasta file
+cp total.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.an.unique_list.0.03.rep.fasta rep_16s_seqs.fasta
 
 ## Remove unnecessary information from the fasta headers 
 

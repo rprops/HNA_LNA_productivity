@@ -13,4 +13,4 @@
 	- `productivity_data.tsv`: Sample meta-, flow cytometry, **and productivity data.**  
 	- And the figure below:
 
-![Relationships between Total Bacterial Production in ug C/L/Hr and  (A) High-Nucleic Acid Cells,  (B) Low-Nucleic Acid Cells, and (C) Total Cells](HNA_vs_productivity.png)
+![Relationships between Total Bacterial Production in ug C/L/Hr and  (A) High-Nucleic Acid Cells,  (B) Low-Nucleic Acid Cells, and (C) Total Cells](Cutoff_Analysis_Figures/HNA_vs_productivity.png)
