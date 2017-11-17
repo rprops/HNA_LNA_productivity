@@ -4,7 +4,10 @@ library(phyloseq)
 library(picante)
 library(tidyverse)
 
-############################### 1seq_in_3samples ######################################
+########################################################################################  
+################################ 1seq_in_3samples ######################################
+########################################################################################  
+
 # Read in the data 
 # Read in the relative abundance data 
 rel_1seq_in3samps <- read.table("1seq_in_3samples/nochloro_relative_1seqin3samps.tsv")
@@ -70,13 +73,17 @@ LNA_physeq_1in3 <- subset_taxa(rel_physeq_1in3,  OTU %in% LNA_otus_1in3)
 ################################################  
 ################################################  WRITE OUT THE PHYLOSEQ OBJECT 
 save(list=c("HNA_physeq_1in3","LNA_physeq_1in3"), file=paste0("HNA-LNA-physeq_1in3.RData"))
+  # This above line of code will create a single .RData object and with the 2 following phyloseq objects: 
+    # 1. HNA_physeq_1in3
+    # 2. LNA_physeq_1in3
 
 
 
 
-
-
+########################################################################################  
 ############################### 5seq_in_10percent ######################################
+########################################################################################  
+
 # Read in the data 
 # Read in the relative abundance data 
 rel_5seq_in_10perc <- read.table("5seqs_in_10percent_samples/nochloro_relative_5in10percent.tsv")
@@ -142,9 +149,14 @@ LNA_physeq_5in10 <- subset_taxa(rel_physeq_5in10,  OTU %in% LNA_otus_5in10)
 ################################################  
 ################################################  WRITE OUT THE PHYLOSEQ OBJECT 
 save(list=c("HNA_physeq_5in10","LNA_physeq_5in10"), file=paste0("HNA-LNA-physeq_5in10.RData"))
+  # This above line of code will create a single .RData object and with the 2 following phyloseq objects: 
+        # 1. HNA_physeq_5in10
+        # 2. LNA_physeq_5in10
 
 
-
+########################################################################################  
+###################################### FIN #############################################
+########################################################################################  
 
 
 
