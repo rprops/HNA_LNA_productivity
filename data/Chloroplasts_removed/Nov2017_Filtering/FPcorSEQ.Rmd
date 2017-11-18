@@ -291,4 +291,74 @@ v_HNA_5in10_fix <- ggplot2::ggplot(res_HNA_5in10_fix, ggplot2::aes(`FL1-H`, `FL3
 png(file = "FPcorSEQ_5in10.png", width = 15, height = 10, units  = "in", res = 500)
 grid.arrange(v_LNA_5in10_fix, v_HNA_5in10_fix, ncol = 2)
 dev.off()
+
+
+### Make separate plots of "unique" OTUs to each pool and the shared
+v_5in10_fix_shared <- res_HNA_5in10_fix %>%
+  filter(taxa %in% unique(res_LNA_5in10_fix$taxa)) %>% 
+  ggplot2::ggplot(ggplot2::aes(`FL1-H`, `FL3-H`, z = cor))+
+  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
+  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
+                      # color = "transparent")+
+  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.7,0.7)) + 
+  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
+  ggplot2::theme_bw()+
+  # ggplot2::geom_contour(color = "white", alpha = 1)+
+  facet_wrap(~taxa, ncol = 3)+
+  ylim(0,150)+
+  xlim(40,150)+
+    theme(axis.title=element_text(size=16), strip.text.x=element_text(size=16),
+        legend.title=element_text(size=15),legend.text=element_text(size=14),
+        axis.text = element_text(size=14),title=element_text(size=20),
+        strip.background=element_rect(fill=adjustcolor("lightgray",0.2))
+        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
+        )+
+  ggtitle("Shared taxa")
+
+v_HNA_5in10_fix_uniq <- res_HNA_5in10_fix %>%
+  filter(!taxa %in% unique(res_LNA_5in10_fix$taxa)) %>% 
+  ggplot2::ggplot(ggplot2::aes(`FL1-H`, `FL3-H`, z = cor))+
+  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
+  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
+                      # color = "transparent")+
+  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.7,0.7)) + 
+  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
+  ggplot2::theme_bw()+
+  # ggplot2::geom_contour(color = "white", alpha = 1)+
+  facet_wrap(~taxa, ncol = 3)+
+  ylim(0,150)+
+  xlim(40,150)+
+    theme(axis.title=element_text(size=16), strip.text.x=element_text(size=16),
+        legend.title=element_text(size=15),legend.text=element_text(size=14),
+        axis.text = element_text(size=14),title=element_text(size=20),
+        strip.background=element_rect(fill=adjustcolor("lightgray",0.2))
+        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
+        )+
+  ggtitle("HNA taxa")
+
+v_LNA_5in10_fix_uniq <- res_LNA_5in10_fix %>%
+  filter(!taxa %in% unique(res_HNA_5in10_fix$taxa)) %>% 
+  ggplot2::ggplot(ggplot2::aes(`FL1-H`, `FL3-H`, z = cor))+
+  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
+  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
+                      # color = "transparent")+
+  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.7,0.7)) + 
+  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
+  ggplot2::theme_bw()+
+  # ggplot2::geom_contour(color = "white", alpha = 1)+
+  facet_wrap(~taxa, ncol = 3)+
+  ylim(0,150)+
+  xlim(40,150)+
+    theme(axis.title=element_text(size=16), strip.text.x=element_text(size=16),
+        legend.title=element_text(size=15),legend.text=element_text(size=14),
+        axis.text = element_text(size=14),title=element_text(size=20),
+        strip.background=element_rect(fill=adjustcolor("lightgray",0.2))
+        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
+        )+
+  ggtitle("LNA taxa")
+
+png(file = "FPcorSEQ_5in10_partition.png", width = 25, height = 10, units  = "in", res = 500)
+grid.arrange(v_LNA_5in10_fix_uniq, v_5in10_fix_shared, v_HNA_5in10_fix_uniq,
+             ncol = 3)
+dev.off()
 ```
