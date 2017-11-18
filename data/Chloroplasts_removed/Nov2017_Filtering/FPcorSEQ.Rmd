@@ -1,0 +1,294 @@
+---
+title: "Correlation OTU vs bins"
+author: "Ruben Props"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: show
+    highlight: haddock
+    keep_md: yes
+    theme: united
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+      toc_depth: 2
+    css: report_styles.css
+    df_print: paged
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r setup, include = FALSE, warning = FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = TRUE,
+                      include = TRUE,
+                      collapse = FALSE,
+                      dependson = NULL,
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.path="Figures/cached/",  # Set the figure options
+                      fig.align = "center"
+                      )
+# Load libraries
+library('dplyr')
+library('ggplot2')
+library("grid")
+library("gridExtra")
+library("phyloseq")
+library("ggrepel")
+library("Phenoflow")
+library("RColorBrewer")
+source("./data/Chloroplasts_removed/Nov2017_Filtering/functions.R")
+```
+
+
+```{r FPCorSeq, fig.width = 10, fig.height= 10, fig.align='center'}
+# Load phyloseq data
+load("./data/Chloroplasts_removed/Nov2017_Filtering/HNA-LNA-physeq_1in3.RData")
+load("./data/Chloroplasts_removed/Nov2017_Filtering/HNA-LNA-physeq_5in10.RData")
+
+# Import FCM data and FCM data list mapping seq to FCM files
+loc_fcs <- grep("_filtered", list.dirs("/./HNA_LNA_productivity/data"),
+     value = TRUE)[1:4]
+
+# These are denoised already (see Filter_Count_FCS.R script) and 
+# only have the four parameters of interest left (FL1/FL3/FSC/SSC)
+fs1 <- read.flowSet(path = loc_fcs[1], pattern = "_filtered")
+fs2 <- read.flowSet(path = loc_fcs[2], pattern = "_filtered")
+fs3 <- read.flowSet(path = loc_fcs[3], pattern = "_filtered")
+fs4 <- read.flowSet(path = loc_fcs[4], pattern = "_filtered")
+fs <- rbind2(fs1,fs2); fs <- rbind2(fs, fs3)
+fs <- rbind2(fs, fs4)
+remove(fs1, fs2, fs3, fs4)
+
+# Pool replicates
+stubs <- c(unique(do.call(rbind, strsplit(flowCore::sampleNames(fs), 
+                                        "_rep.\\.fcs_filtered"))
+))
+
+fs_pool <- FCS_pool(fs, stubs); remove(fs)
+
+# Change some erronous names
+flowCore::sampleNames(fs_pool) <- gsub("MI5", "M15", flowCore::sampleNames(fs_pool))
+
+# Filter out samples that correspond to the sequencing data
+labs_FCM <- read.csv2("./data/Chloroplasts_removed/Nov2017_Filtering/lab_FCM_16S.csv")
+labs_FCM$Sample_fcm <- gsub("_rep.\\.fcs", "",labs_FCM$Sample_fcm)
+labs_FCM <- labs_FCM %>% distinct()
+labs_FCM$Sample_16S <- gsub("-", "", labs_FCM$Sample_16S)
+
+# Check if some names were not found in the mapping file
+flowCore::sampleNames(fs_pool)[!flowCore::sampleNames(fs_pool) %in% labs_FCM$Sample_fcm]
+sample_names(HNA_physeq_1in3)[!sample_names(HNA_physeq_1in3) %in% labs_FCM$Sample_16S]
+
+# Transform with asinh
+fs_pool <- transform(fs_pool,`FL1-H`=asinh(`FL1-H`), 
+                                   `SSC-H`=asinh(`SSC-H`), 
+                                   `FL3-H`=asinh(`FL3-H`), 
+                                   `FSC-H`=asinh(`FSC-H`))
+
+# Rename flow cytometry samples into sequencing names
+flowCore::sampleNames(fs_pool) <- labs_FCM$Sample_16S[match(flowCore::sampleNames(fs_pool),
+                                                             labs_FCM$Sample_fcm)]
+# Order samples according to samples in phyloseq objects
+
+
+# Normalize before calculating fingerprint
+summary <- fsApply(x = fs_pool, FUN = function(x) apply(x, 2, max), use.exprs = TRUE)
+maxval <- max(summary[,1])
+mytrans <- function(x) x/maxval
+fs_pool <- transform(fs_pool,`FL1-H`=mytrans(`FL1-H`),
+                                  `FL3-H`=mytrans(`FL3-H`), 
+                                  `SSC-H`=mytrans(`SSC-H`),
+                                  `FSC-H`=mytrans(`FSC-H`))
+
+# remove flow cytometry samples that are not present in phyloseq objects
+fs_pool <- fs_pool[flowCore::sampleNames(fs_pool) %in% sample_names(HNA_physeq_1in3)]
+
+# Calculate fingerprint
+param <- c("FL1-H", "FL3-H", "FSC-H", "SSC-H")
+fbasis <- flowBasis(fs_pool, param, nbin=128, 
+                   bw=0.01, normalize=function(x) x)
+remove(fs_pool)
+
+# Import lists with scores
+path_scores <- list.files("./Scores")[c(1,2,5,6)]
+
+scores_df <- data.frame()
+for(i in path_scores){
+  tmp <- read.csv(paste("./Scores/", i, sep = ""))[, 1:2]
+  tmp <- cbind(tmp, gsub("_rel.csv","",i))
+  if(i == path_scores[1]){
+    scores_df <- tmp
+  } else {
+      scores_df <- rbind(scores_df, tmp)
+    }
+}
+colnames(scores_df) <- c("OTU", "Score", "method")
+
+### HNA pool ###
+################################################################################
+# Run FPcorSEQ at diffferent thresholds for both LNA and HNA lasso run
+
+## for 1seq3 
+fixed_thresh <- 0.5
+tuned_thresh <- 0.15
+list_fix <- scores_df %>% filter(method == "hnascores_otus_1seq3" & Score > fixed_thresh)
+list_tune <- scores_df %>% filter(method == "hnascores_otus_1seq3" & Score > tuned_thresh)
+
+HNA_physeq_1in3_fix <- prune_taxa(taxa = as.character(list_fix$OTU), HNA_physeq_1in3)
+HNA_physeq_1in3_tune <- prune_taxa(taxa = as.character(list_tune$OTU), HNA_physeq_1in3)
+
+res_HNA_1in3_fix <- FPcorSeq(phy = HNA_physeq_1in3_fix, fp = fbasis,
+                        cor_thresh = 0.1, fp_thresh = 1e-5)
+
+res_HNA_1in3_tune <- FPcorSeq(phy = HNA_physeq_1in3_tune, fp = fbasis,
+                        cor_thresh = 0.1, fp_thresh = 1e-5)
+
+## for 5seq10 
+fixed_thresh <- 0.5
+tuned_thresh <- 0.36
+list_fix <- scores_df %>% filter(method == "hnascores_otus_5seq10" & Score > fixed_thresh)
+list_tune <- scores_df %>% filter(method == "hnascores_otus_5seq10" & Score > tuned_thresh)
+
+HNA_physeq_5in10_fix <- prune_taxa(taxa = as.character(list_fix$OTU), HNA_physeq_5in10)
+HNA_physeq_5in10_tune <- prune_taxa(taxa = as.character(list_tune$OTU), HNA_physeq_5in10)
+
+res_HNA_5in10_fix <- FPcorSeq(phy = HNA_physeq_5in10_fix, fp = fbasis,
+                        cor_thresh = 0.1, fp_thresh = 1e-5)
+
+res_HNA_5in10_tune <- FPcorSeq(phy = HNA_physeq_5in10_tune, fp = fbasis,
+                        cor_thresh = 0.1, fp_thresh = 1e-5)
+
+### LNA pool ###
+################################################################################
+## for 1seq3 
+fixed_thresh <- 0.5
+tuned_thresh <- 0.18
+list_fix <- scores_df %>% filter(method == "lnascores_otus_abun_1seq3" & Score > fixed_thresh)
+list_tune <- scores_df %>% filter(method == "lnascores_otus_abun_1seq3" & Score > tuned_thresh)
+
+LNA_physeq_1in3_fix <- prune_taxa(taxa = as.character(list_fix$OTU), LNA_physeq_1in3)
+LNA_physeq_1in3_tune <- prune_taxa(taxa = as.character(list_tune$OTU), LNA_physeq_1in3)
+
+res_LNA_1in3_fix <- FPcorSeq(phy = LNA_physeq_1in3_fix, fp = fbasis,
+                        cor_thresh = 0.1, fp_thresh = 1e-5)
+
+res_LNA_1in3_tune <- FPcorSeq(phy = LNA_physeq_1in3_tune, fp = fbasis,
+                        cor_thresh = 0.1, fp_thresh = 1e-5)
+
+## for 5seq10 
+fixed_thresh <- 0.5
+tuned_thresh <- 0.21
+list_fix <- scores_df %>% filter(method == "lnascores_otus_5seq10" & Score > fixed_thresh)
+list_tune <- scores_df %>% filter(method == "lnascores_otus_5seq10" & Score > tuned_thresh)
+
+LNA_physeq_5in10_fix <- prune_taxa(taxa = as.character(list_fix$OTU), LNA_physeq_5in10)
+LNA_physeq_5in10_tune <- prune_taxa(taxa = as.character(list_tune$OTU), LNA_physeq_5in10)
+
+res_LNA_5in10_fix <- FPcorSeq(phy = LNA_physeq_5in10_fix, fp = fbasis,
+                        cor_thresh = 0.1, fp_thresh = 1e-5)
+
+res_LNA_5in10_tune <- FPcorSeq(phy = LNA_physeq_5in10_tune, fp = fbasis,
+                        cor_thresh = 0.1, fp_thresh = 1e-5)
+
+
+
+
+
+# Make heatmap plots
+# Visualize correlations for top OTUs
+v_LNA_1in3_fix <- ggplot2::ggplot(res_LNA_1in3_fix, ggplot2::aes(`FL1-H`, `FL3-H`, z = cor))+
+  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
+  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
+                      # color = "transparent")+
+  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.7,0.7)) + 
+  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
+  ggplot2::theme_bw()+
+  # ggplot2::geom_contour(color = "white", alpha = 1)+
+  facet_wrap(~taxa, ncol = 3)+
+  ylim(0,150)+
+  xlim(40,150)+
+    theme(axis.title=element_text(size=16), strip.text.x=element_text(size=16),
+        legend.title=element_text(size=15),legend.text=element_text(size=14),
+        axis.text = element_text(size=14),title=element_text(size=20),
+        strip.background=element_rect(fill=adjustcolor("lightgray",0.2))
+        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
+        )+
+  ggtitle("LNA population")
+
+print(v_LNA_1in3_fix)
+
+v_HNA_1in3_fix <- ggplot2::ggplot(res_HNA_1in3_fix, ggplot2::aes(`FL1-H`, `FL3-H`, z = cor))+
+  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
+  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
+                      # color = "transparent")+
+  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.7,0.7)) + 
+  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
+  ggplot2::theme_bw()+
+  # ggplot2::geom_contour(color = "white", alpha = 1)+
+  facet_wrap(~taxa, ncol = 3)+
+  ylim(0,150)+
+  xlim(40,150)+
+    theme(axis.title=element_text(size=16), strip.text.x=element_text(size=16),
+        legend.title=element_text(size=15),legend.text=element_text(size=14),
+        axis.text = element_text(size=14),title=element_text(size=20),
+        strip.background=element_rect(fill=adjustcolor("lightgray",0.2))
+        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
+        )+
+  ggtitle("HNA population")
+
+print(v_HNA_1in3_fix)
+png(file = "FPcorSEQ_1in3.png", width = 8, height = 9, units  = "in", res = 500)
+grid.arrange(v_LNA_1in3_fix, v_HNA_1in3_fix, nrow = 2)
+dev.off()
+
+# Make heatmap plots
+# Visualize correlations for top OTUs
+v_LNA_5in10_fix <- ggplot2::ggplot(res_LNA_5in10_fix, ggplot2::aes(`FL1-H`, `FL3-H`, z = cor))+
+  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
+  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
+                      # color = "transparent")+
+  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.7,0.7)) + 
+  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
+  ggplot2::theme_bw()+
+  # ggplot2::geom_contour(color = "white", alpha = 1)+
+  facet_wrap(~taxa, ncol = 3)+
+  ylim(0,150)+
+  xlim(40,150)+
+    theme(axis.title=element_text(size=16), strip.text.x=element_text(size=16),
+        legend.title=element_text(size=15),legend.text=element_text(size=14),
+        axis.text = element_text(size=14),title=element_text(size=20),
+        strip.background=element_rect(fill=adjustcolor("lightgray",0.2))
+        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
+        )+
+  ggtitle("LNA population")
+
+print(v_LNA_5in10_fix)
+
+v_HNA_5in10_fix <- ggplot2::ggplot(res_HNA_5in10_fix, ggplot2::aes(`FL1-H`, `FL3-H`, z = cor))+
+  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
+  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
+                      # color = "transparent")+
+  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.7,0.7)) + 
+  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
+  ggplot2::theme_bw()+
+  # ggplot2::geom_contour(color = "white", alpha = 1)+
+  facet_wrap(~taxa, ncol = 3)+
+  ylim(0,150)+
+  xlim(40,150)+
+    theme(axis.title=element_text(size=16), strip.text.x=element_text(size=16),
+        legend.title=element_text(size=15),legend.text=element_text(size=14),
+        axis.text = element_text(size=14),title=element_text(size=20),
+        strip.background=element_rect(fill=adjustcolor("lightgray",0.2))
+        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
+        )+
+  ggtitle("HNA population")
+
+png(file = "FPcorSEQ_5in10.png", width = 15, height = 10, units  = "in", res = 500)
+grid.arrange(v_LNA_5in10_fix, v_HNA_5in10_fix, ncol = 2)
+dev.off()
+```
