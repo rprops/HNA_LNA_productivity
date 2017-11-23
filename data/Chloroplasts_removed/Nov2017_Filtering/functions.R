@@ -122,6 +122,7 @@ FPcorSeq <- function(fp, phy, cor_thresh = 0.5, fp_thresh = 1e-10,
   cat(paste0("\t", "Check if sample names match between fbasis and phyloseq objects:", 
              "\n"))
   cat(paste(rownames(fp@basis),"-", rownames(phy@otu_table), "\n"))
+  
   # Normalize fingerprint
   fp@basis <- fp@basis/apply(fp@basis, 1, max)
   
@@ -152,12 +153,12 @@ FPcorSeq <- function(fp, phy, cor_thresh = 0.5, fp_thresh = 1e-10,
   for(i in 1:ncol(fp@basis)){
     if(i%%100 == 0) cat(date(), paste0("---- at bin ", i, "/",  ncol(fp@basis), "\n"))
     cor_temp <- c(); p_temp <- c(); npoint_temp <- c()
-    for(j in 1:dim(phy@otu_table)[2]){
-      cor_temp[j] <- cor(fp@basis[,i], phy@otu_table[,j], method = cor_m)
-      p_temp[j] <- cor.test(fp@basis[,i], phy@otu_table[,j], method = cor_m)$p.value
-      npoint_temp[j] <- sum((phy@otu_table[, j] > 0)&(round(fp@basis[,i], d) > fp_thresh))
+    for(j in 1:dim(otu_table(phy))[2]){
+      cor_temp[j] <- cor(fp@basis[,i], otu_table(phy)[,j], method = cor_m)
+      # p_temp[j] <- cor.test(fp@basis[,i], otu_table(phy)[,j], method = cor_m)$p.value
+      npoint_temp[j] <- sum((otu_table(phy)[, j] > 0)&(round(fp@basis[,i], d) > fp_thresh))
     }
-    results_m <- data.frame(cor = cor_temp, cor.pval = p_temp, taxa = taxa_names(phy),
+    results_m <- data.frame(cor = cor_temp, taxa = taxa_names(phy),
                             X = X[i], Y = Y[i], npoint = npoint_temp)
     
     if(i == 1) results_cat <- results_m
@@ -167,7 +168,7 @@ FPcorSeq <- function(fp, phy, cor_thresh = 0.5, fp_thresh = 1e-10,
   ### Filter out low correlation values
   ### and correlation values calculated with low number of points
   results_cat <- results_cat[abs(results_cat$cor) > cor_thresh, ]
-  colnames(results_cat)[4:5] <- param
+  colnames(results_cat)[3:4] <- param
   cat(date(), paste0("---- Done!\n"))
   return(results_cat)
 }
