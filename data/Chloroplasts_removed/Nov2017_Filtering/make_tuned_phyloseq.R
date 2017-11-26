@@ -28,7 +28,7 @@ colnames(tax_table(rel_physeq_1in3)) <- c("Kingdom","Phylum","Class","Order","Fa
 ########## ADD THE PROTEOBACTERIA TO THE PHYLA
 phy <- data.frame(tax_table(rel_physeq_1in3))
 Phylum <- as.character(phy$Phylum)
-Class <- as.character(phy$Class)
+Class <- as.character(phy$Class) 
 
 for  (i in 1:length(Phylum)){ 
   if (Phylum[i] == "Proteobacteria"){
