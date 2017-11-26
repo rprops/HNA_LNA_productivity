@@ -1,12 +1,25 @@
 ## Date: November 26th
 
-1. Re-created `HNA-LNA-physeq_1in3.RData` based off of Peter's updates. (`HNA-LNA-physeq_5in10.RData` stayed the same).  
-2. Using code in [make_tuned_phyloseq.R](make_tuned_phyloseq.R), created new phyloseq object `ALL-physeq-for-phylo.RData` that has 3 of each samples: all otus, LNA otus, and HNA otus.  
-3. `ALL-physeq-for-phylo.RData` was then used to calculate the phylogenetic diversity on UofM flux with code in [calc_phylo_div.R](calc_phylo_div.R).  Two files were written out, including:  
+1. Re-created [HNA-LNA-physeq_1in3.RData](HNA-LNA-physeq_1in3.RData) based off of Peter's updates. ([HNA-LNA-physeq_5in10.RData](HNA-LNA-physeq_5in10.RData) stayed the same).  
+2. Using code in [make_tuned_phyloseq.R](make_tuned_phyloseq.R), created new phyloseq object [ALL-physeq-for-phylo.RData](ALL-physeq-for-phylo.RData) that has 3 of each samples: all otus, LNA otus, and HNA otus.  
+3. [ALL-physeq-for-phylo.RData](ALL-physeq-for-phylo.RData)  was then used to calculate the phylogenetic diversity on UofM flux with code in [calc_phylo_div.R](calc_phylo_div.R).  Two files were written out, including:  
+
     a.  [unweighted_MPD_1seqs_in_3samps.tsv](unweighted_MPD_1seqs_in_3samps.tsv)
     b.  [unweighted_MPD_5seqs_in_10perc.tsv](unweighted_MPD_5seqs_in_10perc.tsv)
     
-4. Finally, performed a brief phylogenetic diversity analysis in [phylo_analysis.R](phylo_analysis.R) in which figures were created and put into the [phylo_analysis_figures](phylo_analysis_figures) folder.
+4. Finally, performed a brief phylogenetic diversity analysis in [phylo_analysis.R](phylo_analysis.R) in which figures were created and put into the [phylo_analysis_figures](phylo_analysis_figures) folder.  Which has the following three figures:  
+
+
+
+![](phylo_analysis_figures/ntaxa_by_lake.png)
+
+
+![](phylo_analysis_figures/PD_by_lake.png)
+
+
+![](phylo_analysis_figures/PD_musk2015_surface.png)
+
+
 
 ## Date: November 13th, 2017
 
