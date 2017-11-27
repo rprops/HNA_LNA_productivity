@@ -251,7 +251,7 @@ df_1in3 <- data.frame(c(ntaxa(rare_muskegon_physeq_1in3_rel), ntaxa(rare_michiga
                  c("Muskegon","Michigan","Inland")) 
 colnames(df_1in3) <- c("NumOTUs","Lake")
 ggplot(df_1in3, aes(x = Lake, y = NumOTUs)) + ylab("Number of OTUs per Lake") +
-  ggtitle("1 Sequence in 3 Samples: After Rarefying") +
+  ggtitle("1 seq in 3 Samp: Post-Rarefy") +
   geom_bar(stat = "identity", fill = "firebrick", color = "black", alpha = 0.8) +
   scale_y_continuous(expand = c(0,0), limits = c(0,2000), breaks = seq(0,2000, by = 500)) +
   theme_bw() + theme(axis.title.x = element_blank())
@@ -326,7 +326,7 @@ df_5in10 <- data.frame(c(ntaxa(rare_muskegon_physeq_5in10_rel), ntaxa(rare_michi
                  c("Muskegon","Michigan","Inland")) 
 colnames(df_5in10) <- c("NumOTUs","Lake")
 ggplot(df_5in10, aes(x = Lake, y = NumOTUs)) + ylab("Number of OTUs per Lake") +
-  ggtitle("5 Sequence in 10% of Samples: After Rarefying") +
+  ggtitle("5 Seqs in 10%: Post-Rarefy") +
   geom_bar(stat = "identity", fill = "darkorange", color = "black", alpha = 0.8) +
   scale_y_continuous(expand = c(0,0), limits = c(0,600), breaks = seq(0,600, by = 100)) +
   theme_bw() + theme(axis.title.x = element_blank())
