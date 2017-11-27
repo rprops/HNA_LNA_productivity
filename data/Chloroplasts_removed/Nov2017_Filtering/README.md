@@ -10,6 +10,11 @@
 4. Finally, performed a brief phylogenetic diversity analysis in [phylo_analysis.R](phylo_analysis.R) in which figures were created and put into the [phylo_analysis_figures](phylo_analysis_figures) folder.  Which has the following three figures:  
 
 
+![](phylo_analysis_figures/phylo_tree_type.png)
+
+
+![](phylo_analysis_figures/phylo_tree_type_cir.png)
+
 
 ![](phylo_analysis_figures/ntaxa_by_lake.png)
 
