@@ -10,6 +10,8 @@
 -   [Rarefy for Relative Abundances](#rarefy-for-relative-abundances)
     -   [1in3](#in3)
     -   [5in10](#in10)
+-   [Visualize Number of OTUs](#visualize-number-of-otus)
+    -   [What are the differences in OTUs between the two filtering methods?](#what-are-the-differences-in-otus-between-the-two-filtering-methods)
 -   [Absolute Abundances](#absolute-abundances)
     -   [1in3](#in3-1)
     -   [5in10](#in10-1)
@@ -51,6 +53,9 @@ metadata$Sample_fcm <- gsub(metadata$Sample_fcm, pattern="_rep.*", replacement="
 metadata <- do.call(rbind,by(metadata, INDICES = factor(metadata$Sample_fcm), 
                              FUN = unique))
 metadata$Sample_16S[metadata$Lake=="Inland"] <- gsub(metadata$Sample_16S[metadata$Lake=="Inland"], pattern="-", replacement="")
+# ADD THE Lake MI MLB samples to Lake == Muskegon
+metadata <- mutate(metadata, Lake = ifelse(Site == "MLB", "Muskegon", Lake))
+
 
 ############## Import counts 
 counts <- read.csv2("../count_total_HNALNA.csv", stringsAsFactors = FALSE)
@@ -170,7 +175,7 @@ colnames(df) <- c("NumOTUs", "NumSamples","Lake")
 
 p1 <- ggplot(df, aes(x = Lake, y = NumOTUs)) + ylab("Number of OTUs per Lake") +
   geom_bar(stat = "identity", fill = "cornflowerblue", color = "black", alpha = 0.8) +
-  scale_y_continuous(expand = c(0,0), limits = c(0,7000), breaks = seq(0,7000, by = 1000)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,7500), breaks = seq(0,7500, by = 1000)) +
   theme_bw() + theme(axis.title.x = element_blank())
 
 p2 <- ggplot(df, aes(x = Lake, y = NumSamples)) + ylab("Number of Samples per Lake") +
@@ -178,7 +183,10 @@ p2 <- ggplot(df, aes(x = Lake, y = NumSamples)) + ylab("Number of Samples per La
   scale_y_continuous(expand = c(0,0), limits = c(0,70), breaks = seq(0,70, by = 10)) +
   theme_bw() + theme(axis.title.x = element_blank())
 
-plot_grid(p1, p2, labels = c("A", "B"), nrow = 1, ncol =2)
+plotz <- plot_grid(p1, p2, labels = c("A", "B"), nrow = 1, ncol =2)
+title <- ggdraw() + draw_label("Pre-Rarefy")
+
+plot_grid(title, plotz, ncol=1, rel_heights=c(0.1, 1)) # rel_heights values control title margins
 ```
 
 ![](remove_chloroplasts_bylake_files/figure-markdown_github/subset-physeq-by-lake-1.png)
@@ -243,7 +251,7 @@ musk_minlib_1in3 <- min(sample_sums(muskegon_physeq_1in3)) - 1
 musk_minlib_1in3 # 8153 is the smallest library size
 ```
 
-    ## [1] 8153
+    ## [1] 4678
 
 ``` r
 # Rarefy to the even depth 
@@ -252,20 +260,38 @@ rare_muskegon_physeq_1in3 <- rarefy_even_depth(muskegon_physeq_1in3, sample.size
 apply(otu_table(rare_muskegon_physeq_1in3), 1, sum)
 ```
 
-    ## MBRE1F714 MBRE1F914 MBRE1F715 MBRE2F515 MBRE2F915 MBRH1F714 MBRH1F914 
-    ##      8153      8153      8153      8153      8153      8153      8153 
-    ## MBRH1F715 MBRH2F515 MBRH2F915 MDPE1F514 MDPE1F714 MDPE1F914 MDPE1F715 
-    ##      8153      8153      8153      8153      8153      8153      8153 
-    ## MDPE2F515 MDPE2F915 MDPH1F714 MDPH1F914 MDPH1F715 MDPH2F514 MDPH2F515 
-    ##      8153      8153      8153      8153      8153      8153      8153 
-    ## MDPH2F915 MINE1F514 MINE1F714 MINE1F914 MINE1F715 MINE2F515 MINE2F915 
-    ##      8153      8153      8153      8153      8153      8153      8153 
-    ## MINH1F514 MINH1F714 MINH1F914 MINH1F715 MINH2F515 MINH2F915 MOTE1F514 
-    ##      8153      8153      8153      8153      8153      8153      8153 
-    ## MOTE1F714 MOTE1F914 MOTE1F715 MOTE2F515 MOTE2F915 MOTH1F714 MOTH1F914 
-    ##      8153      8153      8153      8153      8153      8153      8153 
-    ## MOTH1F715 MOTH1F915 MOTH2F514 MOTH2F515 
-    ##      8153      8153      8153      8153
+    ## Fa13.BD.MLB.DN.1 Fa13.BD.MLB.SN.1        MBRE1F714        MBRE1F914 
+    ##             4678             4678             4678             4678 
+    ##        MBRE1F715        MBRE2F515        MBRE2F915        MBRH1F714 
+    ##             4678             4678             4678             4678 
+    ##        MBRH1F914        MBRH1F715        MBRH2F515        MBRH2F915 
+    ##             4678             4678             4678             4678 
+    ##        MDPE1F514        MDPE1F714        MDPE1F914        MDPE1F715 
+    ##             4678             4678             4678             4678 
+    ##        MDPE2F515        MDPE2F915        MDPH1F714        MDPH1F914 
+    ##             4678             4678             4678             4678 
+    ##        MDPH1F715        MDPH2F514        MDPH2F515        MDPH2F915 
+    ##             4678             4678             4678             4678 
+    ##        MINE1F514        MINE1F714        MINE1F914        MINE1F715 
+    ##             4678             4678             4678             4678 
+    ##        MINE2F515        MINE2F915        MINH1F514        MINH1F714 
+    ##             4678             4678             4678             4678 
+    ##        MINH1F914        MINH1F715        MINH2F515        MINH2F915 
+    ##             4678             4678             4678             4678 
+    ##        MLBD2F115        MLBD2F415        MLBD2F515        MLBD2F715 
+    ##             4678             4678             4678             4678 
+    ##        MLBD2F815        MLBD2F915        MLBS2F115        MLBS2F515 
+    ##             4678             4678             4678             4678 
+    ##        MLBS2F715        MLBS2F815        MLBS2F915        MOTE1F514 
+    ##             4678             4678             4678             4678 
+    ##        MOTE1F714        MOTE1F914        MOTE1F715        MOTE2F515 
+    ##             4678             4678             4678             4678 
+    ##        MOTE2F915        MOTH1F714        MOTH1F914        MOTH1F715 
+    ##             4678             4678             4678             4678 
+    ##        MOTH1F915        MOTH2F514        MOTH2F515 Sp13.BD.MLB.SN.1 
+    ##             4678             4678             4678             4678 
+    ## Su13.BD.MLB.DD.1 Su13.BD.MLB.SD.1 
+    ##             4678             4678
 
 ``` r
 ### New phyloseq objects with relative abundances
@@ -279,9 +305,9 @@ rare_muskegon_physeq_1in3_rel
 ```
 
     ## phyloseq-class experiment-level object
-    ## otu_table()   OTU Table:         [ 1524 taxa and 46 samples ]
-    ## sample_data() Sample Data:       [ 46 samples by 18 sample variables ]
-    ## tax_table()   Taxonomy Table:    [ 1524 taxa by 7 taxonomic ranks ]
+    ## otu_table()   OTU Table:         [ 1723 taxa and 62 samples ]
+    ## sample_data() Sample Data:       [ 62 samples by 18 sample variables ]
+    ## tax_table()   Taxonomy Table:    [ 1723 taxa by 7 taxonomic ranks ]
 
 ``` r
 ## Michigan
@@ -289,7 +315,7 @@ mich_minlib_1in3 <- min(sample_sums(michigan_physeq_1in3)) - 1
 mich_minlib_1in3 # 4604 is the smallest library size
 ```
 
-    ## [1] 4604
+    ## [1] 5935
 
 ``` r
 # Rarefy to the even depth 
@@ -299,49 +325,39 @@ apply(otu_table(rare_michigan_physeq_1in3), 1, sum)
 ```
 
     ##            110D2F115            110D2F415            110D2F515 
-    ##                 4604                 4604                 4604 
+    ##                 5935                 5935                 5935 
     ##            110D2F715            110D2F815            110D2F915 
-    ##                 4604                 4604                 4604 
+    ##                 5935                 5935                 5935 
     ##            110M2F115            110M2F415            110M2F515 
-    ##                 4604                 4604                 4604 
+    ##                 5935                 5935                 5935 
     ##            110M2F715            110S2F115            110S2F415 
-    ##                 4604                 4604                 4604 
+    ##                 5935                 5935                 5935 
     ##            110S2F515            110S2F715            110S2F915 
-    ##                 4604                 4604                 4604 
-    ##     Fa13.BD.MLB.DN.1     Fa13.BD.MLB.SN.1   Fa13.BD.MM110.DN.1 
-    ##                 4604                 4604                 4604 
-    ##   Fa13.BD.MM110.SD.1   Fa13.BD.MM110.SN.1    Fa13.BD.MM15.DN.1 
-    ##                 4604                 4604                 4604 
-    ##    Fa13.BD.MM15.SD.1    Fa13.BD.MM15.SN.1            M15S2F115 
-    ##                 4604                 4604                 4604 
-    ##            M15S2F515            M15S2F715            M15S2F815 
-    ##                 4604                 4604                 4604 
-    ##            M15S2F915            M45D2F115            M45D2F415 
-    ##                 4604                 4604                 4604 
-    ##            M45D2F515            M45D2F715            M45D2F815 
-    ##                 4604                 4604                 4604 
-    ##            M45D2F915            M45S2F415            M45S2F515 
-    ##                 4604                 4604                 4604 
-    ##            M45S2F715            M45S2F815            M45S2F915 
-    ##                 4604                 4604                 4604 
-    ##            MLBD2F115            MLBD2F415            MLBD2F515 
-    ##                 4604                 4604                 4604 
-    ##            MLBD2F715            MLBD2F815            MLBD2F915 
-    ##                 4604                 4604                 4604 
-    ##            MLBS2F115            MLBS2F515            MLBS2F715 
-    ##                 4604                 4604                 4604 
-    ##            MLBS2F815            MLBS2F915     Sp13.BD.MLB.SN.1 
-    ##                 4604                 4604                 4604 
-    ##   Sp13.BD.MM110.SD.1   Sp13.BD.MM110.SN.1    Sp13.BD.MM15.DD.1 
-    ##                 4604                 4604                 4604 
-    ##    Sp13.BD.MM15.SD.1    Sp13.BD.MM15.SN.1     Su13.BD.MLB.DD.1 
-    ##                 4604                 4604                 4604 
-    ##     Su13.BD.MLB.SD.1 Su13.BD.MM110.DCMD.1   Su13.BD.MM110.DN.1 
-    ##                 4604                 4604                 4604 
-    ##   Su13.BD.MM110.SD.1   Su13.BD.MM110.SN.1    Su13.BD.MM15.DN.1 
-    ##                 4604                 4604                 4604 
-    ##    Su13.BD.MM15.SD.1    Su13.BD.MM15.SN.1 
-    ##                 4604                 4604
+    ##                 5935                 5935                 5935 
+    ##   Fa13.BD.MM110.DN.1   Fa13.BD.MM110.SD.1   Fa13.BD.MM110.SN.1 
+    ##                 5935                 5935                 5935 
+    ##    Fa13.BD.MM15.DN.1    Fa13.BD.MM15.SD.1    Fa13.BD.MM15.SN.1 
+    ##                 5935                 5935                 5935 
+    ##            M15S2F115            M15S2F515            M15S2F715 
+    ##                 5935                 5935                 5935 
+    ##            M15S2F815            M15S2F915            M45D2F115 
+    ##                 5935                 5935                 5935 
+    ##            M45D2F415            M45D2F515            M45D2F715 
+    ##                 5935                 5935                 5935 
+    ##            M45D2F815            M45D2F915            M45S2F415 
+    ##                 5935                 5935                 5935 
+    ##            M45S2F515            M45S2F715            M45S2F815 
+    ##                 5935                 5935                 5935 
+    ##            M45S2F915   Sp13.BD.MM110.SD.1   Sp13.BD.MM110.SN.1 
+    ##                 5935                 5935                 5935 
+    ##    Sp13.BD.MM15.DD.1    Sp13.BD.MM15.SD.1    Sp13.BD.MM15.SN.1 
+    ##                 5935                 5935                 5935 
+    ## Su13.BD.MM110.DCMD.1   Su13.BD.MM110.DN.1   Su13.BD.MM110.SD.1 
+    ##                 5935                 5935                 5935 
+    ##   Su13.BD.MM110.SN.1    Su13.BD.MM15.DN.1    Su13.BD.MM15.SD.1 
+    ##                 5935                 5935                 5935 
+    ##    Su13.BD.MM15.SN.1 
+    ##                 5935
 
 ``` r
 ### New phyloseq objects with relative abundances
@@ -355,9 +371,9 @@ rare_michigan_physeq_1in3_rel
 ```
 
     ## phyloseq-class experiment-level object
-    ## otu_table()   OTU Table:         [ 1070 taxa and 65 samples ]
-    ## sample_data() Sample Data:       [ 65 samples by 18 sample variables ]
-    ## tax_table()   Taxonomy Table:    [ 1070 taxa by 7 taxonomic ranks ]
+    ## otu_table()   OTU Table:         [ 706 taxa and 49 samples ]
+    ## sample_data() Sample Data:       [ 49 samples by 18 sample variables ]
+    ## tax_table()   Taxonomy Table:    [ 706 taxa by 7 taxonomic ranks ]
 
 ``` r
 ## Inland
@@ -401,29 +417,9 @@ rare_inland_physeq_1in3_rel
 ```
 
     ## phyloseq-class experiment-level object
-    ## otu_table()   OTU Table:         [ 1742 taxa and 62 samples ]
+    ## otu_table()   OTU Table:         [ 1745 taxa and 62 samples ]
     ## sample_data() Sample Data:       [ 62 samples by 18 sample variables ]
-    ## tax_table()   Taxonomy Table:    [ 1742 taxa by 7 taxonomic ranks ]
-
-``` r
-# Visualize
-df_1in3 <- data.frame(c(ntaxa(rare_muskegon_physeq_1in3_rel), ntaxa(rare_michigan_physeq_1in3_rel), ntaxa(rare_inland_physeq_1in3_rel)),
-                 c("Muskegon","Michigan","Inland")) 
-colnames(df_1in3) <- c("NumOTUs","Lake")
-ggplot(df_1in3, aes(x = Lake, y = NumOTUs)) + ylab("Number of OTUs per Lake") +
-  ggtitle("1 seq in 3 Samp: Post-Rarefy") +
-  geom_bar(stat = "identity", fill = "firebrick", color = "black", alpha = 0.8) +
-  scale_y_continuous(expand = c(0,0), limits = c(0,2000), breaks = seq(0,2000, by = 500)) +
-  theme_bw() + theme(axis.title.x = element_blank())
-```
-
-![](remove_chloroplasts_bylake_files/figure-markdown_github/rarefy-1in3-1.png)
-
-Rarefied at the following depths for 1in3:
-
--   muskegon: 8153
--   michigan: 4604
--   inland: 9620
+    ## tax_table()   Taxonomy Table:    [ 1745 taxa by 7 taxonomic ranks ]
 
 5in10
 -----
@@ -439,7 +435,7 @@ musk_minlib_5in10 <- min(sample_sums(muskegon_physeq_5in10)) - 1
 musk_minlib_5in10 # 7885 is the smallest library size 
 ```
 
-    ## [1] 7885
+    ## [1] 4491
 
 ``` r
 # Rarefy to the even depth 
@@ -448,20 +444,38 @@ rare_muskegon_physeq_5in10 <- rarefy_even_depth(muskegon_physeq_5in10, sample.si
 apply(otu_table(rare_muskegon_physeq_5in10), 1, sum)
 ```
 
-    ## MBRE1F714 MBRE1F914 MBRE1F715 MBRE2F515 MBRE2F915 MBRH1F714 MBRH1F914 
-    ##      7885      7885      7885      7885      7885      7885      7885 
-    ## MBRH1F715 MBRH2F515 MBRH2F915 MDPE1F514 MDPE1F714 MDPE1F914 MDPE1F715 
-    ##      7885      7885      7885      7885      7885      7885      7885 
-    ## MDPE2F515 MDPE2F915 MDPH1F714 MDPH1F914 MDPH1F715 MDPH2F514 MDPH2F515 
-    ##      7885      7885      7885      7885      7885      7885      7885 
-    ## MDPH2F915 MINE1F514 MINE1F714 MINE1F914 MINE1F715 MINE2F515 MINE2F915 
-    ##      7885      7885      7885      7885      7885      7885      7885 
-    ## MINH1F514 MINH1F714 MINH1F914 MINH1F715 MINH2F515 MINH2F915 MOTE1F514 
-    ##      7885      7885      7885      7885      7885      7885      7885 
-    ## MOTE1F714 MOTE1F914 MOTE1F715 MOTE2F515 MOTE2F915 MOTH1F714 MOTH1F914 
-    ##      7885      7885      7885      7885      7885      7885      7885 
-    ## MOTH1F715 MOTH1F915 MOTH2F514 MOTH2F515 
-    ##      7885      7885      7885      7885
+    ## Fa13.BD.MLB.DN.1 Fa13.BD.MLB.SN.1        MBRE1F714        MBRE1F914 
+    ##             4491             4491             4491             4491 
+    ##        MBRE1F715        MBRE2F515        MBRE2F915        MBRH1F714 
+    ##             4491             4491             4491             4491 
+    ##        MBRH1F914        MBRH1F715        MBRH2F515        MBRH2F915 
+    ##             4491             4491             4491             4491 
+    ##        MDPE1F514        MDPE1F714        MDPE1F914        MDPE1F715 
+    ##             4491             4491             4491             4491 
+    ##        MDPE2F515        MDPE2F915        MDPH1F714        MDPH1F914 
+    ##             4491             4491             4491             4491 
+    ##        MDPH1F715        MDPH2F514        MDPH2F515        MDPH2F915 
+    ##             4491             4491             4491             4491 
+    ##        MINE1F514        MINE1F714        MINE1F914        MINE1F715 
+    ##             4491             4491             4491             4491 
+    ##        MINE2F515        MINE2F915        MINH1F514        MINH1F714 
+    ##             4491             4491             4491             4491 
+    ##        MINH1F914        MINH1F715        MINH2F515        MINH2F915 
+    ##             4491             4491             4491             4491 
+    ##        MLBD2F115        MLBD2F415        MLBD2F515        MLBD2F715 
+    ##             4491             4491             4491             4491 
+    ##        MLBD2F815        MLBD2F915        MLBS2F115        MLBS2F515 
+    ##             4491             4491             4491             4491 
+    ##        MLBS2F715        MLBS2F815        MLBS2F915        MOTE1F514 
+    ##             4491             4491             4491             4491 
+    ##        MOTE1F714        MOTE1F914        MOTE1F715        MOTE2F515 
+    ##             4491             4491             4491             4491 
+    ##        MOTE2F915        MOTH1F714        MOTH1F914        MOTH1F715 
+    ##             4491             4491             4491             4491 
+    ##        MOTH1F915        MOTH2F514        MOTH2F515 Sp13.BD.MLB.SN.1 
+    ##             4491             4491             4491             4491 
+    ## Su13.BD.MLB.DD.1 Su13.BD.MLB.SD.1 
+    ##             4491             4491
 
 ``` r
 ### New phyloseq objects with relative abundances
@@ -475,9 +489,9 @@ rare_muskegon_physeq_5in10_rel
 ```
 
     ## phyloseq-class experiment-level object
-    ## otu_table()   OTU Table:         [ 538 taxa and 46 samples ]
-    ## sample_data() Sample Data:       [ 46 samples by 18 sample variables ]
-    ## tax_table()   Taxonomy Table:    [ 538 taxa by 7 taxonomic ranks ]
+    ## otu_table()   OTU Table:         [ 482 taxa and 62 samples ]
+    ## sample_data() Sample Data:       [ 62 samples by 18 sample variables ]
+    ## tax_table()   Taxonomy Table:    [ 482 taxa by 7 taxonomic ranks ]
 
 ``` r
 ## Michigan
@@ -485,7 +499,7 @@ mich_minlib_5in10 <- min(sample_sums(michigan_physeq_5in10)) - 1
 mich_minlib_5in10 # 7885 is the smallest library size 
 ```
 
-    ## [1] 4369
+    ## [1] 5724
 
 ``` r
 # Rarefy to the even depth 
@@ -495,49 +509,39 @@ apply(otu_table(rare_michigan_physeq_5in10), 1, sum)
 ```
 
     ##            110D2F115            110D2F415            110D2F515 
-    ##                 4369                 4369                 4369 
+    ##                 5724                 5724                 5724 
     ##            110D2F715            110D2F815            110D2F915 
-    ##                 4369                 4369                 4369 
+    ##                 5724                 5724                 5724 
     ##            110M2F115            110M2F415            110M2F515 
-    ##                 4369                 4369                 4369 
+    ##                 5724                 5724                 5724 
     ##            110M2F715            110S2F115            110S2F415 
-    ##                 4369                 4369                 4369 
+    ##                 5724                 5724                 5724 
     ##            110S2F515            110S2F715            110S2F915 
-    ##                 4369                 4369                 4369 
-    ##     Fa13.BD.MLB.DN.1     Fa13.BD.MLB.SN.1   Fa13.BD.MM110.DN.1 
-    ##                 4369                 4369                 4369 
-    ##   Fa13.BD.MM110.SD.1   Fa13.BD.MM110.SN.1    Fa13.BD.MM15.DN.1 
-    ##                 4369                 4369                 4369 
-    ##    Fa13.BD.MM15.SD.1    Fa13.BD.MM15.SN.1            M15S2F115 
-    ##                 4369                 4369                 4369 
-    ##            M15S2F515            M15S2F715            M15S2F815 
-    ##                 4369                 4369                 4369 
-    ##            M15S2F915            M45D2F115            M45D2F415 
-    ##                 4369                 4369                 4369 
-    ##            M45D2F515            M45D2F715            M45D2F815 
-    ##                 4369                 4369                 4369 
-    ##            M45D2F915            M45S2F415            M45S2F515 
-    ##                 4369                 4369                 4369 
-    ##            M45S2F715            M45S2F815            M45S2F915 
-    ##                 4369                 4369                 4369 
-    ##            MLBD2F115            MLBD2F415            MLBD2F515 
-    ##                 4369                 4369                 4369 
-    ##            MLBD2F715            MLBD2F815            MLBD2F915 
-    ##                 4369                 4369                 4369 
-    ##            MLBS2F115            MLBS2F515            MLBS2F715 
-    ##                 4369                 4369                 4369 
-    ##            MLBS2F815            MLBS2F915     Sp13.BD.MLB.SN.1 
-    ##                 4369                 4369                 4369 
-    ##   Sp13.BD.MM110.SD.1   Sp13.BD.MM110.SN.1    Sp13.BD.MM15.DD.1 
-    ##                 4369                 4369                 4369 
-    ##    Sp13.BD.MM15.SD.1    Sp13.BD.MM15.SN.1     Su13.BD.MLB.DD.1 
-    ##                 4369                 4369                 4369 
-    ##     Su13.BD.MLB.SD.1 Su13.BD.MM110.DCMD.1   Su13.BD.MM110.DN.1 
-    ##                 4369                 4369                 4369 
-    ##   Su13.BD.MM110.SD.1   Su13.BD.MM110.SN.1    Su13.BD.MM15.DN.1 
-    ##                 4369                 4369                 4369 
-    ##    Su13.BD.MM15.SD.1    Su13.BD.MM15.SN.1 
-    ##                 4369                 4369
+    ##                 5724                 5724                 5724 
+    ##   Fa13.BD.MM110.DN.1   Fa13.BD.MM110.SD.1   Fa13.BD.MM110.SN.1 
+    ##                 5724                 5724                 5724 
+    ##    Fa13.BD.MM15.DN.1    Fa13.BD.MM15.SD.1    Fa13.BD.MM15.SN.1 
+    ##                 5724                 5724                 5724 
+    ##            M15S2F115            M15S2F515            M15S2F715 
+    ##                 5724                 5724                 5724 
+    ##            M15S2F815            M15S2F915            M45D2F115 
+    ##                 5724                 5724                 5724 
+    ##            M45D2F415            M45D2F515            M45D2F715 
+    ##                 5724                 5724                 5724 
+    ##            M45D2F815            M45D2F915            M45S2F415 
+    ##                 5724                 5724                 5724 
+    ##            M45S2F515            M45S2F715            M45S2F815 
+    ##                 5724                 5724                 5724 
+    ##            M45S2F915   Sp13.BD.MM110.SD.1   Sp13.BD.MM110.SN.1 
+    ##                 5724                 5724                 5724 
+    ##    Sp13.BD.MM15.DD.1    Sp13.BD.MM15.SD.1    Sp13.BD.MM15.SN.1 
+    ##                 5724                 5724                 5724 
+    ## Su13.BD.MM110.DCMD.1   Su13.BD.MM110.DN.1   Su13.BD.MM110.SD.1 
+    ##                 5724                 5724                 5724 
+    ##   Su13.BD.MM110.SN.1    Su13.BD.MM15.DN.1    Su13.BD.MM15.SD.1 
+    ##                 5724                 5724                 5724 
+    ##    Su13.BD.MM15.SN.1 
+    ##                 5724
 
 ``` r
 ### New phyloseq objects with relative abundances
@@ -551,9 +555,9 @@ rare_michigan_physeq_5in10_rel
 ```
 
     ## phyloseq-class experiment-level object
-    ## otu_table()   OTU Table:         [ 362 taxa and 65 samples ]
-    ## sample_data() Sample Data:       [ 65 samples by 18 sample variables ]
-    ## tax_table()   Taxonomy Table:    [ 362 taxa by 7 taxonomic ranks ]
+    ## otu_table()   OTU Table:         [ 329 taxa and 49 samples ]
+    ## sample_data() Sample Data:       [ 49 samples by 18 sample variables ]
+    ## tax_table()   Taxonomy Table:    [ 329 taxa by 7 taxonomic ranks ]
 
 ``` r
 ## Inland
@@ -601,24 +605,51 @@ rare_inland_physeq_5in10_rel
     ## sample_data() Sample Data:       [ 62 samples by 18 sample variables ]
     ## tax_table()   Taxonomy Table:    [ 548 taxa by 7 taxonomic ranks ]
 
+Visualize Number of OTUs
+========================
+
+What are the differences in OTUs between the two filtering methods?
+-------------------------------------------------------------------
+
 ``` r
-# Visualize
+# Visualize 1in3
+df_1in3 <- data.frame(c(ntaxa(rare_muskegon_physeq_1in3_rel), ntaxa(rare_michigan_physeq_1in3_rel), ntaxa(rare_inland_physeq_1in3_rel)),
+                 c("Muskegon","Michigan","Inland")) 
+colnames(df_1in3) <- c("NumOTUs","Lake")
+p_1in3 <- ggplot(df_1in3, aes(x = Lake, y = NumOTUs)) + ylab("Number of OTUs per Lake") +
+  ggtitle("1 seq in 3 Samp") +
+  geom_bar(stat = "identity", fill = "firebrick", color = "black", alpha = 0.8) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,2000), breaks = seq(0,2000, by = 500)) +
+  theme_bw() + theme(axis.title.x = element_blank())
+
+# Visualize 5in10
 df_5in10 <- data.frame(c(ntaxa(rare_muskegon_physeq_5in10_rel), ntaxa(rare_michigan_physeq_5in10_rel), ntaxa(rare_inland_physeq_5in10_rel)),
                  c("Muskegon","Michigan","Inland")) 
 colnames(df_5in10) <- c("NumOTUs","Lake")
-ggplot(df_5in10, aes(x = Lake, y = NumOTUs)) + ylab("Number of OTUs per Lake") +
-  ggtitle("5 Seqs in 10%: Post-Rarefy") +
+p_5in10 <- ggplot(df_5in10, aes(x = Lake, y = NumOTUs)) + ylab("Number of OTUs per Lake") +
+  ggtitle("5 Seqs in 10%") +
   geom_bar(stat = "identity", fill = "darkorange", color = "black", alpha = 0.8) +
   scale_y_continuous(expand = c(0,0), limits = c(0,600), breaks = seq(0,600, by = 100)) +
   theme_bw() + theme(axis.title.x = element_blank())
+
+plot_numotus <- plot_grid(p_1in3, p_5in10, labels = c("A", "B"), nrow = 1, ncol =2)
+title_2 <- ggdraw() + draw_label("Post-Rarefy")
+
+plot_grid(title_2, plot_numotus, ncol=1, rel_heights=c(0.1, 1)) # rel_heights values control title margins
 ```
 
-![](remove_chloroplasts_bylake_files/figure-markdown_github/rarefy-5in10-1.png)
+![](remove_chloroplasts_bylake_files/figure-markdown_github/plot-numOTUs-postrare-1.png)
+
+Rarefied at the following depths for 1in3:
+
+-   muskegon: 4678
+-   michigan: 5935
+-   inland: 9620
 
 Rarefied at the following depths for 5in10:
 
--   muskegon: 7885
--   michigan: 4369
+-   muskegon: 4491
+-   michigan: 5724
 -   inland: 9037
 
 Absolute Abundances
@@ -652,20 +683,38 @@ sample_data(rare_inland_physeq_1in3_abs)[,c(3:8)] <- sample_data(rare_inland_phy
 apply(otu_table(rare_muskegon_physeq_1in3_abs), 1, sum)    # Muskegon
 ```
 
-    ## MBRE1F714 MBRE1F914 MBRE1F715 MBRE2F515 MBRE2F915 MBRH1F714 MBRH1F914 
-    ##  10104066   7206483   7420899   4326956   4895228   2684666   3475185 
-    ## MBRH1F715 MBRH2F515 MBRH2F915 MDPE1F514 MDPE1F714 MDPE1F914 MDPE1F715 
-    ##   2309542   4833400   2827504   4412738   9365634   7360864   7539905 
-    ## MDPE2F515 MDPE2F915 MDPH1F714 MDPH1F914 MDPH1F715 MDPH2F514 MDPH2F515 
-    ##   6095631   5522877   2792914   3348038   2703952   3112909   3070179 
-    ## MDPH2F915 MINE1F514 MINE1F714 MINE1F914 MINE1F715 MINE2F515 MINE2F915 
-    ##   4146877   5465149  10419622   9447100   8596261   7217489   6647632 
-    ## MINH1F514 MINH1F714 MINH1F914 MINH1F715 MINH2F515 MINH2F915 MOTE1F514 
-    ##   5416344   8911217   8404620   8121098   6695261   6566334   4581945 
-    ## MOTE1F714 MOTE1F914 MOTE1F715 MOTE2F515 MOTE2F915 MOTH1F714 MOTH1F914 
-    ##  10680409   7020677   7446700   6112362   5694244   4961205   7050810 
-    ## MOTH1F715 MOTH1F915 MOTH2F514 MOTH2F515 
-    ##   3892024   5739778   2495231   4166164
+    ## Fa13.BD.MLB.DN.1 Fa13.BD.MLB.SN.1        MBRE1F714        MBRE1F914 
+    ##          4233418          4454994         10104066          7206483 
+    ##        MBRE1F715        MBRE2F515        MBRE2F915        MBRH1F714 
+    ##          7420899          4326956          4895228          2684666 
+    ##        MBRH1F914        MBRH1F715        MBRH2F515        MBRH2F915 
+    ##          3475185          2309542          4833400          2827504 
+    ##        MDPE1F514        MDPE1F714        MDPE1F914        MDPE1F715 
+    ##          4412738          9365634          7360864          7539905 
+    ##        MDPE2F515        MDPE2F915        MDPH1F714        MDPH1F914 
+    ##          6095631          5522877          2792914          3348038 
+    ##        MDPH1F715        MDPH2F514        MDPH2F515        MDPH2F915 
+    ##          2703952          3112909          3070179          4146877 
+    ##        MINE1F514        MINE1F714        MINE1F914        MINE1F715 
+    ##          5465149         10419622          9447100          8596261 
+    ##        MINE2F515        MINE2F915        MINH1F514        MINH1F714 
+    ##          7217489          6647632          5416344          8911217 
+    ##        MINH1F914        MINH1F715        MINH2F515        MINH2F915 
+    ##          8404620          8121098          6695261          6566334 
+    ##        MLBD2F115        MLBD2F415        MLBD2F515        MLBD2F715 
+    ##          6482023          1797395          6467749          5956479 
+    ##        MLBD2F815        MLBD2F915        MLBS2F115        MLBS2F515 
+    ##          6064997          8170355          6389493          1216693 
+    ##        MLBS2F715        MLBS2F815        MLBS2F915        MOTE1F514 
+    ##         10142174          7529909          9430611          4581945 
+    ##        MOTE1F714        MOTE1F914        MOTE1F715        MOTE2F515 
+    ##         10680409          7020677          7446700          6112362 
+    ##        MOTE2F915        MOTH1F714        MOTH1F914        MOTH1F715 
+    ##          5694244          4961205          7050810          3892024 
+    ##        MOTH1F915        MOTH2F514        MOTH2F515 Sp13.BD.MLB.SN.1 
+    ##          5739778          2495231          4166164          3676468 
+    ## Su13.BD.MLB.DD.1 Su13.BD.MLB.SD.1 
+    ##          7578897         13328625
 
 ``` r
 apply(otu_table(rare_michigan_physeq_1in3_abs), 1, sum)    # Michigan
@@ -681,40 +730,30 @@ apply(otu_table(rare_michigan_physeq_1in3_abs), 1, sum)    # Michigan
     ##            1049438.9            1965601.4            1065379.1 
     ##            110S2F515            110S2F715            110S2F915 
     ##             976666.7            1135872.2            1949852.0 
-    ##     Fa13.BD.MLB.DN.1     Fa13.BD.MLB.SN.1   Fa13.BD.MM110.DN.1 
-    ##            4233418.1            4454994.4             568983.8 
-    ##   Fa13.BD.MM110.SD.1   Fa13.BD.MM110.SN.1    Fa13.BD.MM15.DN.1 
-    ##            2267680.2            2435580.6            2045095.2 
-    ##    Fa13.BD.MM15.SD.1    Fa13.BD.MM15.SN.1            M15S2F115 
-    ##            2279051.2            2329065.2            2281973.2 
-    ##            M15S2F515            M15S2F715            M15S2F815 
-    ##            6426699.1            1604758.2            2577264.0 
-    ##            M15S2F915            M45D2F115            M45D2F415 
-    ##            1545927.1            1647885.5            1126724.3 
-    ##            M45D2F515            M45D2F715            M45D2F815 
-    ##            1694259.7             657163.5             774089.0 
-    ##            M45D2F915            M45S2F415            M45S2F515 
-    ##            1141301.7            1232528.4            2169417.9 
-    ##            M45S2F715            M45S2F815            M45S2F915 
-    ##            1079869.4            1906475.9            1254145.4 
-    ##            MLBD2F115            MLBD2F415            MLBD2F515 
-    ##            6482022.9            1797394.9            6467748.8 
-    ##            MLBD2F715            MLBD2F815            MLBD2F915 
-    ##            5956478.7            6064997.4            8170354.9 
-    ##            MLBS2F115            MLBS2F515            MLBS2F715 
-    ##            6389493.0            1216693.4           10142174.2 
-    ##            MLBS2F815            MLBS2F915     Sp13.BD.MLB.SN.1 
-    ##            7529908.6            9430611.4            3676467.7 
-    ##   Sp13.BD.MM110.SD.1   Sp13.BD.MM110.SN.1    Sp13.BD.MM15.DD.1 
-    ##            1233601.8            1758473.3            3019947.4 
-    ##    Sp13.BD.MM15.SD.1    Sp13.BD.MM15.SN.1     Su13.BD.MLB.DD.1 
-    ##            2713212.2            2757128.1            7578897.0 
-    ##     Su13.BD.MLB.SD.1 Su13.BD.MM110.DCMD.1   Su13.BD.MM110.DN.1 
-    ##           13328624.8            1895526.6             470724.2 
-    ##   Su13.BD.MM110.SD.1   Su13.BD.MM110.SN.1    Su13.BD.MM15.DN.1 
-    ##            1573259.8            1699761.6            2491911.7 
-    ##    Su13.BD.MM15.SD.1    Su13.BD.MM15.SN.1 
-    ##            2781922.7            2963172.8
+    ##   Fa13.BD.MM110.DN.1   Fa13.BD.MM110.SD.1   Fa13.BD.MM110.SN.1 
+    ##             568983.8            2267680.2            2435580.6 
+    ##    Fa13.BD.MM15.DN.1    Fa13.BD.MM15.SD.1    Fa13.BD.MM15.SN.1 
+    ##            2045095.2            2279051.2            2329065.2 
+    ##            M15S2F115            M15S2F515            M15S2F715 
+    ##            2281973.2            6426699.1            1604758.2 
+    ##            M15S2F815            M15S2F915            M45D2F115 
+    ##            2577264.0            1545927.1            1647885.5 
+    ##            M45D2F415            M45D2F515            M45D2F715 
+    ##            1126724.3            1694259.7             657163.5 
+    ##            M45D2F815            M45D2F915            M45S2F415 
+    ##             774089.0            1141301.7            1232528.4 
+    ##            M45S2F515            M45S2F715            M45S2F815 
+    ##            2169417.9            1079869.4            1906475.9 
+    ##            M45S2F915   Sp13.BD.MM110.SD.1   Sp13.BD.MM110.SN.1 
+    ##            1254145.4            1233601.8            1758473.3 
+    ##    Sp13.BD.MM15.DD.1    Sp13.BD.MM15.SD.1    Sp13.BD.MM15.SN.1 
+    ##            3019947.4            2713212.2            2757128.1 
+    ## Su13.BD.MM110.DCMD.1   Su13.BD.MM110.DN.1   Su13.BD.MM110.SD.1 
+    ##            1895526.6             470724.2            1573259.8 
+    ##   Su13.BD.MM110.SN.1    Su13.BD.MM15.DN.1    Su13.BD.MM15.SD.1 
+    ##            1699761.6            2491911.7            2781922.7 
+    ##    Su13.BD.MM15.SN.1 
+    ##            2963172.8
 
 ``` r
 apply(otu_table(rare_inland_physeq_1in3_abs), 1, sum)      # inland
@@ -765,20 +804,38 @@ sample_data(rare_inland_physeq_5in10_abs)[,c(3:8)] <- sample_data(rare_inland_ph
 apply(otu_table(rare_muskegon_physeq_5in10_abs), 1, sum)    # Muskegon
 ```
 
-    ## MBRE1F714 MBRE1F914 MBRE1F715 MBRE2F515 MBRE2F915 MBRH1F714 MBRH1F914 
-    ##  10104066   7206483   7420899   4326956   4895228   2684666   3475185 
-    ## MBRH1F715 MBRH2F515 MBRH2F915 MDPE1F514 MDPE1F714 MDPE1F914 MDPE1F715 
-    ##   2309542   4833400   2827504   4412738   9365634   7360864   7539905 
-    ## MDPE2F515 MDPE2F915 MDPH1F714 MDPH1F914 MDPH1F715 MDPH2F514 MDPH2F515 
-    ##   6095631   5522877   2792914   3348038   2703952   3112909   3070179 
-    ## MDPH2F915 MINE1F514 MINE1F714 MINE1F914 MINE1F715 MINE2F515 MINE2F915 
-    ##   4146877   5465149  10419622   9447100   8596261   7217489   6647632 
-    ## MINH1F514 MINH1F714 MINH1F914 MINH1F715 MINH2F515 MINH2F915 MOTE1F514 
-    ##   5416344   8911217   8404620   8121098   6695261   6566334   4581945 
-    ## MOTE1F714 MOTE1F914 MOTE1F715 MOTE2F515 MOTE2F915 MOTH1F714 MOTH1F914 
-    ##  10680409   7020677   7446700   6112362   5694244   4961205   7050810 
-    ## MOTH1F715 MOTH1F915 MOTH2F514 MOTH2F515 
-    ##   3892024   5739778   2495231   4166164
+    ## Fa13.BD.MLB.DN.1 Fa13.BD.MLB.SN.1        MBRE1F714        MBRE1F914 
+    ##          4233418          4454994         10104066          7206483 
+    ##        MBRE1F715        MBRE2F515        MBRE2F915        MBRH1F714 
+    ##          7420899          4326956          4895228          2684666 
+    ##        MBRH1F914        MBRH1F715        MBRH2F515        MBRH2F915 
+    ##          3475185          2309542          4833400          2827504 
+    ##        MDPE1F514        MDPE1F714        MDPE1F914        MDPE1F715 
+    ##          4412738          9365634          7360864          7539905 
+    ##        MDPE2F515        MDPE2F915        MDPH1F714        MDPH1F914 
+    ##          6095631          5522877          2792914          3348038 
+    ##        MDPH1F715        MDPH2F514        MDPH2F515        MDPH2F915 
+    ##          2703952          3112909          3070179          4146877 
+    ##        MINE1F514        MINE1F714        MINE1F914        MINE1F715 
+    ##          5465149         10419622          9447100          8596261 
+    ##        MINE2F515        MINE2F915        MINH1F514        MINH1F714 
+    ##          7217489          6647632          5416344          8911217 
+    ##        MINH1F914        MINH1F715        MINH2F515        MINH2F915 
+    ##          8404620          8121098          6695261          6566334 
+    ##        MLBD2F115        MLBD2F415        MLBD2F515        MLBD2F715 
+    ##          6482023          1797395          6467749          5956479 
+    ##        MLBD2F815        MLBD2F915        MLBS2F115        MLBS2F515 
+    ##          6064997          8170355          6389493          1216693 
+    ##        MLBS2F715        MLBS2F815        MLBS2F915        MOTE1F514 
+    ##         10142174          7529909          9430611          4581945 
+    ##        MOTE1F714        MOTE1F914        MOTE1F715        MOTE2F515 
+    ##         10680409          7020677          7446700          6112362 
+    ##        MOTE2F915        MOTH1F714        MOTH1F914        MOTH1F715 
+    ##          5694244          4961205          7050810          3892024 
+    ##        MOTH1F915        MOTH2F514        MOTH2F515 Sp13.BD.MLB.SN.1 
+    ##          5739778          2495231          4166164          3676468 
+    ## Su13.BD.MLB.DD.1 Su13.BD.MLB.SD.1 
+    ##          7578897         13328625
 
 ``` r
 apply(otu_table(rare_michigan_physeq_5in10_abs), 1, sum)    # Michigan
@@ -794,40 +851,30 @@ apply(otu_table(rare_michigan_physeq_5in10_abs), 1, sum)    # Michigan
     ##            1049438.9            1965601.4            1065379.1 
     ##            110S2F515            110S2F715            110S2F915 
     ##             976666.7            1135872.2            1949852.0 
-    ##     Fa13.BD.MLB.DN.1     Fa13.BD.MLB.SN.1   Fa13.BD.MM110.DN.1 
-    ##            4233418.1            4454994.4             568983.8 
-    ##   Fa13.BD.MM110.SD.1   Fa13.BD.MM110.SN.1    Fa13.BD.MM15.DN.1 
-    ##            2267680.2            2435580.6            2045095.2 
-    ##    Fa13.BD.MM15.SD.1    Fa13.BD.MM15.SN.1            M15S2F115 
-    ##            2279051.2            2329065.2            2281973.2 
-    ##            M15S2F515            M15S2F715            M15S2F815 
-    ##            6426699.1            1604758.2            2577264.0 
-    ##            M15S2F915            M45D2F115            M45D2F415 
-    ##            1545927.1            1647885.5            1126724.3 
-    ##            M45D2F515            M45D2F715            M45D2F815 
-    ##            1694259.7             657163.5             774089.0 
-    ##            M45D2F915            M45S2F415            M45S2F515 
-    ##            1141301.7            1232528.4            2169417.9 
-    ##            M45S2F715            M45S2F815            M45S2F915 
-    ##            1079869.4            1906475.9            1254145.4 
-    ##            MLBD2F115            MLBD2F415            MLBD2F515 
-    ##            6482022.9            1797394.9            6467748.8 
-    ##            MLBD2F715            MLBD2F815            MLBD2F915 
-    ##            5956478.7            6064997.4            8170354.9 
-    ##            MLBS2F115            MLBS2F515            MLBS2F715 
-    ##            6389493.0            1216693.4           10142174.2 
-    ##            MLBS2F815            MLBS2F915     Sp13.BD.MLB.SN.1 
-    ##            7529908.6            9430611.4            3676467.7 
-    ##   Sp13.BD.MM110.SD.1   Sp13.BD.MM110.SN.1    Sp13.BD.MM15.DD.1 
-    ##            1233601.8            1758473.3            3019947.4 
-    ##    Sp13.BD.MM15.SD.1    Sp13.BD.MM15.SN.1     Su13.BD.MLB.DD.1 
-    ##            2713212.2            2757128.1            7578897.0 
-    ##     Su13.BD.MLB.SD.1 Su13.BD.MM110.DCMD.1   Su13.BD.MM110.DN.1 
-    ##           13328624.8            1895526.6             470724.2 
-    ##   Su13.BD.MM110.SD.1   Su13.BD.MM110.SN.1    Su13.BD.MM15.DN.1 
-    ##            1573259.8            1699761.6            2491911.7 
-    ##    Su13.BD.MM15.SD.1    Su13.BD.MM15.SN.1 
-    ##            2781922.7            2963172.8
+    ##   Fa13.BD.MM110.DN.1   Fa13.BD.MM110.SD.1   Fa13.BD.MM110.SN.1 
+    ##             568983.8            2267680.2            2435580.6 
+    ##    Fa13.BD.MM15.DN.1    Fa13.BD.MM15.SD.1    Fa13.BD.MM15.SN.1 
+    ##            2045095.3            2279051.2            2329065.2 
+    ##            M15S2F115            M15S2F515            M15S2F715 
+    ##            2281973.2            6426699.1            1604758.2 
+    ##            M15S2F815            M15S2F915            M45D2F115 
+    ##            2577264.0            1545927.1            1647885.5 
+    ##            M45D2F415            M45D2F515            M45D2F715 
+    ##            1126724.3            1694259.7             657163.5 
+    ##            M45D2F815            M45D2F915            M45S2F415 
+    ##             774089.0            1141301.7            1232528.4 
+    ##            M45S2F515            M45S2F715            M45S2F815 
+    ##            2169417.9            1079869.4            1906475.9 
+    ##            M45S2F915   Sp13.BD.MM110.SD.1   Sp13.BD.MM110.SN.1 
+    ##            1254145.4            1233601.8            1758473.3 
+    ##    Sp13.BD.MM15.DD.1    Sp13.BD.MM15.SD.1    Sp13.BD.MM15.SN.1 
+    ##            3019947.4            2713212.2            2757128.1 
+    ## Su13.BD.MM110.DCMD.1   Su13.BD.MM110.DN.1   Su13.BD.MM110.SD.1 
+    ##            1895526.6             470724.2            1573259.8 
+    ##   Su13.BD.MM110.SN.1    Su13.BD.MM15.DN.1    Su13.BD.MM15.SD.1 
+    ##            1699761.6            2491911.7            2781922.7 
+    ##    Su13.BD.MM15.SN.1 
+    ##            2963172.8
 
 ``` r
 apply(otu_table(rare_inland_physeq_5in10_abs), 1, sum)      # inland

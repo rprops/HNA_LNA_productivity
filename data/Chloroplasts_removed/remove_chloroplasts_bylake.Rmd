@@ -45,6 +45,9 @@ metadata$Sample_fcm <- gsub(metadata$Sample_fcm, pattern="_rep.*", replacement="
 metadata <- do.call(rbind,by(metadata, INDICES = factor(metadata$Sample_fcm), 
                              FUN = unique))
 metadata$Sample_16S[metadata$Lake=="Inland"] <- gsub(metadata$Sample_16S[metadata$Lake=="Inland"], pattern="-", replacement="")
+# ADD THE Lake MI MLB samples to Lake == Muskegon
+metadata <- mutate(metadata, Lake = ifelse(Site == "MLB", "Muskegon", Lake))
+
 
 ############## Import counts 
 counts <- read.csv2("../count_total_HNALNA.csv", stringsAsFactors = FALSE)
@@ -133,7 +136,7 @@ colnames(df) <- c("NumOTUs", "NumSamples","Lake")
 
 p1 <- ggplot(df, aes(x = Lake, y = NumOTUs)) + ylab("Number of OTUs per Lake") +
   geom_bar(stat = "identity", fill = "cornflowerblue", color = "black", alpha = 0.8) +
-  scale_y_continuous(expand = c(0,0), limits = c(0,7000), breaks = seq(0,7000, by = 1000)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,7500), breaks = seq(0,7500, by = 1000)) +
   theme_bw() + theme(axis.title.x = element_blank())
 
 p2 <- ggplot(df, aes(x = Lake, y = NumSamples)) + ylab("Number of Samples per Lake") +
@@ -141,7 +144,10 @@ p2 <- ggplot(df, aes(x = Lake, y = NumSamples)) + ylab("Number of Samples per La
   scale_y_continuous(expand = c(0,0), limits = c(0,70), breaks = seq(0,70, by = 10)) +
   theme_bw() + theme(axis.title.x = element_blank())
 
-plot_grid(p1, p2, labels = c("A", "B"), nrow = 1, ncol =2)
+plotz <- plot_grid(p1, p2, labels = c("A", "B"), nrow = 1, ncol =2)
+title <- ggdraw() + draw_label("Pre-Rarefy")
+
+plot_grid(title, plotz, ncol=1, rel_heights=c(0.1, 1)) # rel_heights values control title margins
 ```
 
 
@@ -191,7 +197,7 @@ inland_physeq_5in10 <- filter_taxa(inland_physeq, function(x) sum(x > 5) > (filt
 # Rarefy for Relative Abundances
 
 ## 1in3
-```{r rarefy-1in3, fig.width=3.5, fig.height=3}
+```{r rarefy-1in3}
 # Set the seed for the randomization of rarefy-ing
 set.seed(777)
 
@@ -244,29 +250,11 @@ stopifnot(sum(apply(otu_table(rare_inland_physeq_1in3_rel), 1, sum)) == nsamples
 tax_table(rare_inland_physeq_1in3_rel)[is.na(tax_table(rare_inland_physeq_1in3_rel))] <- "Unclassified"
 # Final Relative Abundance Phyloseq Object for Inland
 rare_inland_physeq_1in3_rel
-
-
-# Visualize
-df_1in3 <- data.frame(c(ntaxa(rare_muskegon_physeq_1in3_rel), ntaxa(rare_michigan_physeq_1in3_rel), ntaxa(rare_inland_physeq_1in3_rel)),
-                 c("Muskegon","Michigan","Inland")) 
-colnames(df_1in3) <- c("NumOTUs","Lake")
-ggplot(df_1in3, aes(x = Lake, y = NumOTUs)) + ylab("Number of OTUs per Lake") +
-  ggtitle("1 seq in 3 Samp: Post-Rarefy") +
-  geom_bar(stat = "identity", fill = "firebrick", color = "black", alpha = 0.8) +
-  scale_y_continuous(expand = c(0,0), limits = c(0,2000), breaks = seq(0,2000, by = 500)) +
-  theme_bw() + theme(axis.title.x = element_blank())
 ```
 
 
-Rarefied at the following depths for 1in3:
-
-- muskegon: `r musk_minlib_1in3`  
-- michigan:  `r mich_minlib_1in3`   
-- inland:  `r inland_minlib_1in3`  
-
-
 ## 5in10
-```{r rarefy-5in10, fig.width=3.5, fig.height=3}
+```{r rarefy-5in10}
 # Set the seed for the randomization of rarefy-ing
 set.seed(777)
 
@@ -319,18 +307,46 @@ stopifnot(sum(apply(otu_table(rare_inland_physeq_5in10_rel), 1, sum)) == nsample
 tax_table(rare_inland_physeq_5in10_rel)[is.na(tax_table(rare_inland_physeq_5in10_rel))] <- "Unclassified"
 # Final Relative Abundance Phyloseq Object 
 rare_inland_physeq_5in10_rel
+```
 
 
-# Visualize
+# Visualize Number of OTUs
+
+## What are the differences in OTUs between the two filtering methods?
+
+```{r plot-numOTUs-postrare, fig.width=7, fig.height=3.5}
+# Visualize 1in3
+df_1in3 <- data.frame(c(ntaxa(rare_muskegon_physeq_1in3_rel), ntaxa(rare_michigan_physeq_1in3_rel), ntaxa(rare_inland_physeq_1in3_rel)),
+                 c("Muskegon","Michigan","Inland")) 
+colnames(df_1in3) <- c("NumOTUs","Lake")
+p_1in3 <- ggplot(df_1in3, aes(x = Lake, y = NumOTUs)) + ylab("Number of OTUs per Lake") +
+  ggtitle("1 seq in 3 Samp") +
+  geom_bar(stat = "identity", fill = "firebrick", color = "black", alpha = 0.8) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,2000), breaks = seq(0,2000, by = 500)) +
+  theme_bw() + theme(axis.title.x = element_blank())
+
+# Visualize 5in10
 df_5in10 <- data.frame(c(ntaxa(rare_muskegon_physeq_5in10_rel), ntaxa(rare_michigan_physeq_5in10_rel), ntaxa(rare_inland_physeq_5in10_rel)),
                  c("Muskegon","Michigan","Inland")) 
 colnames(df_5in10) <- c("NumOTUs","Lake")
-ggplot(df_5in10, aes(x = Lake, y = NumOTUs)) + ylab("Number of OTUs per Lake") +
-  ggtitle("5 Seqs in 10%: Post-Rarefy") +
+p_5in10 <- ggplot(df_5in10, aes(x = Lake, y = NumOTUs)) + ylab("Number of OTUs per Lake") +
+  ggtitle("5 Seqs in 10%") +
   geom_bar(stat = "identity", fill = "darkorange", color = "black", alpha = 0.8) +
   scale_y_continuous(expand = c(0,0), limits = c(0,600), breaks = seq(0,600, by = 100)) +
   theme_bw() + theme(axis.title.x = element_blank())
+
+plot_numotus <- plot_grid(p_1in3, p_5in10, labels = c("A", "B"), nrow = 1, ncol =2)
+title_2 <- ggdraw() + draw_label("Post-Rarefy")
+
+plot_grid(title_2, plot_numotus, ncol=1, rel_heights=c(0.1, 1)) # rel_heights values control title margins
 ```
+
+
+Rarefied at the following depths for 1in3:
+
+- muskegon: `r musk_minlib_1in3`  
+- michigan:  `r mich_minlib_1in3`   
+- inland:  `r inland_minlib_1in3`  
 
 
 Rarefied at the following depths for 5in10:
@@ -338,6 +354,7 @@ Rarefied at the following depths for 5in10:
 - muskegon: `r musk_minlib_5in10`  
 - michigan:  `r mich_minlib_5in10`   
 - inland:  `r inland_minlib_5in10`  
+
 
 
 # Absolute Abundances
