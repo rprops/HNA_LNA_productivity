@@ -6,4 +6,7 @@
 /data/fasttree/rep_16s_seqs.fasta
 /data/fasttree/test.fasta
 /data/fasttree/total.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.an.unique_list.0.03.rep.fasta
-
+.DS_Store
+data/.DS_Store
+data/Chloroplasts_removed/.DS_Store
+data/Chloroplasts_removed/Nov2017_Filtering/.DS_Store

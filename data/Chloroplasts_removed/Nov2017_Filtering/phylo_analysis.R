@@ -266,6 +266,11 @@ ggsave("./data/Chloroplasts_removed/Nov2017_Filtering/phylo_analysis_figures/phy
 
 ############### 1in3
 tree_1in3 <- read.tree(file = "./data/Chloroplasts_removed/Nov2017_Filtering/1seq_in_3samples/newick_tree_1seqs_in_3samps_rmN.tre")
+hna_1in3_scores <- read.csv("./Scores/hnascores_otus_tuned_thr_0.15_1seq3_rel.csv") %>%
+  dplyr::rename(OTU = X)
+lna_1in3_scores <- read.csv("./Scores/lnascores_otus_tuned_thr_0.18_1seq3_rel.csv")
+
+
 
 otus_1in3_rename <- otus_1in3 %>%
   dplyr::rename(label = OTU)
