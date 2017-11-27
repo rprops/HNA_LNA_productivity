@@ -417,54 +417,69 @@ write.table(otu_table(rare_muskegon_physeq_1in3_abs), file="ByLake_Filtering/1in
 write.table(otu_table(rare_muskegon_physeq_1in3_rel), file="ByLake_Filtering/1in3/muskegon/muskegon_relative_otu_1in3.tsv", row.names=TRUE)
 write.table(sample_data(rare_muskegon_physeq_1in3_rel)[,-1], file="ByLake_Filtering/1in3/muskegon/muskegon_sampledata_1in3.tsv", row.names=TRUE)
 write.table(tax_table(rare_muskegon_physeq_1in3_rel), file="ByLake_Filtering/1in3/muskegon/muskegon_taxonomy_1in3.tsv", row.names=TRUE)
+save(list=c("rare_muskegon_physeq_1in3_rel","rare_muskegon_physeq_1in3_abs"), file=paste0("ByLake_Filtering/1in3/muskegon/muskegon_1in3_physeqs.RData"))
+# This above line of code will create a single .RData object and with the 2 following phyloseq objects: 
+    # rare_muskegon_physeq_1in3_rel
+    # rare_muskegon_physeq_1in3_abs
+
 
 
 ### 5in10: Write the tsv files
-    # rare_muskegon_physeq_5in10_rel
-    # rare_muskegon_physeq_5in10_abs
 write.table(otu_table(rare_muskegon_physeq_5in10_abs), file="ByLake_Filtering/5in10/muskegon/muskegon_absolute_otu_5in10.tsv", row.names=TRUE)
 write.table(otu_table(rare_muskegon_physeq_5in10_rel), file="ByLake_Filtering/5in10/muskegon/muskegon_relative_otu_5in10.tsv", row.names=TRUE)
 write.table(sample_data(rare_muskegon_physeq_5in10_rel)[,-1], file="ByLake_Filtering/5in10/muskegon/muskegon_sampledata_5in10.tsv", row.names=TRUE)
 write.table(tax_table(rare_muskegon_physeq_5in10_rel), file="ByLake_Filtering/5in10/muskegon/muskegon_taxonomy_5in10.tsv", row.names=TRUE)
+save(list=c("rare_muskegon_physeq_5in10_rel","rare_muskegon_physeq_5in10_abs"), file=paste0("ByLake_Filtering/5in10/muskegon/muskegon_5in10_physeqs.RData"))
+# This above line of code will create a single .RData object and with the 2 following phyloseq objects: 
+    # rare_muskegon_physeq_5in10_rel
+    # rare_muskegon_physeq_5in10_abs
+
 ```
 
 ## Michigan
 ```{r write-michigan}
 ### 1in3: Write the tsv files
-    # rare_michigan_physeq_1in3_rel
-    # rare_michigan_physeq_1in3_abs
 write.table(otu_table(rare_michigan_physeq_1in3_abs), file="ByLake_Filtering/1in3/michigan/michigan_absolute_otu_1in3.tsv", row.names=TRUE)
 write.table(otu_table(rare_michigan_physeq_1in3_rel), file="ByLake_Filtering/1in3/michigan/michigan_relative_otu_1in3.tsv", row.names=TRUE)
 write.table(sample_data(rare_michigan_physeq_1in3_rel)[,-1], file="ByLake_Filtering/1in3/michigan/michigan_sampledata_1in3.tsv", row.names=TRUE)
 write.table(tax_table(rare_michigan_physeq_1in3_rel), file="ByLake_Filtering/1in3/michigan/michigan_taxonomy_1in3.tsv", row.names=TRUE)
+save(list=c("rare_michigan_physeq_1in3_rel","rare_michigan_physeq_1in3_abs"), file=paste0("ByLake_Filtering/1in3/michigan/michigan_1in3_physeqs.RData"))
+# This above line of code will create a single .RData object and with the 2 following phyloseq objects: 
+    # rare_michigan_physeq_1in3_rel
+    # rare_michigan_physeq_1in3_abs
 
 
 ### 5in10: Write the tsv files
-    # rare_michigan_physeq_5in10_rel
-    # rare_michigan_physeq_5in10_abs
 write.table(otu_table(rare_michigan_physeq_5in10_abs), file="ByLake_Filtering/5in10/michigan/michigan_absolute_otu_5in10.tsv", row.names=TRUE)
 write.table(otu_table(rare_michigan_physeq_5in10_rel), file="ByLake_Filtering/5in10/michigan/michigan_relative_otu_5in10.tsv", row.names=TRUE)
 write.table(sample_data(rare_michigan_physeq_5in10_rel)[,-1], file="ByLake_Filtering/5in10/michigan/michigan_sampledata_5in10.tsv", row.names=TRUE)
 write.table(tax_table(rare_michigan_physeq_5in10_rel), file="ByLake_Filtering/5in10/michigan/michigan_taxonomy_5in10.tsv", row.names=TRUE)
+save(list=c("rare_michigan_physeq_5in10_rel","rare_michigan_physeq_5in10_abs"), file=paste0("ByLake_Filtering/5in10/michigan/michigan_5in10_physeqs.RData"))
+# This above line of code will create a single .RData object and with the 2 following phyloseq objects: 
+    # rare_michigan_physeq_5in10_rel
+    # rare_michigan_physeq_5in10_abs
 ```
 
 
 ## Inland
 ```{r write-inland}
 ### 1in3: Write the tsv files
-    # rare_inland_physeq_1in3_rel
-    # rare_inland_physeq_1in3_abs
 write.table(otu_table(rare_inland_physeq_1in3_abs), file="ByLake_Filtering/1in3/inland/inland_absolute_otu_1in3.tsv", row.names=TRUE)
 write.table(otu_table(rare_inland_physeq_1in3_rel), file="ByLake_Filtering/1in3/inland/inland_relative_otu_1in3.tsv", row.names=TRUE)
 write.table(sample_data(rare_inland_physeq_1in3_rel)[,-1], file="ByLake_Filtering/1in3/inland/inland_sampledata_1in3.tsv", row.names=TRUE)
 write.table(tax_table(rare_inland_physeq_1in3_rel), file="ByLake_Filtering/1in3/inland/inland_taxonomy_1in3.tsv", row.names=TRUE)
-
+save(list=c("rare_inland_physeq_1in3_rel","rare_inland_physeq_1in3_abs"), file=paste0("ByLake_Filtering/1in3/inland/inland_1in3_physeqs.RData"))
+# This above line of code will create a single .RData object and with the 2 following phyloseq objects: 
+    # rare_inland_physeq_1in3_rel
+    # rare_inland_physeq_1in3_abs
 
 ### 5in10: Write the tsv files
-    # rare_inland_physeq_5in10_rel
-    # rare_inland_physeq_5in10_abs
 write.table(otu_table(rare_inland_physeq_5in10_abs), file="ByLake_Filtering/5in10/inland/inland_absolute_otu_5in10.tsv", row.names=TRUE)
 write.table(otu_table(rare_inland_physeq_5in10_rel), file="ByLake_Filtering/5in10/inland/inland_relative_otu_5in10.tsv", row.names=TRUE)
 write.table(sample_data(rare_inland_physeq_5in10_rel)[,-1], file="ByLake_Filtering/5in10/inland/inland_sampledata_5in10.tsv", row.names=TRUE)
 write.table(tax_table(rare_inland_physeq_5in10_rel), file="ByLake_Filtering/5in10/inland/inland_taxonomy_5in10.tsv", row.names=TRUE)
+save(list=c("rare_inland_physeq_5in10_rel","rare_inland_physeq_5in10_abs"), file=paste0("ByLake_Filtering/5in10/inland/inland_5in10_physeqs.RData"))
+# This above line of code will create a single .RData object and with the 2 following phyloseq objects: 
+    # rare_inland_physeq_5in10_rel
+    # rare_inland_physeq_5in10_abs
 ```
