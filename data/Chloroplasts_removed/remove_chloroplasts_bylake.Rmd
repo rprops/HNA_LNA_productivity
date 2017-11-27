@@ -1,0 +1,470 @@
+---
+title: "Remove Chloroplasts & Output 6 Phyloseq Objects"
+author: "Marian L Schmidt"
+date: "November 27th, 2017"
+output:
+  md_document:
+    variant: markdown_github
+    toc: true
+    toc_depth: 3
+editor_options: 
+  chunk_output_type: console
+---
+
+## Purpose of this Script 
+
+To remove chloroplasts from data and output 6 types of data including:  
+
+- 1-3: 1seq3samps: Inland, Lake, MI, Muskegon  
+- 4-6: 5seq10perc: Inland, Lake, MI, Muskegon
+
+
+```{r load, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, include = TRUE, warning = TRUE)
+```
+
+## Load Libraries
+```{r load-libraries, message = FALSE, warnings = FALSE}
+library("ggplot2")    # Pretty Plotting
+library("dplyr")      # Data Manipulation
+library("phyloseq")   # Easy microbiome analysis
+library("cowplot")    # For multiple plotting
+```
+
+
+## Load Data
+```{r load-data}
+############## Load in raw data
+load("../phyloseq.RData")
+physeq.otu@otu_table <- t(physeq.otu@otu_table)
+
+############## Clean up the metadata file
+metadata <- read.csv2("../metadata.csv", stringsAsFactors = FALSE)
+metadata <- metadata[metadata$Platform == "Accuri",]
+metadata$Sample_fcm <- gsub(metadata$Sample_fcm, pattern="_rep.*", replacement="")
+metadata <- do.call(rbind,by(metadata, INDICES = factor(metadata$Sample_fcm), 
+                             FUN = unique))
+metadata$Sample_16S[metadata$Lake=="Inland"] <- gsub(metadata$Sample_16S[metadata$Lake=="Inland"], pattern="-", replacement="")
+
+############## Import counts 
+counts <- read.csv2("../count_total_HNALNA.csv", stringsAsFactors = FALSE)
+counts$samples[125:188] <- paste0(counts$samples[125:188],"-1")
+
+# Merge metadata 
+counts.total <- inner_join(counts, metadata, by=c("samples"="Sample_fcm"))
+
+# replace unnecessary "-"
+sample_names(physeq.otu) <- gsub(sample_names(physeq.otu),pattern="-",replacement="")
+
+#remove cDNA
+otu_table(physeq.otu) <- otu_table(physeq.otu)[grep(x=sample_names(physeq.otu),pattern="cD.",invert=TRUE), ]
+
+# remove "renamed" tag
+sample_names(physeq.otu) <- gsub(sample_names(physeq.otu),pattern=".renamed",replacement="")
+
+### Select the metadata for which there is sequencing data (876 samples at this point)
+temp1 <- counts.total 
+temp2 <- data.frame(Sample=sample_names(physeq.otu))
+temp3 <- semi_join(temp1,temp2,by=c("Sample_16S"="Sample"))
+rownames(temp3) <- temp3$Sample
+sample_data(physeq.otu) <- temp3
+
+# Current phyloseq object
+physeq.otu
+```
+
+
+## Remove Outlier Samples
+```{r remove-outliers}
+outlier_samples <- c("Z14055F", "Z14003F", "Z14007F", "Z14023F", "Z14011F")
+
+# Function to do 'is not in'
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+# Remove the outliers
+physeq.otu.rmoutliers <- subset_samples(physeq.otu, sample_names(physeq.otu) %!in% outlier_samples) %>%
+  # Prune out the OTUs that were unique to the outlier samples 
+    prune_taxa(taxa_sums(.) > 0, .) 
+physeq.otu.rmoutliers
+```
+
+There were `r ntaxa(physeq.otu) - ntaxa(physeq.otu.rmoutliers)` OTUs that were unique to these 4 anoxic hypolimnion samples!
+
+## Remove Chloroplasts
+```{r remove-chloroplasts}
+no_chloro_physeq <- subset_taxa(physeq.otu, Rank3 != "Chloroplast") %>% # Remove Chloroplasts!
+  prune_taxa(taxa_sums(.) > 0, .) 
+
+# Calculate the sequencing depth of each sample
+sums <- data.frame(Sample_16S=as.character(names(sample_sums(no_chloro_physeq))),
+                   Total_Sequences=sample_sums(no_chloro_physeq), row.names=NULL)
+sums_data <- left_join(data.frame(sample_data(no_chloro_physeq)), sums, by = "Sample_16S")
+row.names(sums_data) <- sums_data$Sample_16S
+sample_data(no_chloro_physeq) <- sums_data
+
+# Remove samples with low sequencing depth 
+no_chloro_physeq_pruned <- subset_samples(no_chloro_physeq, Total_Sequences > 4700) %>%
+  # Now we have removed samples that have 4700 sequences or less 
+  prune_taxa(taxa_sums(.) > 0, .)  # Remove OTUs with counts 0 and less
+
+# Phyloseq object with pruned samples and no chloroplasts
+no_chloro_physeq_pruned
+```
+
+There were `r ntaxa(physeq.otu.rmoutliers) - ntaxa(no_chloro_physeq)` OTUs that were chloroplasts!
+
+
+## By Lake
+```{r subset-physeq-by-lake, fig.width=6, fig.height=3.5}
+# Create a phyloseq object for each environment/lake: Lake MI, Muskegon, Inland Lakes
+muskegon_physeq <- subset_samples(no_chloro_physeq_pruned, Lake == "Muskegon") %>%
+  prune_taxa(taxa_sums(.) > 0, .) 
+
+michigan_physeq <- subset_samples(no_chloro_physeq_pruned, Lake == "Michigan") %>%
+  prune_taxa(taxa_sums(.) > 0, .) 
+
+inland_physeq <- subset_samples(no_chloro_physeq_pruned, Lake == "Inland") %>%
+  prune_taxa(taxa_sums(.) > 0, .) 
+
+df <- data.frame(c(ntaxa(muskegon_physeq), ntaxa(michigan_physeq), ntaxa(inland_physeq)),
+                 c(nsamples(muskegon_physeq), nsamples(michigan_physeq), nsamples(inland_physeq)),
+                 c("Muskegon","Michigan","Inland")) 
+colnames(df) <- c("NumOTUs", "NumSamples","Lake")
+
+p1 <- ggplot(df, aes(x = Lake, y = NumOTUs)) + ylab("Number of OTUs per Lake") +
+  geom_bar(stat = "identity", fill = "cornflowerblue", color = "black", alpha = 0.8) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,7000), breaks = seq(0,7000, by = 1000)) +
+  theme_bw() + theme(axis.title.x = element_blank())
+
+p2 <- ggplot(df, aes(x = Lake, y = NumSamples)) + ylab("Number of Samples per Lake") +
+  geom_bar(stat = "identity", fill = "cornflowerblue", color = "black", alpha = 0.8) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,70), breaks = seq(0,70, by = 10)) +
+  theme_bw() + theme(axis.title.x = element_blank())
+
+plot_grid(p1, p2, labels = c("A", "B"), nrow = 1, ncol =2)
+```
+
+
+## Prevalence Filtering
+
+On November 6th we decided to run the analysis 2 ways:  
+
+1. Liberal Cutoff: Remove OTUs that have only one sequence in three samples.  
+2. Conservative Cutoff: Remove OTUs that have less than 5 sequences in 10% of samples
+
+From now on, there will be 6 phyloseq objects (instead of 3 for the 3 lake types. 
+
+### At least 1 sequence in 3 samples 
+```{r filter-1seq3}
+######### 1 sequence in at least 3 of the samples 
+# Remove OTUs that have only one sequence in three samples 
+
+## Muskegon
+musk_filter_1in3 <- 3/nsamples(muskegon_physeq)
+muskegon_physeq_1in3 <- filter_taxa(muskegon_physeq, function(x) sum(x > 1) > (musk_filter_1in3*length(x)), TRUE)
+
+## Michigan
+mich_filter_1in3 <- 3/nsamples(michigan_physeq)
+michigan_physeq_1in3 <- filter_taxa(michigan_physeq, function(x) sum(x > 1) > (mich_filter_1in3*length(x)), TRUE)
+
+## Inland 
+inland_filter_1in3 <- 3/nsamples(inland_physeq)
+inland_physeq_1in3 <- filter_taxa(inland_physeq, function(x) sum(x > 1) > (inland_filter_1in3*length(x)), TRUE)
+```
+
+### At least 5 sequences in 10 percent of samples 
+```{r filter-5in10}
+# Remove OTUs that have less than 5 sequences in 10% of samples
+filter_value <- 0.10
+
+## Muskegon
+muskegon_physeq_5in10 <- filter_taxa(muskegon_physeq, function(x) sum(x > 5) > (filter_value*length(x)), TRUE)
+
+## Michigan
+michigan_physeq_5in10 <- filter_taxa(michigan_physeq, function(x) sum(x > 5) > (filter_value*length(x)), TRUE)
+
+## Inland 
+inland_physeq_5in10 <- filter_taxa(inland_physeq, function(x) sum(x > 5) > (filter_value*length(x)), TRUE)
+```
+
+
+# Rarefy for Relative Abundances
+
+## 1in3
+```{r rarefy-1in3, fig.width=3.5, fig.height=3}
+# Set the seed for the randomization of rarefy-ing
+set.seed(777)
+
+## Muskegon
+musk_minlib_1in3 <- min(sample_sums(muskegon_physeq_1in3)) - 1
+musk_minlib_1in3 # 8153 is the smallest library size
+# Rarefy to the even depth 
+rare_muskegon_physeq_1in3 <- rarefy_even_depth(muskegon_physeq_1in3, sample.size = musk_minlib_1in3, verbose = FALSE, replace = TRUE)
+# Sanity Check - Samples all have sample counts of 4760
+apply(otu_table(rare_muskegon_physeq_1in3), 1, sum)
+### New phyloseq objects with relative abundances
+rare_muskegon_physeq_1in3_rel <- transform_sample_counts(rare_muskegon_physeq_1in3, function(x) x/sum(x))
+# Sanity Check to make sure all relative abundances are 1
+stopifnot(sum(apply(otu_table(rare_muskegon_physeq_1in3_rel), 1, sum)) == nsamples(rare_muskegon_physeq_1in3_rel))
+### Replacing NA by "Unclassified"
+tax_table(rare_muskegon_physeq_1in3_rel)[is.na(tax_table(rare_muskegon_physeq_1in3_rel))] <- "Unclassified"
+# Final Relative Abundance Phyloseq Object for Muskgeon
+rare_muskegon_physeq_1in3_rel
+
+
+## Michigan
+mich_minlib_1in3 <- min(sample_sums(michigan_physeq_1in3)) - 1
+mich_minlib_1in3 # 4604 is the smallest library size
+# Rarefy to the even depth 
+rare_michigan_physeq_1in3 <- rarefy_even_depth(michigan_physeq_1in3, sample.size = mich_minlib_1in3, verbose = FALSE, replace = TRUE)
+# Sanity Check - Samples all have sample counts of 4760
+apply(otu_table(rare_michigan_physeq_1in3), 1, sum)
+### New phyloseq objects with relative abundances
+rare_michigan_physeq_1in3_rel <- transform_sample_counts(rare_michigan_physeq_1in3, function(x) x/sum(x))
+# Sanity Check to make sure all relative abundances are 1
+stopifnot(sum(apply(otu_table(rare_michigan_physeq_1in3_rel), 1, sum)) == nsamples(rare_michigan_physeq_1in3_rel))
+### Replacing NA by "Unclassified"
+tax_table(rare_michigan_physeq_1in3_rel)[is.na(tax_table(rare_michigan_physeq_1in3_rel))] <- "Unclassified"
+# Final Relative Abundance Phyloseq Object for Michigan
+rare_michigan_physeq_1in3_rel
+
+
+## Inland
+inland_minlib_1in3 <- min(sample_sums(inland_physeq_1in3)) - 1
+inland_minlib_1in3 # 9620 is the smallest library size
+# Rarefy to the even depth 
+rare_inland_physeq_1in3 <- rarefy_even_depth(inland_physeq_1in3, sample.size = inland_minlib_1in3, verbose = FALSE, replace = TRUE)
+# Sanity Check - Samples all have sample counts of 4760
+apply(otu_table(rare_inland_physeq_1in3), 1, sum)
+### New phyloseq objects with relative abundances
+rare_inland_physeq_1in3_rel <- transform_sample_counts(rare_inland_physeq_1in3, function(x) x/sum(x))
+# Sanity Check to make sure all relative abundances are 1
+stopifnot(sum(apply(otu_table(rare_inland_physeq_1in3_rel), 1, sum)) == nsamples(rare_inland_physeq_1in3_rel))
+### Replacing NA by "Unclassified"
+tax_table(rare_inland_physeq_1in3_rel)[is.na(tax_table(rare_inland_physeq_1in3_rel))] <- "Unclassified"
+# Final Relative Abundance Phyloseq Object for Inland
+rare_inland_physeq_1in3_rel
+
+
+# Visualize
+df_1in3 <- data.frame(c(ntaxa(rare_muskegon_physeq_1in3_rel), ntaxa(rare_michigan_physeq_1in3_rel), ntaxa(rare_inland_physeq_1in3_rel)),
+                 c("Muskegon","Michigan","Inland")) 
+colnames(df_1in3) <- c("NumOTUs","Lake")
+ggplot(df_1in3, aes(x = Lake, y = NumOTUs)) + ylab("Number of OTUs per Lake") +
+  ggtitle("1 Sequence in 3 Samples: After Rarefying") +
+  geom_bar(stat = "identity", fill = "firebrick", color = "black", alpha = 0.8) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,2000), breaks = seq(0,2000, by = 500)) +
+  theme_bw() + theme(axis.title.x = element_blank())
+```
+
+
+Rarefied at the following depths for 1in3:
+
+- muskegon: `r musk_minlib_1in3`  
+- michigan:  `r mich_minlib_1in3`   
+- inland:  `r inland_minlib_1in3`  
+
+
+## 5in10
+```{r rarefy-5in10, fig.width=3.5, fig.height=3}
+# Set the seed for the randomization of rarefy-ing
+set.seed(777)
+
+###  NOW FOR THE TAXA THAT ARE 5 COUNTS IN AT 10% OF SAMPLES 
+
+## Muskegon
+musk_minlib_5in10 <- min(sample_sums(muskegon_physeq_5in10)) - 1
+musk_minlib_5in10 # 7885 is the smallest library size 
+# Rarefy to the even depth 
+rare_muskegon_physeq_5in10 <- rarefy_even_depth(muskegon_physeq_5in10, sample.size = musk_minlib_5in10, verbose = FALSE, replace = TRUE)
+# Sanity Check - Samples all have sample counts of 4760
+apply(otu_table(rare_muskegon_physeq_5in10), 1, sum)
+### New phyloseq objects with relative abundances
+rare_muskegon_physeq_5in10_rel <- transform_sample_counts(rare_muskegon_physeq_5in10, function(x) x/sum(x))
+# Sanity Check to make sure all relative abundances are 1
+stopifnot(sum(apply(otu_table(rare_muskegon_physeq_5in10_rel), 1, sum)) == nsamples(rare_muskegon_physeq_5in10_rel))
+### Replacing NA by "Unclassified"
+tax_table(rare_muskegon_physeq_5in10_rel)[is.na(tax_table(rare_muskegon_physeq_5in10_rel))] <- "Unclassified"
+# Final Relative Abundance Phyloseq Object 
+rare_muskegon_physeq_5in10_rel
+
+## Michigan
+mich_minlib_5in10 <- min(sample_sums(michigan_physeq_5in10)) - 1
+mich_minlib_5in10 # 7885 is the smallest library size 
+# Rarefy to the even depth 
+rare_michigan_physeq_5in10 <- rarefy_even_depth(michigan_physeq_5in10, sample.size = mich_minlib_5in10, verbose = FALSE, replace = TRUE)
+# Sanity Check - Samples all have sample counts of 4760
+apply(otu_table(rare_michigan_physeq_5in10), 1, sum)
+### New phyloseq objects with relative abundances
+rare_michigan_physeq_5in10_rel <- transform_sample_counts(rare_michigan_physeq_5in10, function(x) x/sum(x))
+# Sanity Check to make sure all relative abundances are 1
+stopifnot(sum(apply(otu_table(rare_michigan_physeq_5in10_rel), 1, sum)) == nsamples(rare_michigan_physeq_5in10_rel))
+### Replacing NA by "Unclassified"
+tax_table(rare_michigan_physeq_5in10_rel)[is.na(tax_table(rare_michigan_physeq_5in10_rel))] <- "Unclassified"
+# Final Relative Abundance Phyloseq Object 
+rare_michigan_physeq_5in10_rel
+
+## Inland
+inland_minlib_5in10 <- min(sample_sums(inland_physeq_5in10)) - 1
+inland_minlib_5in10 # 7885 is the smallest library size 
+# Rarefy to the even depth 
+rare_inland_physeq_5in10 <- rarefy_even_depth(inland_physeq_5in10, sample.size = inland_minlib_5in10, verbose = FALSE, replace = TRUE)
+# Sanity Check - Samples all have sample counts of 4760
+apply(otu_table(rare_inland_physeq_5in10), 1, sum)
+### New phyloseq objects with relative abundances
+rare_inland_physeq_5in10_rel <- transform_sample_counts(rare_inland_physeq_5in10, function(x) x/sum(x))
+# Sanity Check to make sure all relative abundances are 1
+stopifnot(sum(apply(otu_table(rare_inland_physeq_5in10_rel), 1, sum)) == nsamples(rare_inland_physeq_5in10_rel))
+### Replacing NA by "Unclassified"
+tax_table(rare_inland_physeq_5in10_rel)[is.na(tax_table(rare_inland_physeq_5in10_rel))] <- "Unclassified"
+# Final Relative Abundance Phyloseq Object 
+rare_inland_physeq_5in10_rel
+
+
+# Visualize
+df_5in10 <- data.frame(c(ntaxa(rare_muskegon_physeq_5in10_rel), ntaxa(rare_michigan_physeq_5in10_rel), ntaxa(rare_inland_physeq_5in10_rel)),
+                 c("Muskegon","Michigan","Inland")) 
+colnames(df_5in10) <- c("NumOTUs","Lake")
+ggplot(df_5in10, aes(x = Lake, y = NumOTUs)) + ylab("Number of OTUs per Lake") +
+  ggtitle("5 Sequence in 10% of Samples: After Rarefying") +
+  geom_bar(stat = "identity", fill = "darkorange", color = "black", alpha = 0.8) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,600), breaks = seq(0,600, by = 100)) +
+  theme_bw() + theme(axis.title.x = element_blank())
+```
+
+
+Rarefied at the following depths for 5in10:
+
+- muskegon: `r musk_minlib_5in10`  
+- michigan:  `r mich_minlib_5in10`   
+- inland:  `r inland_minlib_5in10`  
+
+
+# Absolute Abundances
+
+### 1in3
+```{r abs-abund-1in3}
+### New phyloseq object with absolute abundances in cells/mL
+rare_muskegon_physeq_1in3_abs <- rare_muskegon_physeq_1in3_rel    # Muskegon
+rare_michigan_physeq_1in3_abs <- rare_michigan_physeq_1in3_rel    # Michigan
+rare_inland_physeq_1in3_abs <- rare_inland_physeq_1in3_rel        # inland
+
+# Replace the OTU table 
+otu_table(rare_muskegon_physeq_1in3_abs) <- 1000*otu_table(rare_muskegon_physeq_1in3_rel)*sample_data(rare_muskegon_physeq_1in3_rel)$Total.cells    # Muskegon
+otu_table(rare_michigan_physeq_1in3_abs) <- 1000*otu_table(rare_michigan_physeq_1in3_rel)*sample_data(rare_michigan_physeq_1in3_rel)$Total.cells    # Michigan
+otu_table(rare_inland_physeq_1in3_abs) <- 1000*otu_table(rare_inland_physeq_1in3_rel)*sample_data(rare_inland_physeq_1in3_rel)$Total.cells          # inland
+
+### to cells/mL
+## Muskegon
+sample_data(rare_muskegon_physeq_1in3_rel)[,c(3:8)] <- sample_data(rare_muskegon_physeq_1in3_rel)[,c(3:8)]*1000    # Muskegon
+sample_data(rare_muskegon_physeq_1in3_abs)[,c(3:8)] <- sample_data(rare_muskegon_physeq_1in3_abs)[,c(3:8)]*1000    # Muskegon
+## Michigan
+sample_data(rare_michigan_physeq_1in3_rel)[,c(3:8)] <- sample_data(rare_michigan_physeq_1in3_rel)[,c(3:8)]*1000    # Michigan
+sample_data(rare_michigan_physeq_1in3_abs)[,c(3:8)] <- sample_data(rare_michigan_physeq_1in3_abs)[,c(3:8)]*1000    # Michigan
+## Inland
+sample_data(rare_inland_physeq_1in3_rel)[,c(3:8)] <- sample_data(rare_inland_physeq_1in3_rel)[,c(3:8)]*1000          # inland
+sample_data(rare_inland_physeq_1in3_abs)[,c(3:8)] <- sample_data(rare_inland_physeq_1in3_abs)[,c(3:8)]*1000          # inland
+
+# Sanity Check
+apply(otu_table(rare_muskegon_physeq_1in3_abs), 1, sum)    # Muskegon
+apply(otu_table(rare_michigan_physeq_1in3_abs), 1, sum)    # Michigan
+apply(otu_table(rare_inland_physeq_1in3_abs), 1, sum)      # inland
+```
+
+
+
+
+### 5in10
+
+```{r abs-abund-5in10}
+### New phyloseq object with absolute abundances in cells/mL
+rare_muskegon_physeq_5in10_abs <- rare_muskegon_physeq_5in10_rel    # Muskegon
+rare_michigan_physeq_5in10_abs <- rare_michigan_physeq_5in10_rel    # Michigan
+rare_inland_physeq_5in10_abs <- rare_inland_physeq_5in10_rel        # inland
+
+# Replace the OTU table 
+otu_table(rare_muskegon_physeq_5in10_abs) <- 1000*otu_table(rare_muskegon_physeq_5in10_rel)*sample_data(rare_muskegon_physeq_5in10_rel)$Total.cells    # Muskegon
+otu_table(rare_michigan_physeq_5in10_abs) <- 1000*otu_table(rare_michigan_physeq_5in10_rel)*sample_data(rare_michigan_physeq_5in10_rel)$Total.cells    # Michigan
+otu_table(rare_inland_physeq_5in10_abs) <- 1000*otu_table(rare_inland_physeq_5in10_rel)*sample_data(rare_inland_physeq_5in10_rel)$Total.cells          # inland
+
+### to cells/mL
+## Muskegon
+sample_data(rare_muskegon_physeq_5in10_rel)[,c(3:8)] <- sample_data(rare_muskegon_physeq_5in10_rel)[,c(3:8)]*1000    # Muskegon
+sample_data(rare_muskegon_physeq_5in10_abs)[,c(3:8)] <- sample_data(rare_muskegon_physeq_5in10_abs)[,c(3:8)]*1000    # Muskegon
+## Michigan
+sample_data(rare_michigan_physeq_5in10_rel)[,c(3:8)] <- sample_data(rare_michigan_physeq_5in10_rel)[,c(3:8)]*1000    # Michigan
+sample_data(rare_michigan_physeq_5in10_abs)[,c(3:8)] <- sample_data(rare_michigan_physeq_5in10_abs)[,c(3:8)]*1000    # Michigan
+## Inland
+sample_data(rare_inland_physeq_5in10_rel)[,c(3:8)] <- sample_data(rare_inland_physeq_5in10_rel)[,c(3:8)]*1000          # inland
+sample_data(rare_inland_physeq_5in10_abs)[,c(3:8)] <- sample_data(rare_inland_physeq_5in10_abs)[,c(3:8)]*1000          # inland
+
+# Sanity Check
+apply(otu_table(rare_muskegon_physeq_5in10_abs), 1, sum)    # Muskegon
+apply(otu_table(rare_michigan_physeq_5in10_abs), 1, sum)    # Michigan
+apply(otu_table(rare_inland_physeq_5in10_abs), 1, sum)      # inland
+```
+
+
+
+# Write files
+
+## Muskegon
+```{r write-muskegon}
+### 1in3: Write the tsv files
+    # rare_muskegon_physeq_1in3_rel
+    # rare_muskegon_physeq_1in3_abs
+write.table(otu_table(rare_muskegon_physeq_1in3_abs), file="ByLake_Filtering/1in3/muskegon/muskegon_absolute_otu_1in3.tsv", row.names=TRUE)
+write.table(otu_table(rare_muskegon_physeq_1in3_rel), file="ByLake_Filtering/1in3/muskegon/muskegon_relative_otu_1in3.tsv", row.names=TRUE)
+write.table(sample_data(rare_muskegon_physeq_1in3_rel)[,-1], file="ByLake_Filtering/1in3/muskegon/muskegon_sampledata_1in3.tsv", row.names=TRUE)
+write.table(tax_table(rare_muskegon_physeq_1in3_rel), file="ByLake_Filtering/1in3/muskegon/muskegon_taxonomy_1in3.tsv", row.names=TRUE)
+
+
+### 5in10: Write the tsv files
+    # rare_muskegon_physeq_5in10_rel
+    # rare_muskegon_physeq_5in10_abs
+write.table(otu_table(rare_muskegon_physeq_5in10_abs), file="ByLake_Filtering/5in10/muskegon/muskegon_absolute_otu_5in10.tsv", row.names=TRUE)
+write.table(otu_table(rare_muskegon_physeq_5in10_rel), file="ByLake_Filtering/5in10/muskegon/muskegon_relative_otu_5in10.tsv", row.names=TRUE)
+write.table(sample_data(rare_muskegon_physeq_5in10_rel)[,-1], file="ByLake_Filtering/5in10/muskegon/muskegon_sampledata_5in10.tsv", row.names=TRUE)
+write.table(tax_table(rare_muskegon_physeq_5in10_rel), file="ByLake_Filtering/5in10/muskegon/muskegon_taxonomy_5in10.tsv", row.names=TRUE)
+```
+
+## Michigan
+```{r write-michigan}
+### 1in3: Write the tsv files
+    # rare_michigan_physeq_1in3_rel
+    # rare_michigan_physeq_1in3_abs
+write.table(otu_table(rare_michigan_physeq_1in3_abs), file="ByLake_Filtering/1in3/michigan/michigan_absolute_otu_1in3.tsv", row.names=TRUE)
+write.table(otu_table(rare_michigan_physeq_1in3_rel), file="ByLake_Filtering/1in3/michigan/michigan_relative_otu_1in3.tsv", row.names=TRUE)
+write.table(sample_data(rare_michigan_physeq_1in3_rel)[,-1], file="ByLake_Filtering/1in3/michigan/michigan_sampledata_1in3.tsv", row.names=TRUE)
+write.table(tax_table(rare_michigan_physeq_1in3_rel), file="ByLake_Filtering/1in3/michigan/michigan_taxonomy_1in3.tsv", row.names=TRUE)
+
+
+### 5in10: Write the tsv files
+    # rare_michigan_physeq_5in10_rel
+    # rare_michigan_physeq_5in10_abs
+write.table(otu_table(rare_michigan_physeq_5in10_abs), file="ByLake_Filtering/5in10/michigan/michigan_absolute_otu_5in10.tsv", row.names=TRUE)
+write.table(otu_table(rare_michigan_physeq_5in10_rel), file="ByLake_Filtering/5in10/michigan/michigan_relative_otu_5in10.tsv", row.names=TRUE)
+write.table(sample_data(rare_michigan_physeq_5in10_rel)[,-1], file="ByLake_Filtering/5in10/michigan/michigan_sampledata_5in10.tsv", row.names=TRUE)
+write.table(tax_table(rare_michigan_physeq_5in10_rel), file="ByLake_Filtering/5in10/michigan/michigan_taxonomy_5in10.tsv", row.names=TRUE)
+```
+
+
+## Inland
+```{r write-inland}
+### 1in3: Write the tsv files
+    # rare_inland_physeq_1in3_rel
+    # rare_inland_physeq_1in3_abs
+write.table(otu_table(rare_inland_physeq_1in3_abs), file="ByLake_Filtering/1in3/inland/inland_absolute_otu_1in3.tsv", row.names=TRUE)
+write.table(otu_table(rare_inland_physeq_1in3_rel), file="ByLake_Filtering/1in3/inland/inland_relative_otu_1in3.tsv", row.names=TRUE)
+write.table(sample_data(rare_inland_physeq_1in3_rel)[,-1], file="ByLake_Filtering/1in3/inland/inland_sampledata_1in3.tsv", row.names=TRUE)
+write.table(tax_table(rare_inland_physeq_1in3_rel), file="ByLake_Filtering/1in3/inland/inland_taxonomy_1in3.tsv", row.names=TRUE)
+
+
+### 5in10: Write the tsv files
+    # rare_inland_physeq_5in10_rel
+    # rare_inland_physeq_5in10_abs
+write.table(otu_table(rare_inland_physeq_5in10_abs), file="ByLake_Filtering/5in10/inland/inland_absolute_otu_5in10.tsv", row.names=TRUE)
+write.table(otu_table(rare_inland_physeq_5in10_rel), file="ByLake_Filtering/5in10/inland/inland_relative_otu_5in10.tsv", row.names=TRUE)
+write.table(sample_data(rare_inland_physeq_5in10_rel)[,-1], file="ByLake_Filtering/5in10/inland/inland_sampledata_5in10.tsv", row.names=TRUE)
+write.table(tax_table(rare_inland_physeq_5in10_rel), file="ByLake_Filtering/5in10/inland/inland_taxonomy_5in10.tsv", row.names=TRUE)
+```
