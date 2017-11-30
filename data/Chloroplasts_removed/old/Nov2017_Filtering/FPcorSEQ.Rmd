@@ -35,21 +35,31 @@ knitr::opts_chunk$set(eval = TRUE,
 # Load libraries
 library('dplyr')
 library('ggplot2')
+library("compositions")
 library("grid")
 library("gridExtra")
 library("phyloseq")
 library("ggrepel")
 library("Phenoflow")
 library("RColorBrewer")
-source("./data/Chloroplasts_removed/Nov2017_Filtering/functions.R")
+source("./data/Chloroplasts_removed/old/Nov2017_Filtering/functions.R")
 ```
 
 
 ```{r FPCorSeq, fig.width = 10, fig.height= 10, fig.align='center'}
 # Load phyloseq data
-load("./data/Chloroplasts_removed/Nov2017_Filtering/HNA-LNA-physeq_1in3.RData")
-load("./data/Chloroplasts_removed/Nov2017_Filtering/HNA-LNA-physeq_5in10.RData")
+load("./data/Chloroplasts_removed/ByLake_Filtering/1in3/inland/inland_1in3_physeqs.RData")
+load("./data/Chloroplasts_removed/ByLake_Filtering/5in10/inland/inland_5in10_physeqs.RData")
+load("./data/Chloroplasts_removed/ByLake_Filtering/1in3/michigan/michigan_1in3_physeqs.RData")
+load("./data/Chloroplasts_removed/ByLake_Filtering/5in10/michigan/michigan_5in10_physeqs.RData")
+load("./data/Chloroplasts_removed/ByLake_Filtering/1in3/muskegon/muskegon_1in3_physeqs.RData")
+load("./data/Chloroplasts_removed/ByLake_Filtering/5in10/muskegon/muskegon_5in10_physeqs.RData")
 
+# get all 16S sample names
+seq_samples <- c(sample_names(rare_inland_physeq_1in3_rel), 
+                 sample_names(rare_michigan_physeq_1in3_rel),
+                 sample_names(rare_muskegon_physeq_1in3_rel))
+  
 # Import FCM data and FCM data list mapping seq to FCM files
 loc_fcs <- grep("_filtered", list.dirs("./data"),
      value = TRUE)[1:4]
@@ -75,14 +85,14 @@ fs_pool <- FCS_pool(fs, stubs); remove(fs)
 flowCore::sampleNames(fs_pool) <- gsub("MI5", "M15", flowCore::sampleNames(fs_pool))
 
 # Filter out samples that correspond to the sequencing data
-labs_FCM <- read.csv2("./data/Chloroplasts_removed/Nov2017_Filtering/lab_FCM_16S.csv")
+labs_FCM <- read.csv2("./data/Chloroplasts_removed/old/Nov2017_Filtering/lab_FCM_16S.csv")
 labs_FCM$Sample_fcm <- gsub("_rep.\\.fcs", "",labs_FCM$Sample_fcm)
 labs_FCM <- labs_FCM %>% distinct()
 labs_FCM$Sample_16S <- gsub("-", "", labs_FCM$Sample_16S)
 
 # Check if some names were not found in the mapping file
 flowCore::sampleNames(fs_pool)[!flowCore::sampleNames(fs_pool) %in% labs_FCM$Sample_fcm]
-sample_names(HNA_physeq_1in3)[!sample_names(HNA_physeq_1in3) %in% labs_FCM$Sample_16S]
+# sample_names(HNA_physeq_1in3)[!sample_names(HNA_physeq_1in3) %in% labs_FCM$Sample_16S]
 
 # Transform with asinh
 fs_pool <- transform(fs_pool,`FL1-H`=asinh(`FL1-H`), 
@@ -106,7 +116,7 @@ fs_pool <- transform(fs_pool,`FL1-H`=mytrans(`FL1-H`),
                                   `FSC-H`=mytrans(`FSC-H`))
 
 # remove flow cytometry samples that are not present in phyloseq objects
-fs_pool <- fs_pool[flowCore::sampleNames(fs_pool) %in% sample_names(HNA_physeq_1in3)]
+fs_pool <- fs_pool[flowCore::sampleNames(fs_pool) %in% seq_samples]
 
 # Calculate fingerprint
 param <- c("FL1-H", "FL3-H", "FSC-H", "SSC-H")
@@ -118,200 +128,180 @@ fbasis <- flowBasis(fs_pool, param, nbin=128,
 remove(fs_pool)
 
 # Import lists with scores
-path_scores <- list.files("./Scores")[c(1,2,5,6)]
+path_scores <- list.files("./Scores")[c(1:6, 13:18)]
 
 scores_df <- data.frame()
 for(i in path_scores){
   tmp <- read.csv(paste("./Scores/", i, sep = ""))[, 1:2]
-  tmp <- cbind(tmp, gsub("_rel.csv","",i))
+  if(!is.null(read.csv(paste("./Scores/", i, sep = ""))[, 7])){
+      tmp2 <- read.csv(paste("./Scores/", i, sep = ""))[, 7]
+        tmp <- cbind(tmp, gsub("_rel.*$","",i), gsub(".csv","", do.call(rbind, strsplit(i, "_"))[,5]),
+               tmp2)
+  } else {
+    tmp <- cbind(tmp, gsub("_rel.*$","",i), gsub(".csv","", do.call(rbind, strsplit(i, "_"))[,5]),
+               NA)
+  }
   if(i == path_scores[1]){
     scores_df <- tmp
   } else {
       scores_df <- rbind(scores_df, tmp)
     }
 }
-colnames(scores_df) <- c("OTU", "Score", "method")
-
-# Get spearman's correlation values
-LNA_sm <- read.csv(paste("./Scores/", path_scores[1], sep = ""))[, c(1,7)]
-colnames(LNA_sm) <- c("OTU", "LNA_spearman")
-HNA_sm <- read.csv(paste("./Scores/", path_scores[2], sep = ""))[, c(1,7)]
-colnames(HNA_sm) <- c("OTU", "HNA_spearman")
-scores_df <- left_join(scores_df, LNA_sm, by = "OTU")
-scores_df <- left_join(scores_df, HNA_sm, by = "OTU")
+colnames(scores_df) <- c("OTU", "Score", "method", "Environment", "p_kendall")
 
 # sample names for each environment to partition calculates
-sam_mi <- grep("M15|M45|110", sample_names(LNA_physeq_1in3), value = TRUE)
-sam_musk <- grep("M15|M45|110|Z", sample_names(LNA_physeq_1in3), value = TRUE,
+sam_mi <- grep("M15|M45|110", seq_samples, value = TRUE)
+sam_musk <- grep("M15|M45|110|Z", seq_samples, value = TRUE,
                  invert=TRUE)
-sam_il <- grep("Z1", sample_names(LNA_physeq_1in3), value = TRUE)
+sam_il <- grep("Z1", seq_samples, value = TRUE)
 sams <- list(sam_mi, sam_musk, sam_il)
 env <- c("Lake Michigan", "Muskegon Lake", "Inland Lakes")
+frac <- rep(c("HNA","LNA"), each = 3)
 
-### HNA pool ###
+################################################################################
+# Perform CLR transformation on phyloseq objects
+################################################################################
+### Set 0 values to 1/(number of OTUs)²
+otu_table(rare_inland_physeq_1in3_rel)[otu_table(rare_inland_physeq_1in3_rel) == 0] <-
+  1/length(taxa_names(rare_inland_physeq_1in3_rel))^2
+otu_table(rare_inland_physeq_5in10_rel)[otu_table(rare_inland_physeq_5in10_rel) == 0] <-
+  1/length(taxa_names(rare_inland_physeq_5in10_rel))^2
+otu_table(rare_michigan_physeq_1in3_rel)[otu_table(rare_michigan_physeq_1in3_rel) == 0] <-
+  1/length(taxa_names(rare_michigan_physeq_1in3_rel))^2
+otu_table(rare_michigan_physeq_5in10_rel)[otu_table(rare_michigan_physeq_5in10_rel) == 0] <-
+  1/length(taxa_names(rare_michigan_physeq_5in10_rel))^2
+otu_table(rare_muskegon_physeq_1in3_rel)[otu_table(rare_muskegon_physeq_1in3_rel) == 0] <-
+  1/length(taxa_names(rare_muskegon_physeq_1in3_rel))^2
+otu_table(rare_muskegon_physeq_5in10_rel)[otu_table(rare_muskegon_physeq_5in10_rel) == 0] <-
+  1/length(taxa_names(rare_muskegon_physeq_5in10_rel))^2
+
+### Normalize to sum of 1 per sample
+rare_inland_physeq_1in3_rel_norm <- transform_sample_counts(rare_inland_physeq_1in3_rel, function(x) x/sum(x))
+rare_inland_physeq_5in10_rel_norm <- transform_sample_counts(rare_inland_physeq_5in10_rel, function(x) x/sum(x))
+rare_michigan_physeq_1in3_rel_norm <- transform_sample_counts(rare_michigan_physeq_1in3_rel, function(x) x/sum(x))
+rare_michigan_physeq_5in10_rel_norm <- transform_sample_counts(rare_michigan_physeq_5in10_rel, function(x) x/sum(x))
+rare_muskegon_physeq_1in3_rel_norm <- transform_sample_counts(rare_muskegon_physeq_1in3_rel, function(x) x/sum(x))
+rare_muskegon_physeq_5in10_rel_norm <- transform_sample_counts(rare_muskegon_physeq_5in10_rel, function(x) x/sum(x))
+
+### Check if sample sums are 1
+sample_sums(rare_inland_physeq_1in3_rel_norm)
+sample_sums(rare_inland_physeq_5in10_rel_norm)
+sample_sums(rare_michigan_physeq_1in3_rel_norm)
+sample_sums(rare_michigan_physeq_5in10_rel_norm)
+sample_sums(rare_muskegon_physeq_1in3_rel_norm)
+sample_sums(rare_muskegon_physeq_5in10_rel_norm)
+
+### Run CLR transformation
+rare_inland_physeq_1in3_rel_clr <- transform_sample_counts(rare_inland_physeq_1in3_rel_norm, compositions::clr)
+rare_inland_physeq_5in10_rel_clr <- transform_sample_counts(rare_inland_physeq_5in10_rel_norm, compositions::clr)
+rare_michigan_physeq_1in3_rel_clr <- transform_sample_counts(rare_michigan_physeq_1in3_rel_norm, compositions::clr)
+rare_michigan_physeq_5in10_rel_clr <- transform_sample_counts(rare_michigan_physeq_5in10_rel_norm, compositions::clr)
+rare_muskegon_physeq_1in3_rel_clr <- transform_sample_counts(rare_muskegon_physeq_1in3_rel_norm, compositions::clr)
+rare_muskegon_physeq_5in10_rel_clr <- transform_sample_counts(rare_muskegon_physeq_5in10_rel_norm, compositions::clr)
+
 ################################################################################
 # Run FPcorSEQ at diffferent thresholds for both LNA and HNA lasso run
+################################################################################
 
 ## for 1seq3 
-fixed_thresh <- 0.5
+fixed_thresh <- 0.35
 tuned_thresh <- 0.15
-list_fix <- scores_df %>% filter(method == "hnascores_otus_1seq3" & Score > fixed_thresh)
-list_tune <- scores_df %>% filter(method == "hnascores_otus_1seq3" & Score > tuned_thresh)
-HNA_physeq_1in3_fix <- prune_taxa(taxa = as.character(list_fix$OTU), HNA_physeq_1in3)
-HNA_physeq_1in3_tune <- prune_taxa(taxa = as.character(list_tune$OTU), HNA_physeq_1in3)
+list_fix <- list(scores_df %>% dplyr::filter(method == "hnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Michigan"), 
+                    scores_df %>% dplyr::filter(method == "hnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Inland"), 
+                    scores_df %>% dplyr::filter(method == "hnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Muskegon"),
+                 scores_df %>% dplyr::filter(method == "lnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Muskegon"),
+                 scores_df %>% dplyr::filter(method == "lnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Muskegon"),
+                 scores_df %>% dplyr::filter(method == "lnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Muskegon")
+)
+
+HNA_physeq_1in3 <- rep(list(rare_michigan_physeq_1in3_rel_clr,  rare_muskegon_physeq_1in3_rel, rare_inland_physeq_1in3_rel),2)
+
 
 # Calculate correlations for each environment separately and then concantenate
 # results
-for(i in 1:length(sams)){
-  phy_tmp <- prune_samples(sams[[i]], HNA_physeq_1in3_fix)
+for(i in 1:length(rep(sams,2))){
+  HNA_physeq_1in3_fix <- prune_taxa(taxa = as.character(list_fix[[i]]$OTU), HNA_physeq_1in3[[i]])
+  phy_tmp <- prune_samples(rep(sams,2)[[i]], HNA_physeq_1in3_fix)
   fp_tmp <- fbasis
-  fp_tmp@basis <- fp_tmp@basis[rownames(fp_tmp@basis) %in% sams[[i]], ]
+  fp_tmp@basis <- fp_tmp@basis[rownames(fp_tmp@basis) %in% rep(sams,2)[[i]], ]
+  ################################################################################
+  # Perform CLR transformation on flowbasis
+  ################################################################################
+  fp_tmp@basis[fp_tmp@basis == 0] <- 1/(ncol(fp_tmp@basis)^2)
+  fp_tmp@basis <- apply(fp_tmp@basis, 1, FUN = function(x) x/sum(x))
+  fp_tmp@basis <- apply(fp_tmp@basis, 1, FUN = function(x) compositions::clr(x))
+  ################################################################################
   res_HNA_1in3_tmp <- FPcorSeq(phy = phy_tmp, fp = fp_tmp,
                         cor_thresh = 0.1, fp_thresh = 1e-5, 
                         cor_m = "kendall")
-  res_HNA_1in3_tmp <- data.frame(res_HNA_1in3_tmp, Environment =  env[i])
+  res_HNA_1in3_tmp <- data.frame(res_HNA_1in3_tmp, Environment =  rep(env,2)[i], fraction = frac[i])
   if(i == 1) {
     res_HNA_1in3_fix <- res_HNA_1in3_tmp
   } else{
     res_HNA_1in3_fix <- rbind(res_HNA_1in3_fix, res_HNA_1in3_tmp)
   }
 }
+
 # res_HNA_1in3_fix <- FPcorSeq(phy = HNA_physeq_1in3_fix, fp = fbasis,
 #                         cor_thresh = 0.1, fp_thresh = 1e-5, 
 #                         cor_m = "kendall")
-scores_sb <- scores_df %>% filter(method == "hnascores_otus_1seq3")
-res_HNA_1in3_fix <- left_join(res_HNA_1in3_fix, scores_sb, by = c("taxa" = "OTU"))
-  
-# res_HNA_1in3_tune <- FPcorSeq(phy = HNA_physeq_1in3_tune, fp = fbasis,
-#                         cor_thresh = 0.1, fp_thresh = 1e-5, 
-#                         cor_m = "spearman")
-# res_HNA_1in3_tune <- left_join(res_HNA_1in3_tune, scores_df, by = c("taxa" = "OTU"))
-#   
-## for 5seq10 
-fixed_thresh <- 0.5
-tuned_thresh <- 0.36
-list_fix <- scores_df %>% filter(method == "hnascores_otus_5seq10" & Score > fixed_thresh)
-list_tune <- scores_df %>% filter(method == "hnascores_otus_5seq10" & Score > tuned_thresh)
+scores_sb <- scores_df %>% dplyr::filter(grepl("*1seq3*", method))
+res_NA_1in3_fix <- dplyr::left_join(res_HNA_1in3_fix, scores_sb[, c(1:3, 5)], by = c("taxa" = "OTU"))
 
-HNA_physeq_5in10_fix <- prune_taxa(taxa = as.character(list_fix$OTU), HNA_physeq_5in10)
-HNA_physeq_5in10_tune <- prune_taxa(taxa = as.character(list_tune$OTU), HNA_physeq_5in10)
+
+### Same analysis for 5seq10 samples
+fixed_thresh <- 0.35
+list_fix <- list(scores_df %>% dplyr::filter(method == "hnascores_otus_5seq10" 
+                                             & Score > fixed_thresh & Environment == "Michigan"), 
+                 scores_df %>% dplyr::filter(method == "hnascores_otus_5seq10" 
+                                             & Score > fixed_thresh & Environment == "Inland"), 
+                 scores_df %>% dplyr::filter(method == "hnascores_otus_5seq10"
+                                             & Score > fixed_thresh & Environment == "Muskegon"),
+                 scores_df %>% dplyr::filter(method == "lnascores_otus_5seq10" 
+                                             & Score > fixed_thresh & Environment == "Muskegon"),
+                 scores_df %>% dplyr::filter(method == "lnascores_otus_5seq10" 
+                                             & Score > fixed_thresh & Environment == "Muskegon"),
+                 scores_df %>% dplyr::filter(method == "lnascores_otus_5seq10" 
+                                             & Score > fixed_thresh & Environment == "Muskegon")
+)
+
+HNA_physeq_5in10 <- rep(list(rare_michigan_physeq_5in10_rel_clr,  rare_muskegon_physeq_5in10_rel_clr, rare_inland_physeq_5in10_rel_clr),2)
+
 
 # Calculate correlations for each environment separately and then concantenate
 # results
-for(i in 1:length(sams)){
-  phy_tmp <- prune_samples(sams[[i]], HNA_physeq_5in10_fix)
+for(i in 1:length(rep(sams,2))){
+  HNA_physeq_5in10_fix <- prune_taxa(taxa = as.character(list_fix[[i]]$OTU), HNA_physeq_5in10[[i]])
+  phy_tmp <- prune_samples(rep(sams,2)[[i]], HNA_physeq_5in10_fix)
   fp_tmp <- fbasis
-  fp_tmp@basis <- fp_tmp@basis[rownames(fp_tmp@basis) %in% sams[[i]], ]
+  fp_tmp@basis <- fp_tmp@basis[rownames(fp_tmp@basis) %in% rep(sams,2)[[i]], ]
+  ################################################################################
+  # Perform CLR transformation on flowbasis
+  ################################################################################
+  fp_tmp@basis[fp_tmp@basis == 0] <- 1/(ncol(fp_tmp@basis)^2)
+  fp_tmp@basis <- apply(fp_tmp@basis, 1, FUN = function(x) x/sum(x))
+  fp_tmp@basis <- apply(fp_tmp@basis, 1, FUN = function(x) compositions::clr(x))
+  ################################################################################
   res_HNA_5in10_tmp <- FPcorSeq(phy = phy_tmp, fp = fp_tmp,
-                        cor_thresh = 0.1, fp_thresh = 20, 
+                        cor_thresh = 0.1, fp_thresh = 1e-5, 
                         cor_m = "kendall")
-  res_HNA_5in10_tmp <- data.frame(res_HNA_5in10_tmp, Environment =  env[i])
+  res_HNA_5in10_tmp <- data.frame(res_HNA_5in10_tmp, Environment = rep(env,2)[i], fraction = frac[i])
   if(i == 1) {
     res_HNA_5in10_fix <- res_HNA_5in10_tmp
   } else{
     res_HNA_5in10_fix <- rbind(res_HNA_5in10_fix, res_HNA_5in10_tmp)
   }
 }
-res_HNA_5in10_fix <- res_HNA_5in10_fix[!is.na(res_HNA_5in10_fix$cor),]
 
-# res_HNA_5in10_fix <- FPcorSeq(phy = HNA_physeq_5in10_fix, fp = fbasis,
-#                         cor_thresh = 0.1, fp_thresh = 1e-5, 
-#                         cor_m = "kendall")
-scores_sb <- scores_df %>% filter(method == "hnascores_otus_5seq10")
-res_HNA_5in10_fix <- left_join(res_HNA_5in10_fix, scores_sb, by = c("taxa" = "OTU"))
-
-#   
-# res_HNA_5in10_tune <- FPcorSeq(phy = HNA_physeq_5in10_tune, fp = fbasis,
-#                         cor_thresh = 0.1, fp_thresh = 1e-5, 
-#                         cor_m = "kendall")
-# 
-# res_HNA_5in10_tune <- left_join(res_HNA_5in10_tune, scores_df, by = c("taxa" = "OTU"))
-#   
-
-
-
-### LNA pool ###
-################################################################################
-## for 1seq3 
-fixed_thresh <- 0.5
-tuned_thresh <- 0.18
-list_fix <- scores_df %>% filter(method == "lnascores_otus_abun_1seq3" & Score > fixed_thresh)
-list_tune <- scores_df %>% filter(method == "lnascores_otus_abun_1seq3" & Score > tuned_thresh)
-
-LNA_physeq_1in3_fix <- prune_taxa(taxa = as.character(list_fix$OTU), LNA_physeq_1in3)
-LNA_physeq_1in3_tune <- prune_taxa(taxa = as.character(list_tune$OTU), LNA_physeq_1in3)
-
-# Calculate correlations for each environment separately and then concantenate
-# results
-for(i in 1:length(sams)){
-  phy_tmp <- prune_samples(sams[[i]], LNA_physeq_1in3_fix)
-  fp_tmp <- fbasis
-  fp_tmp@basis <- fp_tmp@basis[rownames(fp_tmp@basis) %in% sams[[i]], ]
-  res_LNA_1in3_tmp <- FPcorSeq(phy = phy_tmp, fp = fp_tmp,
-                        cor_thresh = 0.1, fp_thresh = 1e-5, 
-                        cor_m = "kendall")
-  res_LNA_1in3_tmp <- data.frame(res_LNA_1in3_tmp, Environment =  env[i])
-  if(i == 1) {
-    res_LNA_1in3_fix <- res_LNA_1in3_tmp
-  } else{
-    res_LNA_1in3_fix <- rbind(res_LNA_1in3_fix, res_LNA_1in3_tmp)
-  }
-}
-# res_LNA_1in3_fix <- FPcorSeq(phy = LNA_physeq_1in3_fix, fp = fbasis,
-#                         cor_thresh = 0.1, fp_thresh = 1e-5, 
-#                         cor_m = "kendall")
-scores_sb <- scores_df %>% filter(method == "lnascores_otus_abun_1seq3")
-res_LNA_1in3_fix <- left_join(res_LNA_1in3_fix, scores_sb, by = c("taxa" = "OTU"))
-
-#   
-# res_LNA_1in3_tune <- FPcorSeq(phy = LNA_physeq_1in3_tune, fp = fbasis,
-#                         cor_thresh = 0.1, fp_thresh = 1e-5, 
-#                         cor_m = "kendall")
-# res_LNA_1in3_tune <- left_join(res_LNA_1in3_tune, scores_df, by = c("taxa" = "OTU"))
-#  
-
-## for 5seq10 
-fixed_thresh <- 0.5
-tuned_thresh <- 0.21
-list_fix <- scores_df %>% filter(method == "lnascores_otus_5seq10" & Score > fixed_thresh)
-list_tune <- scores_df %>% filter(method == "lnascores_otus_5seq10" & Score > tuned_thresh)
-
-LNA_physeq_5in10_fix <- prune_taxa(taxa = as.character(list_fix$OTU), LNA_physeq_5in10)
-LNA_physeq_5in10_tune <- prune_taxa(taxa = as.character(list_tune$OTU), LNA_physeq_5in10)
-
-# Calculate correlations for each environment separately and then concantenate
-# results
-for(i in 1:length(sams)){
-  phy_tmp <- prune_samples(sams[[i]], LNA_physeq_5in10_fix)
-  fp_tmp <- fbasis
-  fp_tmp@basis <- fp_tmp@basis[rownames(fp_tmp@basis) %in% sams[[i]], ]
-  res_LNA_5in10_tmp <- FPcorSeq(phy = phy_tmp, fp = fp_tmp,
-                        cor_thresh = 0.1, fp_thresh = 1e-5, 
-                        cor_m = "kendall")
-  res_LNA_5in10_tmp <- data.frame(res_LNA_5in10_tmp, Environment =  env[i])
-  if(i == 1) {
-    res_LNA_5in10_fix <- res_LNA_5in10_tmp
-  } else{
-    res_LNA_5in10_fix <- rbind(res_LNA_5in10_fix, res_LNA_5in10_tmp)
-  }
-}
-
-# res_LNA_5in10_fix <- FPcorSeq(phy = LNA_physeq_5in10_fix, fp = fbasis,
-#                         cor_thresh = 0.1, fp_thresh = 1e-5, 
-#                         cor_m = "kendall")
-scores_sb <- scores_df %>% filter(method == "lnascores_otus_5seq10")
-res_LNA_5in10_fix <- left_join(res_LNA_5in10_fix, scores_sb, by = c("taxa" = "OTU"))
- 
-# res_LNA_5in10_tune <- FPcorSeq(phy = LNA_physeq_5in10_tune, fp = fbasis,
-#                         cor_thresh = 0.1, fp_thresh = 1e-5, 
-#                         cor_m = "kendall")
-# res_LNA_5in10_tune <- left_join(res_LNA_5in10_tune, scores_df, by = c("taxa" = "OTU"))
+scores_sb <- scores_df %>% dplyr::filter(grepl("*5seq10*", method))
+res_NA_5in10_fix <- dplyr::left_join(res_HNA_5in10_fix, scores_sb, by = c("taxa" = "OTU"))
 
 
 
 # Make heatmap plots
 # Visualize correlations for top OTUs
-v_LNA_1in3_fix <- ggplot2::ggplot(res_LNA_1in3_fix, ggplot2::aes(`FL1.H`, `FL3.H`, z = cor))+
+v_LNA_1in3_fix <- res_NA_1in3_fix %>% dplyr::filter(grepl("*1seq3*", method) & fraction == "LNA") %>% 
+  ggplot2::ggplot(ggplot2::aes(`FL1.H`, `FL3.H`, z = cor))+
   ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
   # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
                       # color = "transparent")+
@@ -332,7 +322,8 @@ v_LNA_1in3_fix <- ggplot2::ggplot(res_LNA_1in3_fix, ggplot2::aes(`FL1.H`, `FL3.H
 
 print(v_LNA_1in3_fix)
 
-v_HNA_1in3_fix <- ggplot2::ggplot(res_HNA_1in3_fix, ggplot2::aes(`FL1.H`, `FL3.H`, z = cor))+
+v_HNA_1in3_fix <- res_NA_1in3_fix %>% dplyr::filter(grepl("*1seq3*", method) & fraction == "HNA") %>% 
+  ggplot2::ggplot(ggplot2::aes(`FL1.H`, `FL3.H`, z = cor))+
   ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
   # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
                       # color = "transparent")+
