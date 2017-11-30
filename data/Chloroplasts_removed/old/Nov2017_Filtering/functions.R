@@ -151,7 +151,7 @@ FPcorSeq <- function(fp, phy, cor_thresh = 0.5, fp_thresh = 1e-10,
   cat(date(), paste0("---- Returning correlations >", 
                      cor_thresh, "\n"))
   for(i in 1:ncol(fp@basis)){
-    if(i%%100 == 0) cat(date(), paste0("---- at bin ", i, "/",  ncol(fp@basis), "\n"))
+    if(i%%1000 == 0) cat(date(), paste0("---- at bin ", i, "/",  ncol(fp@basis), "\n"))
     cor_temp <- c(); p_temp <- c(); npoint_temp <- c()
     for(j in 1:dim(otu_table(phy))[2]){
       cor_temp[j] <- cor(fp@basis[,i], otu_table(phy)[,j], method = cor_m)
