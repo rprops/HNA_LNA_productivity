@@ -214,7 +214,7 @@ list_fix <- list(scores_df %>% dplyr::filter(method == "hnascores_otus_1seq3" & 
                  scores_df %>% dplyr::filter(method == "lnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Muskegon")
 )
 
-HNA_physeq_1in3 <- rep(list(rare_michigan_physeq_1in3_rel_clr,  rare_muskegon_physeq_1in3_rel, rare_inland_physeq_1in3_rel),2)
+HNA_physeq_1in3 <- rep(list(rare_michigan_physeq_1in3_rel,  rare_muskegon_physeq_1in3_rel, rare_inland_physeq_1in3_rel),2)
 
 
 # Calculate correlations for each environment separately and then concantenate
@@ -269,7 +269,7 @@ list_fix <- list(scores_df %>% dplyr::filter(method == "hnascores_otus_5seq10"
                                              & Score > fixed_thresh & Environment == "Muskegon")
 )
 
-HNA_physeq_5in10 <- rep(list(rare_michigan_physeq_5in10_rel_clr,  rare_muskegon_physeq_5in10_rel_clr, rare_inland_physeq_5in10_rel_clr),2)
+HNA_physeq_5in10 <- rep(list(rare_michigan_physeq_5in10_rel,  rare_muskegon_physeq_5in10_rel, rare_inland_physeq_5in10_rel),2)
 
 
 # Calculate correlations for each environment separately and then concantenate
@@ -313,7 +313,7 @@ for(i in 1:3){
   ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
   # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
                       # color = "transparent")+
-  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.5,0.5)) + 
+  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.6,0.6) + 
   # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
   ggplot2::theme_bw()+
   # ggplot2::geom_contour(color = "white", alpha = 1)+
@@ -334,7 +334,7 @@ for(i in 1:3){
   ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
   # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
                       # color = "transparent")+
-  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.5,0.5)) + 
+  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.6,0.6)) + 
   # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
   ggplot2::theme_bw()+
   # ggplot2::geom_contour(color = "white", alpha = 1)+
@@ -359,7 +359,7 @@ for(i in 1:3){
   ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
   # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
                       # color = "transparent")+
-  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.5,0.5)) + 
+  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.6,0.6)) + 
   # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
   ggplot2::theme_bw()+
   # ggplot2::geom_contour(color = "white", alpha = 1)+
@@ -389,7 +389,7 @@ for(i in 1:3){
   ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
   # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
                       # color = "transparent")+
-  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.5,0.5)) + 
+  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.6,0.6) + 
   # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
   ggplot2::theme_bw()+
   # ggplot2::geom_contour(color = "white", alpha = 1)+
@@ -409,7 +409,7 @@ for(i in 1:3){
   ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
   # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
                       # color = "transparent")+
-  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.5,0.5)) + 
+  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.6,0.6)) + 
   # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
   ggplot2::theme_bw()+
   # ggplot2::geom_contour(color = "white", alpha = 1)+
@@ -429,7 +429,7 @@ for(i in 1:3){
   ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
   # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
                       # color = "transparent")+
-  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.5,0.5)) + 
+  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.6,0.6)) + 
   # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
   ggplot2::theme_bw()+
   # ggplot2::geom_contour(color = "white", alpha = 1)+
