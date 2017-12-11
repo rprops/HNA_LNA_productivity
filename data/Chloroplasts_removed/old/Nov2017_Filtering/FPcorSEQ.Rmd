@@ -74,6 +74,34 @@ fs <- rbind2(fs1,fs2); fs <- rbind2(fs, fs3)
 fs <- rbind2(fs, fs4)
 remove(fs1, fs2, fs3, fs4)
 
+### Chunk for exporting renamed fcs files for Peter ###############################
+###################################################################################
+# # Rename FCS samples to corresponding sequencing samples and export them
+# # for Peter to analyse in Python
+# flowCore::sampleNames(fs) <- gsub("MI5", "M15", flowCore::sampleNames(fs))
+# labs_FCM <- read.csv2("./data/Chloroplasts_removed/old/Nov2017_Filtering/lab_FCM_16S.csv")
+# labs_FCM$Sample_16S <- gsub("-", "", labs_FCM$Sample_16S)
+# 
+# stubs_rep <- c(do.call(rbind, strsplit(flowCore::sampleNames(fs), 
+#                                         "_filtered"))
+# )
+# stubs_reps <- rep(c("rep1_filtered.fcs", "rep2_filtered.fcs", "rep3_filtered.fcs"), 188)
+# 
+# rep_names <- labs_FCM$Sample_16S[match(stubs_rep, labs_FCM$Sample_fcm)]
+# 
+# 
+# # Filter out FCM samples for which there is no sequencing data available
+# # And also rename flow cytometry samples into sequencing names
+# fs <- fs[rep_names %in% seq_samples]
+# stubs_reps <- stubs_reps[rep_names %in% seq_samples]
+# rep_names <- rep_names[rep_names %in% seq_samples]
+# flowCore::sampleNames(fs) <- paste(rep_names, stubs_reps, sep = "_")
+# 
+# for(i in 1:length(fs)){
+#   write.FCS(filename = paste("./data/Renamed_filtered/", flowCore::sampleNames(fs)[i], sep = "" ), x = fs[[i]])
+# }
+
+
 # Pool replicates
 stubs <- c(unique(do.call(rbind, strsplit(flowCore::sampleNames(fs), 
                                         "_rep.\\.fcs_filtered"))
@@ -82,16 +110,20 @@ stubs <- c(unique(do.call(rbind, strsplit(flowCore::sampleNames(fs),
 fs_pool <- FCS_pool(fs, stubs); remove(fs)
 
 # Change some erronous names
+labs_FCM <- read.csv2("./data/Chloroplasts_removed/old/Nov2017_Filtering/lab_FCM_16S.csv")
+labs_FCM$Sample_16S <- gsub("-", "", labs_FCM$Sample_16S)
 flowCore::sampleNames(fs_pool) <- gsub("MI5", "M15", flowCore::sampleNames(fs_pool))
 
 # Filter out samples that correspond to the sequencing data
-labs_FCM <- read.csv2("./data/Chloroplasts_removed/old/Nov2017_Filtering/lab_FCM_16S.csv")
 labs_FCM$Sample_fcm <- gsub("_rep.\\.fcs", "",labs_FCM$Sample_fcm)
 labs_FCM <- labs_FCM %>% distinct()
-labs_FCM$Sample_16S <- gsub("-", "", labs_FCM$Sample_16S)
+
 
 # Check if some names were not found in the mapping file
 flowCore::sampleNames(fs_pool)[!flowCore::sampleNames(fs_pool) %in% labs_FCM$Sample_fcm]
+
+unique(labs_FCM$Sample_fcm) [unique(labs_FCM$Sample_fcm) %in% flowCore::sampleNames(fs_pool)]
+
 # sample_names(HNA_physeq_1in3)[!sample_names(HNA_physeq_1in3) %in% labs_FCM$Sample_16S]
 
 # Transform with asinh
@@ -290,15 +322,17 @@ for(i in 1:length(rep(sams,2))){
   # fp_tmp@basis <- apply(fp_tmp@basis, 1, FUN = function(x) x/sum(x))
   # fp_tmp@basis <- apply(fp_tmp@basis, 1, FUN = function(x) compositions::clr(x))
   ################################################################################
-  res_HNA_5in10_tmp <- FPcorSeq(phy = phy_tmp, fp = fp_tmp,
-                        cor_thresh = 0.1, fp_thresh = 1e-4, 
-                        cor_m = "kendall")
-  res_HNA_5in10_tmp <- data.frame(res_HNA_5in10_tmp, Environment = rep(env,2)[i], fraction = frac[i])
-  if(i == 1) {
-    res_HNA_5in10_fix <- res_HNA_5in10_tmp
-  } else{
-    res_HNA_5in10_fix <- rbind(res_HNA_5in10_fix, res_HNA_5in10_tmp)
-  }
+  print(nrow(fp_tmp@basis))
+  print(dim(phy_tmp@otu_table)[1])
+  # res_HNA_5in10_tmp <- FPcorSeq(phy = phy_tmp, fp = fp_tmp,
+  #                       cor_thresh = 0.1, fp_thresh = 1e-4, 
+  #                       cor_m = "kendall")
+  # res_HNA_5in10_tmp <- data.frame(res_HNA_5in10_tmp, Environment = rep(env,2)[i], fraction = frac[i])
+  # if(i == 1) {
+  #   res_HNA_5in10_fix <- res_HNA_5in10_tmp
+  # } else{
+  #   res_HNA_5in10_fix <- rbind(res_HNA_5in10_fix, res_HNA_5in10_tmp)
+  # }
 }
 
 scores_sb <- scores_df %>% dplyr::filter(grepl("*5seq10*", method))
@@ -581,7 +615,5 @@ png(file = paste("./fingerprint_plots/FPcorSEQ_5in10_unique_notrans_shared_muske
     units  = "in", res = 500, bg = "transparent")
 print(v_musk_5in10_shared)
 dev.off()
-
-
 
 ```
