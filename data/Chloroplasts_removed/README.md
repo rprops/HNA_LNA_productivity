@@ -9,3 +9,5 @@
 	- And the figure below:
 
 ![Relationships between Total Bacterial Production in ug C/L/Hr and  (A) High-Nucleic Acid Cells,  (B) Low-Nucleic Acid Cells, and (C) Total Cells](Cutoff_Analysis_Figures/HNA_vs_productivity.png)
+
+![How plot (A) from above compares to (B) fraction HNA between Total Bacterial Production in ug C/L/Hr.](fHNA_vs_productivity.png)

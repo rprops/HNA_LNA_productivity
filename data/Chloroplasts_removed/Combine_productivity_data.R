@@ -7,7 +7,7 @@ library(ggplot2)
 library(cowplot)
 
 # Read in the data 
-raw_data <- read.table(file="data/Chloroplasts_removed/nochloro_HNA_LNA.tsv", header = TRUE)  %>%
+raw_data <- read.table(file="data/Chloroplasts_removed/old/nochloro_HNA_LNA.tsv", header = TRUE)  %>%
   # Create matching column to go with Muskegon productivity data
   mutate(norep_filter_name = paste(substr(Sample_16S,1,4), substr(Sample_16S,6,9), sep = "")) %>%
   arrange(norep_filter_name)
@@ -97,9 +97,38 @@ totprod_plots <- plot_grid(HNA_vs_prod + theme(legend.position = c(0.84, 0.18),
           labels = c("A", "B", "C"), 
           ncol = 3)
 
+
+
+## Plot the fraction of HNA
+fmusk <- muskegon %>% mutate(fHNA = HNA.cells/Total.cells)
+
+lm_fHNA <- lm(tot_bacprod ~ fHNA, data = fmusk)
+
+fHNA_vs_prod <- ggplot(fmusk, aes(x = fHNA, y = tot_bacprod)) + 
+  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey") + 
+  scale_shape_manual(values = c(21, 22, 23, 24)) + 
+  geom_point(size = 3, aes(shape = Site), fill = "black") + 
+  geom_smooth(method = "lm") + 
+  ylab("Bacterial Production") + xlab("Fraction HNA") +
+  annotate("text", x = 0.35, y=75, color = "black", fontface = "bold", size = 3.5,
+           label = paste("Adj R2 =", round(summary(lm_fHNA)$adj.r.squared, digits = 3), "\n", 
+                         "p =", round(unname(summary(lm_fHNA)$coefficients[,4][2]), digits = 3)))
+
 # Save the plot to a file to call in the README
 ggsave(plot = totprod_plots, 
        filename = "data/Chloroplasts_removed/HNA_vs_productivity.png", 
        width = 10, height = 4, units = "in", dpi = 500)
+
+
+fHNA_comparison <- plot_grid(HNA_vs_prod + theme(legend.position = "none"), 
+          fHNA_vs_prod + theme(legend.position = "none"),
+          labels = c("A", "B"), ncol = 2) 
+
+ggsave(plot = fHNA_comparison, 
+       filename = "data/Chloroplasts_removed/fHNA_vs_productivity.png", 
+       width = 6, height = 3, units = "in", dpi = 500)
+
+
+
 
 
