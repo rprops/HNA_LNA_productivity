@@ -138,3 +138,5 @@ ggplot(test, aes(x = TaxRank, y = Num_Unique, group = lake)) +
   facet_grid(dataset~lake, scales = "free_y") + theme_bw() +
   theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
 
+ggsave("nums_tax_rankings.jpg", width = 7, height = 5)
+
