@@ -140,3 +140,37 @@ ggplot(test, aes(x = TaxRank, y = Num_Unique, group = lake)) +
 
 ggsave("nums_tax_rankings.jpg", width = 7, height = 5)
 
+
+
+
+############### CREATE NEW PHYLOSEQ OBJECTS
+rare_muskegon_physeq_5in10_rel
+# Species level
+species_musk_physeq_5in10 <- tax_glom(rare_muskegon_physeq_5in10_rel, taxrank = "Rank7")
+species_musk_physeq_5in10
+
+# Family level
+family_musk_physeq_5in10 <- tax_glom(rare_muskegon_physeq_5in10_rel, taxrank = "Rank5")
+family_musk_physeq_5in10
+
+#Phylum level
+phylum_musk_physeq_5in10 <- tax_glom(rare_muskegon_physeq_5in10_rel, taxrank = "Rank2")
+phylum_musk_physeq_5in10
+
+
+
+
+# Species
+rare_muskegon_physeq_1in3_rel
+species_musk_physeq_1in3 <- tax_glom(rare_muskegon_physeq_1in3_rel, taxrank = "Rank7")
+species_musk_physeq_1in3
+
+# Family
+rare_muskegon_physeq_1in3_rel
+family_musk_physeq_1in3 <- tax_glom(rare_muskegon_physeq_1in3_rel, taxrank = "Rank5")
+family_musk_physeq_1in3
+
+# Phylum
+phylum_musk_physeq_1in3 <- tax_glom(rare_muskegon_physeq_1in3_rel, taxrank = "Rank2")
+phylum_musk_physeq_1in3
+
