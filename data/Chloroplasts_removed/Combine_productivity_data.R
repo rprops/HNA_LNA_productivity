@@ -1,10 +1,16 @@
-# March 4th, 2017 
+# February 22th, 2018 
 # Marian L Schmidt 
 
 # Load libraries
 library(dplyr)
+library(tidyr)
 library(ggplot2)
 library(cowplot)
+
+fcm_colors <- c(
+  "HNA" = "deepskyblue4",
+  "LNA" = "darkgoldenrod1",
+  "Total" = "black")
 
 # Read in the data 
 raw_data <- read.table(file="data/Chloroplasts_removed/old/nochloro_HNA_LNA.tsv", header = TRUE)  %>%
@@ -39,65 +45,104 @@ data <- left_join(raw_data, combined_data, by = "norep_filter_name")
 # Write out the file 
 #write.table(data, file="data/Chloroplasts_removed/productivity_data.tsv", row.names=TRUE)
 
+###### SUBSET MUSKEGON ONLY
+muskegon <- dplyr::filter(data, Lake == "Muskegon" & Depth == "Surface") %>%
+  mutate(Site = factor(Site, levels = c("MOT", "MDP", "MBR", "MIN"))) %>%
+  filter(tot_bacprod < 90)
 
+#############
+#############
+# Number of Cells in Muskegon
+musk_cells <- muskegon %>%
+  dplyr::select(1:4, Season:Depth) %>%
+  rename(Total = Total.cells, HNA = HNA.cells, LNA = LNA.cells) %>%
+  gather(key = FCM_type, value = num_cells, Total:LNA) 
 
+df_cells <- data %>%
+  dplyr::select(1:4, Lake, Season:Depth) %>%
+  rename(Total = Total.cells, HNA = HNA.cells, LNA = LNA.cells) %>%
+  gather(key = FCM_type, value = num_cells, Total:LNA) %>%
+  
+
+cells_boxplot <- 
+  ggplot(df_cells, 
+         aes(x = FCM_type, y = num_cells, fill = FCM_type, color = FCM_type, shape = Lake)) + 
+  geom_boxplot(alpha = 0.7, outlier.shape = NA, show.legend = FALSE) +
+  geom_point(size = 2.5, position = position_jitterdodge()) + 
+  scale_fill_manual(values = fcm_colors, guide = "none") + 
+  scale_color_manual(values = fcm_colors, guide = "none") + 
+  labs(y = "Number of Cells \n (cells/mL)", x = "Cell Type") +
+  theme(legend.position = c(0.12, 0.85))
 
 ####################################################################################
 ####################################################################################
 ########################  Analysis of HNA/LNA/Total Cells vs Total Productivity
-muskegon <- dplyr::filter(data, Lake == "Muskegon" & Depth == "Surface") %>%
-  mutate(Site = factor(Site, levels = c("MOT", "MDP", "MBR", "MIN"))) 
-
-
+# 1. Run the linear model 
 lm_HNA <- lm(tot_bacprod ~ HNA.cells, data = muskegon)
 
+## 2. Extract the R2 and p-value from the linear model: 
+lm_HNA_stats <- paste("atop(R^2 ==", round(summary(lm_HNA)$adj.r.squared, digits = 2), ",",
+                                    "p ==", round(unname(summary(lm_HNA)$coefficients[,4][2]), digits = 5), ")")
+
+# 3. Plot it
 HNA_vs_prod <- ggplot(muskegon, aes(x = HNA.cells, y = tot_bacprod)) + 
   geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey") + 
   geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey") + 
-  scale_shape_manual(values = c(21, 22, 23, 24)) + 
-  geom_point(size = 3, aes(shape = Site), fill = "black") + 
-  geom_smooth(method = "lm") + 
-  ylab("Bacterial Production") +
-  annotate("text", x = 2e+06, y=75, color = "black", fontface = "bold", size = 3.5,
-           label = paste("Adj R2 =", round(summary(lm_HNA)$adj.r.squared, digits = 3), "\n", 
-                         "p =", round(unname(summary(lm_HNA)$coefficients[,4][2]), digits = 8)))
+  geom_point(size = 3, shape = 22, fill = "deepskyblue4") + 
+  geom_smooth(method = "lm", color = "deepskyblue4") + 
+  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "Number of HNA Cells") +
+  scale_x_continuous(labels = function(x) format(x, scientific = TRUE), 
+                     breaks = c(2e+06, 3e+06)) +
+  annotate("text", x=1.5e+06, y=60, label=lm_HNA_stats, parse = TRUE, color = "black", size = 4) 
 
+
+# 1. Run the linear model 
 lm_LNA <- lm(tot_bacprod ~ LNA.cells, data = muskegon)
 
+## 2. Extract the R2 and p-value from the linear model: 
+lm_LNA_stats <- paste("atop(R^2 ==", round(summary(lm_LNA)$adj.r.squared, digits = 3), ",",
+                      "p ==", round(unname(summary(lm_LNA)$coefficients[,4][2]), digits = 2), ")")
+
+# 3. Plot it
 LNA_vs_prod <- ggplot(muskegon, aes(x = LNA.cells, y = tot_bacprod)) + 
   geom_errorbarh(aes(xmin = LNA.cells - LNA.sd, xmax = LNA.cells + LNA.sd), color = "grey") + 
   geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey") + 
-  scale_shape_manual(values = c(21, 22, 23, 24)) + 
-  geom_point(size = 3, aes(shape = Site), fill = "black") + 
-  ylab("Bacterial Production") +
-  geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "red") + 
-  annotate("text", x = 4e+06, y=75, color = "red", fontface = "bold", size = 3.5,
-           label = paste("Adj R2 =", round(summary(lm_LNA)$adj.r.squared, digits = 3), "\n", 
-                         "p =", round(unname(summary(lm_LNA)$coefficients[,4][2]), digits = 3)))
+  geom_point(size = 3, shape = 22, fill = "darkgoldenrod1") + 
+  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "Number of LNA Cells") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "darkgoldenrod1") + 
+  annotate("text", x=2.5e+06, y=60, label=lm_LNA_stats, parse = TRUE, color = "red", size = 4) 
 
+
+
+# 1. Run the linear model 
 lm_total <- lm(tot_bacprod ~ Total.cells, data = muskegon)
 
+## 2. Extract the R2 and p-value from the linear model: 
+lm_total_stats <- paste("atop(R^2 ==", round(summary(lm_total)$adj.r.squared, digits = 2), ",",
+                      "p ==", round(unname(summary(lm_total)$coefficients[,4][2]), digits = 2), ")")
+
+# 3. Plot it 
 Total_vs_prod <- ggplot(muskegon, aes(x = Total.cells, y = tot_bacprod)) + 
   geom_errorbarh(aes(xmin = Total.cells - Total.count.sd, xmax = Total.cells + Total.count.sd), color = "grey") + 
   geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey") + 
   scale_shape_manual(values = c(21, 22, 23, 24)) +
-  geom_point(size = 3, aes(shape = Site), fill = "black") + 
-  ylab("Bacterial Production") +
-  geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "red") + 
-  annotate("text", x = 7e+06, y=75, color = "red", fontface = "bold", size = 3.5,
-           label = paste("Adj R2 =", round(summary(lm_total)$adj.r.squared, digits = 3), "\n", 
-                         "p =", round(unname(summary(lm_total)$coefficients[,4][2]), digits = 3)))
+  geom_point(size = 3, shape = 22, fill = "black") + 
+  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "Total Number of Cells") +
+  geom_smooth(method = "lm", color = "black") + 
+  #geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "red") + 
+  annotate("text", x=5e+06, y=60, label=lm_total_stats, parse = TRUE, color = "black", size = 4) 
+
 
 # Put all three plots together into one 
-totprod_plots <- plot_grid(HNA_vs_prod + theme(legend.position = c(0.84, 0.18),
-                              legend.text = element_text(size = 10),
-                              legend.title = element_text(size = 11, face = "bold")), 
-          LNA_vs_prod + theme(legend.position = "none"), 
-          Total_vs_prod + theme(legend.position = "none"),
-          labels = c("A", "B", "C"), 
-          ncol = 3)
+totprod_plots <- plot_grid(cells_boxplot + theme(legend.text = element_text(size = 10),
+                                                 legend.title = element_text(size = 11, face = "bold")),
+                           HNA_vs_prod + theme(legend.position = "none"), 
+                           LNA_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"), 
+                           Total_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"), 
+          labels = c("A", "B", "C", "D"), 
+          ncol = 4, rel_widths = c(1, 0.9, 0.8, 0.8))
 
-
+totprod_plots
 
 ## Plot the fraction of HNA
 fmusk <- muskegon %>% mutate(fHNA = HNA.cells/Total.cells)
@@ -117,7 +162,7 @@ fHNA_vs_prod <- ggplot(fmusk, aes(x = fHNA, y = tot_bacprod)) +
 # Save the plot to a file to call in the README
 ggsave(plot = totprod_plots, 
        filename = "data/Chloroplasts_removed/HNA_vs_productivity.png", 
-       width = 10, height = 4, units = "in", dpi = 500)
+       width = 14, height = 4, units = "in", dpi = 500)
 
 
 fHNA_comparison <- plot_grid(HNA_vs_prod + theme(legend.position = "none"), 
