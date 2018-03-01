@@ -68,11 +68,27 @@ cells_boxplot <-
   ggplot(df_cells, 
          aes(x = FCM_type, y = num_cells, fill = FCM_type, color = FCM_type, shape = Lake)) + 
   geom_boxplot(alpha = 0.7, outlier.shape = NA, show.legend = FALSE) +
-  geom_point(size = 2.5, position = position_jitterdodge()) + 
+  geom_point(size = 1.5, position = position_jitterdodge()) + 
   scale_fill_manual(values = fcm_colors, guide = "none") + 
   scale_color_manual(values = fcm_colors, guide = "none") + 
   labs(y = "Number of Cells \n (cells/mL)", x = "Cell Type") +
-  theme(legend.position = c(0.12, 0.85))
+  theme(legend.position = c(0.04, 0.85))
+
+ggplot(df_cells, 
+       aes(x = Lake, y = num_cells, fill = FCM_type, color = FCM_type)) + 
+  geom_boxplot(alpha = 0.7, outlier.shape = NA, show.legend = FALSE) +
+  geom_point(size = 1, position = position_jitterdodge()) + 
+  #facet_grid(FCM_type~., scales = "free") + 
+  scale_fill_manual(values = fcm_colors, guide = "none") + 
+  scale_color_manual(values = fcm_colors) + 
+  scale_y_continuous(labels = function(x) format(x, scientific = TRUE)) +
+  labs(y = "Number of Cells \n (cells/mL)", x = "Lake") +
+  theme(legend.position = "top", legend.title = element_blank())
+
+ggsave(filename = "data/Chloroplasts_removed/HNA-LNA-lakes.png", 
+       width = 4, height = 3.5, units = "in", dpi = 500)
+
+
 
 ####################################################################################
 ####################################################################################
