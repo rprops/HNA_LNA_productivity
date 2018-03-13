@@ -262,12 +262,14 @@ my_palette <- colorRampPalette(c("grey","black", "red")) (n=20)
 col <- c("deepskyblue4", "darkgoldenrod1", "deepskyblue4", 
          "darkgoldenrod1", "deepskyblue4", "darkgoldenrod1")
 
+colz <- c("pink", "pink", "green", "green", "orange", "orange")
+
 jpeg(file = "heatmap_figs/clustering_heatmap_all.jpg", 
      units = "in", width = 8, height = 10, res = 300)
 heatmap.2(matrix_scores, col = my_palette, breaks=breakers, trace="none",
           key=TRUE, symkey=FALSE, density.info="none", srtCol=45,
           margins=c(8,7), cexRow=1.25,cexCol=1.25,
-          ColSideColors=col)
+          ColSideColors=colz)
 dev.off()  # 318 bytes file in current directory
 
 
