@@ -322,3 +322,194 @@ heatmap.2(LNA_matrix, col = lna_palette, breaks=lna_breaks, trace="none",
           key=TRUE, symkey=FALSE, density.info="none", srtCol=0,
           margins=c(3,7), cexRow=1.25,cexCol=1.25, key.xlab="Lasso Score", key.title = NA)
 dev.off() 
+
+
+# Taxonomic analysis 
+load("data/Chloroplasts_removed/ByLake_Filtering/5in10/muskegon/muskegon_5in10_physeqs.RData")
+
+muskegonOTUs <- 
+  matrix_scores %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("OTU") %>%
+  dplyr::select(OTU, musk_HNA, musk_LNA) %>%
+  dplyr::filter(musk_HNA > 0.15 | musk_LNA > 0.15) 
+
+list_muskegon_otus <- muskegonOTUs$OTU
+
+muskegon_taxonomy <- rare_muskegon_physeq_5in10_abs %>%
+  subset_taxa(., taxa_names(rare_muskegon_physeq_5in10_abs) %in% list_muskegon_otus)
+
+as.data.frame(tax_table(muskegon_taxonomy)) %>%
+  tibble::rownames_to_column(var = "OTU") %>%
+  full_join(muskegonOTUs, by = "OTU") %>%
+  rename(HNA = musk_HNA, LNA = musk_LNA) %>%
+  gather(key = fcm_group, value = RL_score, HNA:LNA) %>%
+  dplyr::filter(RL_score > 0.15) %>%
+  ggplot(aes(y = RL_score, x = Rank5, fill = Rank5)) +
+  geom_bar(stat = "identity", position = "stack", color = "black") + facet_wrap(~fcm_group) +
+  scale_fill_brewer(palette="Set3") + xlab("Family") +
+  ggtitle("Muskegon Lake") +
+  scale_y_continuous(expand = c(0,0), limits = c(0, 1.1)) +
+  theme(legend.position = "bottom", axis.text.x = element_text(angle=30, hjust = 1, vjust = 1))
+
+as.data.frame(sample_data(muskegon_taxonomy)) %>%
+  tibble::rownames_to_column(var = "OTU")
+
+
+
+
+load("data/Chloroplasts_removed/ByLake_Filtering/5in10/inland/inland_5in10_physeqs.RData")
+rare_inland_physeq_5in10_abs
+
+inlandOTUs <- 
+  matrix_scores %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("OTU") %>%
+  dplyr::select(OTU, inland_HNA, inland_LNA) %>%
+  dplyr::filter(inland_HNA > 0.15 | inland_LNA > 0.15) 
+
+list_inland_otus <- inlandOTUs$OTU
+
+inland_taxonomy <- rare_inland_physeq_5in10_abs %>%
+  subset_taxa(., taxa_names(rare_inland_physeq_5in10_abs) %in% list_inland_otus)
+
+as.data.frame(tax_table(inland_taxonomy)) %>%
+  tibble::rownames_to_column(var = "OTU") %>%
+  full_join(inlandOTUs, by = "OTU") %>%
+  rename(HNA = inland_HNA, LNA = inland_LNA) %>%
+  gather(key = fcm_group, value = RL_score, HNA:LNA) %>%
+  dplyr::filter(RL_score > 0.15) %>%
+  ggplot(aes(y = RL_score, x = Rank4, fill = Rank4)) +
+  geom_bar(stat = "identity") + facet_wrap(~fcm_group, scale = "free_x") +
+  scale_fill_brewer(palette="Set1") + xlab("Order") +
+  ggtitle("Inland Lakes") +
+  scale_y_continuous(expand = c(0,0), limits = c(0, 1.1)) +
+  theme(legend.position = "bottom", axis.text.x = element_text(angle=30, hjust = 1, vjust = 1))
+
+
+
+load("data/Chloroplasts_removed/ByLake_Filtering/5in10/michigan/michigan_5in10_physeqs.RData")
+rare_michigan_physeq_5in10_abs
+
+michiganOTUs <- 
+  matrix_scores %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("OTU") %>%
+  dplyr::select(OTU, michigan_HNA, michigan_LNA) %>%
+  dplyr::filter(michigan_HNA > 0.15 | michigan_LNA > 0.15) 
+
+list_michigan_otus <- michiganOTUs$OTU
+
+michigan_taxonomy <- rare_michigan_physeq_5in10_abs %>%
+  subset_taxa(., taxa_names(rare_michigan_physeq_5in10_abs) %in% list_michigan_otus)
+
+as.data.frame(tax_table(michigan_taxonomy)) %>%
+  tibble::rownames_to_column(var = "OTU") %>%
+  full_join(michiganOTUs, by = "OTU") %>%
+  rename(HNA = michigan_HNA, LNA = michigan_LNA) %>%
+  gather(key = fcm_group, value = RL_score, HNA:LNA) %>%
+  dplyr::filter(RL_score > 0.15) %>%
+  ggplot(aes(y = RL_score, x = Rank4, fill = Rank4)) +
+  geom_bar(stat = "identity", color = "black") + facet_wrap(~fcm_group, scale = "free_x") +
+  scale_fill_brewer(palette="Set3") + xlab("Order") +
+  ggtitle("Lake Michigan") +
+  scale_y_continuous(expand = c(0,0), limits = c(0, 1.1)) +
+  theme(legend.position = "bottom", axis.text.x = element_text(angle=30, hjust = 1, vjust = 1))
+
+
+##### THE TOP 6
+ones <- c("Otu000173", "Otu000029", "Otu000369", "Otu000555", "Otu000025", "Otu000168")
+
+
+top_inland_otu_tax <- 
+  as.data.frame(tax_table(inland_taxonomy)) %>%
+  tibble::rownames_to_column(var = "OTU") %>%
+  full_join(inlandOTUs, by = "OTU") %>%
+  dplyr::filter(OTU %in% ones) %>%
+  rename(HNA = inland_HNA, LNA = inland_LNA)
+
+top_musk_otu_tax <- 
+  as.data.frame(tax_table(muskegon_taxonomy)) %>%
+  tibble::rownames_to_column(var = "OTU") %>%
+  full_join(muskegonOTUs, by = "OTU") %>%
+  dplyr::filter(OTU %in% ones) %>%
+  rename(HNA = musk_HNA, LNA = musk_LNA)
+
+top_michigan_otu_tax <- 
+  as.data.frame(tax_table(michigan_taxonomy)) %>%
+  tibble::rownames_to_column(var = "OTU") %>%
+  full_join(michiganOTUs, by = "OTU") %>%
+  dplyr::filter(OTU %in% ones) %>%
+  rename(HNA = michigan_HNA, LNA = michigan_LNA)
+
+df <- bind_rows(top_inland_otu_tax, top_musk_otu_tax, top_michigan_otu_tax)
+
+
+
+
+#### PHYLOGENETIC ANALYSIS
+load("data/fasttree/ALL-physeq-for-phylo.RData")
+ALL_rel_physeq_5in10
+
+otu_scores_df <- matrix_scores %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("OTU")
+
+vector_of_otus <- as.vector(otu_scores_df$OTU)
+write(vector_of_otus, file = "heatmap_figs/OTUnames_based_on_RLscores.txt",
+      ncolumns = 1,
+      append = FALSE, sep = "\n")
+
+### Make a phyloseq object 
+otu_scores_df <- matrix_scores %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column(var = "OTU") 
+
+library(phytools)
+HNALNA_otu_tree <- read.newick(file="data/fasttree/newick_tree_HNALNA_rmN.tre")
+
+## Prepare the tax table 
+michigan_otu_tax <- 
+  as.data.frame(tax_table(michigan_taxonomy)) %>%
+  tibble::rownames_to_column(var = "OTU") %>%
+  full_join(michiganOTUs, by = "OTU") %>%
+  rename(HNA = michigan_HNA, LNA = michigan_LNA) %>%
+  filter(OTU != "Otu000242")%>%
+  dplyr::select(-c(HNA:LNA))
+
+inland_otu_tax <- 
+  as.data.frame(tax_table(inland_taxonomy)) %>%
+  tibble::rownames_to_column(var = "OTU") %>%
+  full_join(inlandOTUs, by = "OTU") %>%
+  rename(HNA = inland_HNA, LNA = inland_LNA)%>%
+  dplyr::select(-c(HNA:LNA))
+
+muskegon_otu_tax <- 
+  as.data.frame(tax_table(muskegon_taxonomy)) %>%
+  tibble::rownames_to_column(var = "OTU") %>%
+  full_join(muskegonOTUs, by = "OTU") %>%
+  rename(HNA = musk_HNA, LNA = musk_LNA) %>%
+  dplyr::select(-c(HNA:LNA))
+
+taxtable <- bind_rows(michigan_otu_tax, inland_otu_tax, muskegon_otu_tax) %>%
+  rename(Domain = Rank1, Phylum = Rank2, Class = Rank3, 
+         Order = Rank4, Family = Rank5, Genus = Rank6, Species = Rank7) %>%
+  tibble::column_to_rownames(var = "OTU") 
+
+
+merge_phyloseq(HNALNA_otu_tree, otu_table(otu_scores_df, taxa_are_rows = TRUE), tax_table(taxtable))
+
+
+phylo_otus <- ALL_rel_physeq_5in10 %>%
+  subset_taxa(., taxa_names(ALL_rel_physeq_5in10) %in% otu_scores_df$OTU)  
+
+scratch_otu <- otu_table(phylo_otus)
+
+PHYTREE <- merge_phyloseq(phylo_otus, phy_tree(HNALNA_otu_tree))
+
+
+
+plot_tree(phylo_otus, color="Rank2", ladderize="left") 
+
+
+

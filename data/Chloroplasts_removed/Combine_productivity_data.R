@@ -61,8 +61,17 @@ musk_cells <- muskegon %>%
 df_cells <- data %>%
   dplyr::select(1:4, Lake, Season:Depth) %>%
   rename(Total = Total.cells, HNA = HNA.cells, LNA = LNA.cells) %>%
-  gather(key = FCM_type, value = num_cells, Total:LNA) %>%
+  gather(key = FCM_type, value = num_cells, Total:LNA)
   
+stats_cells <- df_cells %>%
+  group_by(Lake, FCM_type) %>%
+  summarise(count = n(),
+            mean_cells = mean(num_cells),
+            median_cells = median(num_cells))
+
+# More 
+#filter(stats_cells, FCM_type == "Total")
+
 
 cells_boxplot <- 
   ggplot(df_cells, 
