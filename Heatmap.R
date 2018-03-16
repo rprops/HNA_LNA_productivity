@@ -270,8 +270,8 @@ as.data.frame(tax_table(michigan_taxonomy)) %>%
 
 
 #### PHYLOGENETIC ANALYSIS
-load("data/fasttree/ALL-physeq-for-phylo.RData")
-ALL_rel_physeq_1in3
+load("/data/phyloseq.RData")
+physeq.otu
 
 otu_scores_df <- matrix_scores %>%
   as.data.frame() %>%
@@ -279,17 +279,14 @@ otu_scores_df <- matrix_scores %>%
 
 vector_of_otus <- as.vector(otu_scores_df$OTU)
 
-View(taxa_names(ALL_rel_physeq_1in3))
-
-physeq <- ALL_rel_physeq_1in3 %>%
-  subset_taxa(., taxa_names(ALL_rel_physeq_1in3) %in% vector_of_otus)  
+physeq <- physeq.otu %>%
+  subset_taxa(., taxa_names(physeq.otu) %in% vector_of_otus)  
 
 # Which OTU is missing?
 setdiff(sort(vector_of_otus), sort(taxa_names(physeq)))
+setdiff(sort(taxa_names(physeq)), sort(vector_of_otus))
 
-
-
-write(vector_of_otus, file = "heatmap_figs/OTUnames_based_on_RLscores.txt",
+write(vector_of_otus, file = "data/fasttree/OTUnames_based_on_RLscores.txt",
       ncolumns = 1,
       append = FALSE, sep = "\n")
 
@@ -299,67 +296,113 @@ otu_scores_df <- matrix_scores %>%
   tibble::rownames_to_column(var = "OTU") 
 
 library(phytools)
-HNALNA_otu_tree <- read.newick(file="data/fasttree/newick_tree_HNALNA_rmN.tre")
+HNALNA_otu_tree <- read.tree(file="data/fasttree/RAxML_bipartitions.newick_tree_HNALNA_rmN.tre")
+
 tree_tip_order <- data.frame(HNALNA_otu_tree$tip.label) %>%
   rename(OTU = HNALNA_otu_tree.tip.label)
 
-## Prepare the tax table 
-michigan_otu_tax <- 
-  as.data.frame(tax_table(michigan_taxonomy)) %>%
-  tibble::rownames_to_column(var = "OTU") %>%
-  full_join(michiganOTUs, by = "OTU") %>%
-  rename(HNA = michigan_HNA, LNA = michigan_LNA) %>%
-  filter(OTU != "Otu000242")%>%
-  dplyr::select(-c(HNA:LNA))
 
-inland_otu_tax <- 
-  as.data.frame(tax_table(inland_taxonomy)) %>%
-  tibble::rownames_to_column(var = "OTU") %>%
-  full_join(inlandOTUs, by = "OTU") %>%
-  rename(HNA = inland_HNA, LNA = inland_LNA)%>%
-  dplyr::select(-c(HNA:LNA))
+final_physeq <- merge_phyloseq(physeq, phy_tree(HNALNA_otu_tree))
 
-muskegon_otu_tax <- 
-  as.data.frame(tax_table(muskegon_taxonomy)) %>%
-  tibble::rownames_to_column(var = "OTU") %>%
-  full_join(muskegonOTUs, by = "OTU") %>%
-  rename(HNA = musk_HNA, LNA = musk_LNA) %>%
-  dplyr::select(-c(HNA:LNA))
+# Fix the taxonomy names 
+colnames(tax_table(final_physeq)) <- c("Kingdom","Phylum","Class","Order","Family","Genus","Species")
 
-taxtable <- bind_rows(michigan_otu_tax, inland_otu_tax, muskegon_otu_tax) %>%
-  rename(Domain = Rank1, Phylum = Rank2, Class = Rank3, 
-         Order = Rank4, Family = Rank5, Genus = Rank6, Species = Rank7)
+###################################################################### ADD THE PROTEOBACTERIA TO THE PHYLA
+phy <- data.frame(tax_table(final_physeq))
+Phylum <- as.character(phy$Phylum)
+Class <- as.character(phy$Class)
 
-ordered_tax_table <- left_join(tree_tip_order, taxtable, by = "OTU") %>%
-  tibble::column_to_rownames(var = "OTU")
+for  (i in 1:length(Phylum)){ 
+  if (Phylum[i] == "Proteobacteria"){
+    Phylum[i] <- Class[i]
+  } 
+}
 
-ordered_tax_table$OTU <- row.names(ordered_tax_table)
+phy$Phylum <- Phylum # Add the new phylum level data back to phy
+#phy$OTU <- row.names(tax_table(final_physeq)) # Make a column for OTU
 
-test_df <- data.frame(taxa_names(phylo_otus)) %>%
-  rename(OTU = taxa_names.phylo_otus.)
+t <- tax_table(as.matrix(phy))
 
-left_join(test_df, tree_tip_order, by = "OTU")
-setdiff(tree_tip_order, test_df)
+tax_table(final_physeq) <- t
+
+# Set global colors for the different taxonomic phyla
+phylum_colors <- c( 
+  Acidobacteria = "navy", 
+  Actinobacteria = "blue", 
+  Alphaproteobacteria = "tomato", 
+  Aminicenantes = "cornflowerblue",
+  Armatimonadetes = "wheat", 
+  Bacteria_unclassified = "#508578", 
+  Bacteroidetes = "gold", 
+  Betaproteobacteria = "plum1", 
+  "Candidate_division_OP3" = "slategray3",
+  Chlamydiae = "#A20E42",
+  Chlorobi="magenta", 
+  Chloroflexi="black", 
+  Cyanobacteria = "limegreen",
+  "Deinococcus-Thermus" = "black",
+  Deltaproteobacteria = "olivedrab", 
+  Firmicutes = "black",
+  Gammaproteobacteria = "cyan",
+  Gemmatimonadetes = "yellow",
+  Gracilibacteria = "#FD823F",
+  JTB23 = "#B5D6AA",
+  Latescibacteria = "salmon4",
+  Lentisphaerae = "palevioletred1",
+  Nitrospirae = "forestgreen",
+  Omnitrophica = "violet",
+  Parcubacteria = "#531A4D",
+  Planctomycetes = "darkorange", 
+  Proteobacteria_unclassified = "greenyellow",
+  Spirochaetae = "royalblue",
+  TA06 = "peachpuff",
+  Omnitrophica = "burlywood", 
+  unknown_unclassified = "grey",
+  Verrucomicrobia = "purple4",
+  Proteobacteria_unclassified = "green",
+  Proteobacteria = "red")
 
 
+plot_tree(final_physeq, "treeonly", nodelabf = nodeplotboot(), ladderize = "left", 
+          label.tips="taxa_names")
+  
+
+## Test on a smaller tree
+test <- final_physeq %>%
+  subset_taxa(., taxa_names(final_physeq) %in% vector_of_otus[1:10])  
 
 
-
-phylo_otus <- ALL_rel_physeq_5in10 %>%
-  subset_taxa(., taxa_names(ALL_rel_physeq_5in10) %in% otu_scores_df$OTU)  
-
-scratch_otu <- otu_table(phylo_otus)
-
-PHYTREE <- merge_phyloseq(phylo_otus, phy_tree(HNALNA_otu_tree))
+plot_tree(test, "treeonly", nodelabf = nodeplotboot(), ladderize = "left", 
+          label.tips="taxa_names", color = "Phylum") 
 
 
+library(ggtree)
 
-plot(HNALNA_otu_tree) 
+tax <- data.frame(tax_table(final_physeq)) %>%
+  tibble::rownames_to_column(var = "OTU")
+
+df <- read.csv("data/fasttree/OTUnames_based_on_RLscores_MANUAL.csv") %>%
+  left_join(., tax, by = "OTU") %>%
+  tibble::column_to_rownames("OTU") %>%
+  dplyr::select(Lake, fcm_type)
+
+p <- ggplot(HNALNA_otu_tree, aes(x, y)) + geom_tree() + theme_tree() +
+  geom_tiplab(size=3, align=TRUE, linesize=.5) 
+gheatmap(p, df, offset = 0.5, width=0.5, font.size=3, colnames_angle=0, hjust=0.5) +
+  scale_fill_brewer(palette = "Set1")
+ggsave("heatmap_figs/phylogenetic_tree_fcm_lake.jpg", width = 8, height = 8)
 
 
+df2 <- read.csv("data/fasttree/OTUnames_based_on_RLscores_MANUAL.csv") %>%
+  left_join(., tax, by = "OTU") %>%
+  tibble::column_to_rownames("OTU") %>%
+  dplyr::select(Phylum)
 
-
-
+p2 <- ggplot(HNALNA_otu_tree, aes(x, y)) + geom_tree() + theme_tree() +
+  geom_tiplab(size=3, align=TRUE, linesize=.5) 
+gheatmap(p2, df2, offset = 0.5, width=0.5, font.size=3, colnames_angle=0, hjust=0.5) +
+  scale_fill_manual(values = phylum_colors)
+ggsave("heatmap_figs/phylogenetic_tree_phylum.jpg", width = 8, height = 8)
 
 
 
@@ -540,4 +583,42 @@ top_michigan_otu_tax <-
   rename(HNA = michigan_HNA, LNA = michigan_LNA)
 
 df <- bind_rows(top_inland_otu_tax, top_musk_otu_tax, top_michigan_otu_tax)
+
+
+
+
+
+
+####
+## Prepare the tax table 
+michigan_otu_tax <- 
+  as.data.frame(tax_table(michigan_taxonomy)) %>%
+  tibble::rownames_to_column(var = "OTU") %>%
+  full_join(michiganOTUs, by = "OTU") %>%
+  rename(HNA = Michigan_HNA, LNA = Michigan_LNA) %>%
+  filter(OTU != "Otu000242")%>%
+  dplyr::select(-c(HNA:LNA))
+
+inland_otu_tax <- 
+  as.data.frame(tax_table(inland_taxonomy)) %>%
+  tibble::rownames_to_column(var = "OTU") %>%
+  full_join(inlandOTUs, by = "OTU") %>%
+  rename(HNA = Inland_HNA, LNA = Inland_LNA)%>%
+  dplyr::select(-c(HNA:LNA))
+
+muskegon_otu_tax <- 
+  as.data.frame(tax_table(muskegon_taxonomy)) %>%
+  tibble::rownames_to_column(var = "OTU") %>%
+  full_join(muskegonOTUs, by = "OTU") %>%
+  rename(HNA = Muskegon_HNA, LNA = Muskegon_LNA) %>%
+  dplyr::select(-c(HNA:LNA))
+
+taxtable <- bind_rows(michigan_otu_tax, inland_otu_tax, muskegon_otu_tax) %>%
+  rename(Domain = Rank1, Phylum = Rank2, Class = Rank3, 
+         Order = Rank4, Family = Rank5, Genus = Rank6, Species = Rank7)
+
+ordered_tax_table <- left_join(tree_tip_order, taxtable, by = "OTU") %>%
+  tibble::column_to_rownames(var = "OTU")
+
+ordered_tax_table$OTU <- row.names(ordered_tax_table)
 

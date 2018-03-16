@@ -1,4 +1,4 @@
-# Date: November 10th, 2017 & March 13th, 2018
+# Date: November 10th, 2017 & March 13-16th, 2018
 # Author: Marian L. Schmidt
 # This folder was created to fix fasta header names and to run fasttree for phylogenetic diversity analysis. 
 
@@ -13,9 +13,9 @@ cut -f1 -d "|" test.fasta | cut -f2 | sed 's/Otu/>Otu/'  > cut_test.fasta
 
 
 ########### 
-On March 13, 2018
+On March 16, 2018
 
-### Prepare fasta files for FastTree
+### Prepare fasta files for RAxML
 
 1. To plot a phylogeny with OTUs with HNA and LNA Lasso Scores to look for phylogenetic signal. The following code was ran in R with the vector of OTUs with RL scores of at least 0.15:
 
@@ -38,23 +38,17 @@ write(vector_of_otus, file = "heatmap_figs/OTUnames_based_on_RLscores.txt",
 sed 's/N/-/g' HNA_LNA_OTUs.fasta > HNA_LNA_OTUs_rmN.fasta
 ```
 
-### Run FastTree
+### Run RAxML
 
 4. Log onto flux  
 
 5. Make a new working directory, for me it was called `/scratch/lsa_fluxm/marschmi/HNA_LNA/March_2018`.
 
-6. Load fasttree: `module load fasttree`
+6. Load fasttree: `module load RAxML`
 
-10. On flux run the `fasttree.pbs` script. It's main function is the following line of code:  
+10. On flux run the `raxml.pbs` script. It's main function is the following line of code (see the file for annotations of the arguments and output files):  
 
 
 ```
-# Infer a tree with fasttree with the GTR+CAT 
-### GTR: General time reversible model 
-
-## Input file to fasttree = rmN_to_dash.fasta
-## Output file to fasttree = newick_tree_rmN_to_dash.tre 
-
-FastTree -gtr -nt -fastest  < HNA_LNA_OTUs_rmN.fasta > newick_tree_HNALNA_rmN.tre
+raxmlHPC-PTHREADS-SSE3 -m GTRGAMMA -p 333 -f a -s HNA_LNA_OTUs_rmN.fasta -T 10 -x 777 -N 1000 -n newick_tree_HNALNA_rmN.tre
 ```
