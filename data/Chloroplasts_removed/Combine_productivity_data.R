@@ -69,6 +69,34 @@ stats_cells <- df_cells %>%
             mean_cells = mean(num_cells),
             median_cells = median(num_cells))
 
+proportionHNA_plot <- 
+  df_cells %>%
+  dplyr::select(samples, Lake, FCM_type, num_cells) %>%
+  spread(FCM_type, num_cells) %>%
+  mutate(prop_HNA = HNA/Total * 100,
+         prop_LNA = LNA/Total * 100) %>%
+  dplyr::select(Lake, prop_HNA, prop_LNA) %>%
+  rename(HNA = prop_HNA, LNA = prop_LNA) %>%
+  gather(key = fcm_type, value = Percentage, HNA:LNA) %>%
+  ggplot(aes(x = Lake, y = Percentage, color = fcm_type, fill = fcm_type)) +
+    facet_grid(~fcm_type) + ylab("Percentage of Total Cells") +
+    geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+    geom_jitter(alpha = 0.9) +
+    scale_color_manual(values = fcm_colors) +
+    scale_fill_manual(values = fcm_colors) + 
+    theme(legend.position = "none")
+  
+
+df_cells %>%
+  dplyr::select(samples, Lake, FCM_type, num_cells) %>%
+  spread(FCM_type, num_cells) %>%
+  mutate(prop_HNA = HNA/Total * 100,
+         prop_LNA = LNA/Total * 100) %>%
+  dplyr::select(Lake, prop_HNA, prop_LNA) %>%
+  group_by(Lake) %>%
+  summarize(mean_prop_HNA = mean(prop_HNA),
+            mean_prop_LNA = mean(prop_LNA))
+
 # More 
 #filter(stats_cells, FCM_type == "Total")
 
@@ -94,8 +122,8 @@ ggplot(df_cells,
   labs(y = "Number of Cells \n (cells/mL)", x = "Lake") +
   theme(legend.position = "top", legend.title = element_blank())
 
-ggsave(filename = "data/Chloroplasts_removed/HNA-LNA-lakes.png", 
-       width = 4, height = 3.5, units = "in", dpi = 500)
+#ggsave(filename = "data/Chloroplasts_removed/HNA-LNA-lakes.png", 
+#       width = 4, height = 3.5, units = "in", dpi = 500)
 
 
 
@@ -115,7 +143,7 @@ HNA_vs_prod <- ggplot(muskegon, aes(x = HNA.cells, y = tot_bacprod)) +
   geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey") + 
   geom_point(size = 3, shape = 22, fill = "deepskyblue4") + 
   geom_smooth(method = "lm", color = "deepskyblue4") + 
-  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "Number of HNA Cells") +
+  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "HNA Cell Density (cells/mL)") +
   scale_x_continuous(labels = function(x) format(x, scientific = TRUE), 
                      breaks = c(2e+06, 3e+06)) +
   annotate("text", x=1.5e+06, y=60, label=lm_HNA_stats, parse = TRUE, color = "black", size = 4) 
@@ -133,7 +161,7 @@ LNA_vs_prod <- ggplot(muskegon, aes(x = LNA.cells, y = tot_bacprod)) +
   geom_errorbarh(aes(xmin = LNA.cells - LNA.sd, xmax = LNA.cells + LNA.sd), color = "grey") + 
   geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey") + 
   geom_point(size = 3, shape = 22, fill = "darkgoldenrod1") + 
-  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "Number of LNA Cells") +
+  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "LNA Cell Density (cells/mL)") +
   geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "darkgoldenrod1") + 
   annotate("text", x=2.5e+06, y=60, label=lm_LNA_stats, parse = TRUE, color = "red", size = 4) 
 
@@ -152,7 +180,7 @@ Total_vs_prod <- ggplot(muskegon, aes(x = Total.cells, y = tot_bacprod)) +
   geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey") + 
   scale_shape_manual(values = c(21, 22, 23, 24)) +
   geom_point(size = 3, shape = 22, fill = "black") + 
-  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "Total Number of Cells") +
+  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "Cell Density (cells/mL)") +
   geom_smooth(method = "lm", color = "black") + 
   #geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "red") + 
   annotate("text", x=5e+06, y=60, label=lm_total_stats, parse = TRUE, color = "black", size = 4) 
@@ -197,8 +225,4 @@ fHNA_comparison <- plot_grid(HNA_vs_prod + theme(legend.position = "none"),
 ggsave(plot = fHNA_comparison, 
        filename = "data/Chloroplasts_removed/fHNA_vs_productivity.png", 
        width = 6, height = 3, units = "in", dpi = 500)
-
-
-
-
 

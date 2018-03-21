@@ -111,9 +111,13 @@ colz <- c("pink", "pink", "green", "green", "orange", "orange")
 
 jpeg(file = "heatmap_figs/clustering_heatmap_all.jpg", 
      units = "in", width = 8, height = 10, res = 300)
-heatmap.2(matrix_scores, col = my_palette, breaks=breakers, trace="none",
+heatmap.2(matrix_scores, 
+          distfun = function(x) dist(x, method = "euclidean"),
+          hclustfun = function(x) hclust(x,method = "complete"),
+          col = my_palette, breaks=breakers, trace="none",
           key=TRUE, symkey=FALSE, density.info="none", srtCol=30,
           margins=c(5.5,7), cexRow=1.25,cexCol=1.25,
+          key.xlab="1/RL Score",
           ColSideColors=colz)
 dev.off() 
 
@@ -381,6 +385,20 @@ library(ggtree)
 tax <- data.frame(tax_table(final_physeq)) %>%
   tibble::rownames_to_column(var = "OTU")
 
+fcm_groups_df <- read.csv("data/fasttree/OTUnames_based_on_RLscores_MANUAL.csv") %>%
+  left_join(., tax, by = "OTU") %>%
+  tibble::column_to_rownames("OTU") %>%
+  dplyr::select(fcm_type)
+
+p_fcm <- ggplot(HNALNA_otu_tree, aes(x, y)) + geom_tree() + theme_tree() +
+  geom_tiplab(size=3, align=TRUE, linesize=.5) 
+gheatmap(p_fcm, fcm_groups_df, offset = 0.2, width=0.15, font.size=0, colnames_angle=0, hjust=0.5) +
+  scale_fill_manual(values = c("black", "deepskyblue4", "darkgoldenrod1"))
+ggsave("heatmap_figs/phylogenetic_tree_fcm_only.jpg", width = 8, height = 8)
+
+
+
+
 df <- read.csv("data/fasttree/OTUnames_based_on_RLscores_MANUAL.csv") %>%
   left_join(., tax, by = "OTU") %>%
   tibble::column_to_rownames("OTU") %>%
@@ -404,6 +422,28 @@ gheatmap(p2, df2, offset = 0.5, width=0.5, font.size=3, colnames_angle=0, hjust=
   scale_fill_manual(values = phylum_colors)
 ggsave("heatmap_figs/phylogenetic_tree_phylum.jpg", width = 8, height = 8)
 
+
+
+### Is there phylogentic signal?
+physig_df <- data.frame(HNALNA_otu_tree$tip.label) %>%
+  rename(OTU = HNALNA_otu_tree.tip.label) %>%
+  left_join(., otu_scores_df, by = "OTU") %>%
+  left_join(., tax, by = "OTU")
+
+stopifnot(physig_df$OTU == HNALNA_otu_tree$tip.label)
+
+# null hypothesis of no signal we just type:
+phylosig(HNALNA_otu_tree, physig_df$Muskegon_HNA, method="K",test=TRUE)
+phylosig(HNALNA_otu_tree, physig_df$Muskegon_LNA, method="K",test=TRUE)
+
+phylosig(HNALNA_otu_tree, physig_df$Inland_HNA, method="K",test=TRUE)
+phylosig(HNALNA_otu_tree, physig_df$Inland_LNA, method="K",test=TRUE)
+
+phylosig(HNALNA_otu_tree, physig_df$Michigan_HNA, method="K",test=TRUE)
+phylosig(HNALNA_otu_tree, physig_df$Michigan_LNA, method="K",test=TRUE)
+
+phylosig(HNALNA_otu_tree, physig_df$Phylum, method="K",test=TRUE)
+phylosig(HNALNA_otu_tree, physig_df$Michigan_LNA, method="K",test=TRUE)
 
 
 
