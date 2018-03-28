@@ -274,7 +274,7 @@ as.data.frame(tax_table(michigan_taxonomy)) %>%
 
 
 #### PHYLOGENETIC ANALYSIS
-load("/data/phyloseq.RData")
+load("data/phyloseq.RData")
 physeq.otu
 
 otu_scores_df <- matrix_scores %>%
@@ -333,11 +333,11 @@ tax_table(final_physeq) <- t
 phylum_colors <- c( 
   Acidobacteria = "navy", 
   Actinobacteria = "blue", 
-  Alphaproteobacteria = "tomato", 
-  Aminicenantes = "cornflowerblue",
+  Alphaproteobacteria = "orangered", 
+  Aminicenantes = "",
   Armatimonadetes = "wheat", 
-  Bacteria_unclassified = "#508578", 
-  Bacteroidetes = "gold", 
+  Bacteria_unclassified = "grey47", 
+  Bacteroidetes = "cornflowerblue", 
   Betaproteobacteria = "plum1", 
   "Candidate_division_OP3" = "slategray3",
   Chlamydiae = "#A20E42",
@@ -346,7 +346,7 @@ phylum_colors <- c(
   Cyanobacteria = "limegreen",
   "Deinococcus-Thermus" = "black",
   Deltaproteobacteria = "olivedrab", 
-  Firmicutes = "black",
+  Firmicutes = "navy",
   Gammaproteobacteria = "cyan",
   Gemmatimonadetes = "yellow",
   Gracilibacteria = "#FD823F",
@@ -354,17 +354,20 @@ phylum_colors <- c(
   Latescibacteria = "salmon4",
   Lentisphaerae = "palevioletred1",
   Nitrospirae = "forestgreen",
-  Omnitrophica = "violet",
+  Omnitrophica = "red4",
   Parcubacteria = "#531A4D",
   Planctomycetes = "darkorange", 
   Proteobacteria_unclassified = "greenyellow",
   Spirochaetae = "royalblue",
   TA06 = "peachpuff",
   Omnitrophica = "burlywood", 
-  unknown_unclassified = "grey",
-  Verrucomicrobia = "purple4",
+  unknown_unclassified = "grey88",
+  Verrucomicrobia = "purple",
   Proteobacteria_unclassified = "green",
-  Proteobacteria = "red")
+  Proteobacteria = "red", 
+  HNA =  "deepskyblue4",
+  LNA = "darkgoldenrod1",
+  Both = "black" )
 
 
 plot_tree(final_physeq, "treeonly", nodelabf = nodeplotboot(), ladderize = "left", 
@@ -444,6 +447,135 @@ phylosig(HNALNA_otu_tree, physig_df$Michigan_LNA, method="K",test=TRUE)
 
 phylosig(HNALNA_otu_tree, physig_df$Phylum, method="K",test=TRUE)
 phylosig(HNALNA_otu_tree, physig_df$Michigan_LNA, method="K",test=TRUE)
+
+
+######################################### OUTGROUP TREE
+library(phytools)
+outgroup_tree <- read.tree(file="data/fasttree/outgroup_tree/RAxML_bipartitions.newick_tree_HNALNA_rmN_outgroup.tre")
+
+outgroup_tree_tip_order <- data.frame(outgroup_tree$tip.label) %>%
+  rename(OTU = outgroup_tree.tip.label)
+
+
+outgroup_physeq <- merge_phyloseq(physeq, phy_tree(outgroup_tree))
+
+# Fix the taxonomy names 
+colnames(tax_table(outgroup_physeq)) <- c("Kingdom","Phylum","Class","Order","Family","Genus","Species")
+
+###################################################################### ADD THE PROTEOBACTERIA TO THE PHYLA
+phy <- data.frame(tax_table(outgroup_physeq))
+Phylum <- as.character(phy$Phylum)
+Class <- as.character(phy$Class)
+
+for  (i in 1:length(Phylum)){ 
+  if (Phylum[i] == "Proteobacteria"){
+    Phylum[i] <- Class[i]
+  } 
+}
+
+phy$Phylum <- Phylum # Add the new phylum level data back to phy
+#phy$OTU <- row.names(tax_table(final_physeq)) # Make a column for OTU
+
+t <- tax_table(as.matrix(phy))
+
+tax_table(outgroup_physeq) <- t
+
+library(ggtree)
+
+outgroup_tax <- data.frame(tax_table(outgroup_physeq)) %>%
+  tibble::rownames_to_column(var = "OTU")
+
+outgroup_fcm_groups_df <- read.csv("data/fasttree/OTUnames_based_on_RLscores_MANUAL.csv") %>%
+  left_join(., outgroup_tax, by = "OTU") %>%
+  tibble::column_to_rownames("OTU") %>%
+  dplyr::select(fcm_type)
+
+outgroup_p <- ggplot(outgroup_tree, aes(x, y)) + geom_tree() + theme_tree() +
+  geom_tiplab(size=3, align=TRUE, linesize=.5) 
+gheatmap(outgroup_p, outgroup_fcm_groups_df, offset = 0.2, width=0.15, font.size=0, colnames_angle=0, hjust=0.5) +
+  scale_fill_manual(values = c("black", "deepskyblue4", "darkgoldenrod1"))
+#ggsave("heatmap_figs/outgroup_phylogenetic_tree_fcm_only.jpg", width = 8, height = 8)
+
+
+
+outgroup_df2 <- read.csv("data/fasttree/OTUnames_based_on_RLscores_MANUAL.csv") %>%
+  left_join(., outgroup_tax, by = "OTU") %>%
+  tibble::column_to_rownames("OTU") %>%
+  dplyr::select(Phylum)
+
+outgroup_p2 <- ggplot(outgroup_tree, aes(x, y)) + geom_tree() + theme_tree() +
+  geom_tiplab(size=3, align=TRUE, linesize=.5) 
+gheatmap(outgroup_p2, outgroup_df2, offset = 0.5, width=0.5, font.size=3, colnames_angle=0, hjust=0.5) +
+  scale_fill_manual(values = phylum_colors)
+#ggsave("heatmap_figs/outgroup_phylogenetic_tree_phylum.jpg", width = 8, height = 8)
+
+
+
+
+
+######################################### FASTTREE
+library(phytools)
+fast_tree <- read.tree(file="data/fasttree/fasttree_newick_tree_HNALNA_rmN.tre")
+
+fast_tree_tip_order <- data.frame(fast_tree$tip.label) %>%
+  rename(OTU = fast_tree.tip.label)
+
+
+fasttree_physeq <- merge_phyloseq(physeq, phy_tree(fast_tree))
+
+# Fix the taxonomy names 
+colnames(tax_table(fasttree_physeq)) <- c("Kingdom","Phylum","Class","Order","Family","Genus","Species")
+
+###################################################################### ADD THE PROTEOBACTERIA TO THE PHYLA
+phy <- data.frame(tax_table(fasttree_physeq))
+Phylum <- as.character(phy$Phylum)
+Class <- as.character(phy$Class)
+
+for  (i in 1:length(Phylum)){ 
+  if (Phylum[i] == "Proteobacteria"){
+    Phylum[i] <- Class[i]
+  } 
+}
+
+phy$Phylum <- Phylum # Add the new phylum level data back to phy
+#phy$OTU <- row.names(tax_table(final_physeq)) # Make a column for OTU
+
+t <- tax_table(as.matrix(phy))
+
+tax_table(fasttree_physeq) <- t
+
+library(ggtree)
+
+fasttree_tax <- data.frame(tax_table(fasttree_physeq)) %>%
+  tibble::rownames_to_column(var = "OTU")
+
+fasttree_df2 <- read.csv("data/fasttree/OTUnames_based_on_RLscores_MANUAL.csv") %>%
+  left_join(., fasttree_tax, by = "OTU") %>%
+  tibble::column_to_rownames("OTU") %>%
+  dplyr::select(Phylum)
+
+fasttree_p2 <- ggplot(fast_tree, aes(x, y)) + geom_tree() + theme_tree() +
+  geom_tiplab(size=3, align=TRUE, linesize=.5) 
+gheatmap(fasttree_p2, fasttree_df2, offset = 0.2, width=0.2, font.size=3, colnames_angle=0, hjust=0.5) +
+  scale_fill_manual(values = phylum_colors)
+ggsave("heatmap_figs/fasttree_phylum.jpg", width = 8, height = 8)
+
+
+phyfcm_fasttree_df3 <- read.csv("data/fasttree/OTUnames_based_on_RLscores_MANUAL.csv") %>%
+  left_join(., fasttree_tax, by = "OTU") %>%
+  tibble::column_to_rownames("OTU") %>%
+  dplyr::rename(FCM = fcm_type) %>%
+  dplyr::select(Phylum, FCM)
+
+fasttree_p2 <- ggplot(fast_tree, aes(x, y)) + geom_tree() + theme_tree() +
+  geom_tiplab(size=3, align=TRUE, linesize=.5) 
+gheatmap(fasttree_p2, phyfcm_fasttree_df3, offset = 0.1, width=0.3, font.size=3, colnames_angle=0, hjust=0.5) +
+  scale_fill_manual(values = phylum_colors,  
+                    breaks = c("Actinobacteria", "Alphaproteobacteria", "Bacteria_unclassified", "Bacteroidetes", "Betaproteobacteria", "Cyanobacteria",
+                               "Deltaproteobacteria", "Firmicutes", "Gammaproteobacteria","Omnitrophica", "Planctomycetes", "Proteobacteria_unclassified",
+                               "unknown_unclassified", "Verrucomicrobia", "Both", "HNA", "LNA"))
+ggsave("heatmap_figs/fasttree_phylumFCM.jpg", width = 8, height = 8)
+
 
 
 
