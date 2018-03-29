@@ -9,6 +9,8 @@ library(cowplot)
 library(gplots)
 library(tibble)
 library(d3heatmap)
+library(phytools)
+library(ggtree)
 
 # Set HNA and LNA discrete colors
 fcm_colors <- c(
@@ -190,18 +192,19 @@ list_muskegon_otus <- muskegonOTUs$OTU
 muskegon_taxonomy <- rare_muskegon_physeq_5in10_abs %>%
   subset_taxa(., taxa_names(rare_muskegon_physeq_5in10_abs) %in% list_muskegon_otus)
 
-as.data.frame(tax_table(muskegon_taxonomy)) %>%
+musk_plot <- 
+  as.data.frame(tax_table(muskegon_taxonomy)) %>%
   tibble::rownames_to_column(var = "OTU") %>%
   full_join(muskegonOTUs, by = "OTU") %>%
   rename(HNA = Muskegon_HNA, LNA = Muskegon_LNA) %>%
   gather(key = fcm_group, value = RL_score, HNA:LNA) %>%
   dplyr::filter(RL_score > 0.09) %>%
-  ggplot(aes(y = RL_score, x = Rank5, fill = Rank2)) + xlab("Family") +
+  ggplot(aes(y = RL_score, x = Rank4, fill = Rank2)) + 
   geom_bar(stat = "identity", position = "stack",color = "black") + 
-  facet_wrap(~fcm_group, scale = "free") +  ggtitle("Muskegon Lake") +  
-  scale_fill_brewer(palette="Set3") + xlab("Family") +
-  scale_y_continuous(expand = c(0,0), limits = c(0, 1.3)) +
-  theme(legend.position = "bottom", axis.text.x = element_text(angle=30, hjust = 1, vjust = 1))
+  facet_wrap(~fcm_group, scale = "free_x") +  ggtitle("Muskegon Lake") +  
+  scale_fill_brewer(palette="Set3", name = "Phylum") + xlab("Order") +
+  scale_y_continuous(expand = c(0,0), limits = c(0, 1)) +
+  theme(legend.position = "right", axis.text.x = element_text(angle=30, hjust = 1, vjust = 1))
 
 as.data.frame(sample_data(muskegon_taxonomy)) %>%
   tibble::rownames_to_column(var = "OTU")
@@ -224,7 +227,7 @@ list_inland_otus <- inlandOTUs$OTU
 inland_taxonomy <- rare_inland_physeq_5in10_abs %>%
   subset_taxa(., taxa_names(rare_inland_physeq_5in10_abs) %in% list_inland_otus)
 
-as.data.frame(tax_table(inland_taxonomy)) %>%
+inland_plot <- as.data.frame(tax_table(inland_taxonomy)) %>%
   tibble::rownames_to_column(var = "OTU") %>%
   full_join(inlandOTUs, by = "OTU") %>%
   dplyr::filter(Inland_HNA > 0.13 | Inland_LNA > 0.108) %>%
@@ -232,11 +235,11 @@ as.data.frame(tax_table(inland_taxonomy)) %>%
   gather(key = fcm_group, value = RL_score, HNA:LNA) %>%
   dplyr::filter(RL_score > 0.15) %>%
   ggplot(aes(y = RL_score, x = Rank4, fill = Rank2)) +
-  geom_bar(stat = "identity") + facet_wrap(~fcm_group, scale = "free_x") +
-  scale_fill_brewer(palette="Set1") + xlab("Order") +
+  geom_bar(stat = "identity", color = "black") + facet_wrap(~fcm_group, scale = "free_x") +
+  scale_fill_brewer(palette="Set1", name = "Phylum") + xlab("Order") +
   ggtitle("Inland Lakes") +
   scale_y_continuous(expand = c(0,0), limits = c(0, 1.1)) +
-  theme(legend.position = "bottom", axis.text.x = element_text(angle=30, hjust = 1, vjust = 1))
+  theme(legend.position = "right", axis.text.x = element_text(angle=30, hjust = 1, vjust = 1))
 
 ##### Load Lake Michigan Data!
 load("data/Chloroplasts_removed/ByLake_Filtering/5in10/michigan/michigan_5in10_physeqs.RData")
@@ -255,7 +258,7 @@ list_michigan_otus <- michiganOTUs$OTU
 michigan_taxonomy <- rare_michigan_physeq_5in10_abs %>%
   subset_taxa(., taxa_names(rare_michigan_physeq_5in10_abs) %in% list_michigan_otus)
 
-as.data.frame(tax_table(michigan_taxonomy)) %>%
+michi_plot <- as.data.frame(tax_table(michigan_taxonomy)) %>%
   tibble::rownames_to_column(var = "OTU") %>%
   full_join(michiganOTUs, by = "OTU") %>%
   dplyr::filter(Michigan_HNA > 0.248 | Michigan_LNA > 0.286) %>%
@@ -264,12 +267,15 @@ as.data.frame(tax_table(michigan_taxonomy)) %>%
   dplyr::filter(RL_score > 0.15) %>%
   ggplot(aes(y = RL_score, x = Rank5, fill = Rank2)) +
   geom_bar(stat = "identity", color = "black") + facet_wrap(~fcm_group, scale = "free_x") +
-  scale_fill_brewer(palette="Set3") + xlab("Family") +
+  scale_fill_brewer(palette="Dark2", name = "Phylum") + xlab("Family") +
   ggtitle("Lake Michigan") +
   scale_y_continuous(expand = c(0,0), limits = c(0, 1.1)) +
-  theme(legend.position = "bottom", axis.text.x = element_text(angle=30, hjust = 1, vjust = 1))
+  theme(legend.position = "right", axis.text.x = element_text(angle=30, hjust = 1, vjust = 1))
 
-
+plot_grid(musk_plot, inland_plot, michi_plot,
+          nrow = 3, ncol = 1, labels = c("A", "B", "C"),
+          align = "v")
+ggsave("heatmap_figs/HNALNA_scores.jpg", width = 8, height = 12)
 
 
 
@@ -290,9 +296,9 @@ physeq <- physeq.otu %>%
 setdiff(sort(vector_of_otus), sort(taxa_names(physeq)))
 setdiff(sort(taxa_names(physeq)), sort(vector_of_otus))
 
-write(vector_of_otus, file = "data/fasttree/OTUnames_based_on_RLscores.txt",
-      ncolumns = 1,
-      append = FALSE, sep = "\n")
+#write(vector_of_otus, file = "data/fasttree/OTUnames_based_on_RLscores.txt",
+#      ncolumns = 1,
+#      append = FALSE, sep = "\n")
 
 ### Make a phyloseq object 
 otu_scores_df <- matrix_scores %>%
@@ -370,21 +376,6 @@ phylum_colors <- c(
   Both = "black" )
 
 
-plot_tree(final_physeq, "treeonly", nodelabf = nodeplotboot(), ladderize = "left", 
-          label.tips="taxa_names")
-  
-
-## Test on a smaller tree
-test <- final_physeq %>%
-  subset_taxa(., taxa_names(final_physeq) %in% vector_of_otus[1:10])  
-
-
-plot_tree(test, "treeonly", nodelabf = nodeplotboot(), ladderize = "left", 
-          label.tips="taxa_names", color = "Phylum") 
-
-
-library(ggtree)
-
 tax <- data.frame(tax_table(final_physeq)) %>%
   tibble::rownames_to_column(var = "OTU")
 
@@ -450,7 +441,7 @@ phylosig(HNALNA_otu_tree, physig_df$Michigan_LNA, method="K",test=TRUE)
 
 
 ######################################### OUTGROUP TREE
-library(phytools)
+
 outgroup_tree <- read.tree(file="data/fasttree/outgroup_tree/RAxML_bipartitions.newick_tree_HNALNA_rmN_outgroup.tre")
 
 outgroup_tree_tip_order <- data.frame(outgroup_tree$tip.label) %>%
@@ -514,7 +505,7 @@ gheatmap(outgroup_p2, outgroup_df2, offset = 0.5, width=0.5, font.size=3, colnam
 
 
 ######################################### FASTTREE
-library(phytools)
+library(ape)
 fast_tree <- read.tree(file="data/fasttree/fasttree_newick_tree_HNALNA_rmN.tre")
 
 fast_tree_tip_order <- data.frame(fast_tree$tip.label) %>%
@@ -533,18 +524,12 @@ Class <- as.character(phy$Class)
 
 for  (i in 1:length(Phylum)){ 
   if (Phylum[i] == "Proteobacteria"){
-    Phylum[i] <- Class[i]
-  } 
-}
+    Phylum[i] <- Class[i]  } }
 
 phy$Phylum <- Phylum # Add the new phylum level data back to phy
-#phy$OTU <- row.names(tax_table(final_physeq)) # Make a column for OTU
 
 t <- tax_table(as.matrix(phy))
-
 tax_table(fasttree_physeq) <- t
-
-library(ggtree)
 
 fasttree_tax <- data.frame(tax_table(fasttree_physeq)) %>%
   tibble::rownames_to_column(var = "OTU")
@@ -554,11 +539,11 @@ fasttree_df2 <- read.csv("data/fasttree/OTUnames_based_on_RLscores_MANUAL.csv") 
   tibble::column_to_rownames("OTU") %>%
   dplyr::select(Phylum)
 
-fasttree_p2 <- ggplot(fast_tree, aes(x, y)) + geom_tree() + theme_tree() +
-  geom_tiplab(size=3, align=TRUE, linesize=.5) 
-gheatmap(fasttree_p2, fasttree_df2, offset = 0.2, width=0.2, font.size=3, colnames_angle=0, hjust=0.5) +
-  scale_fill_manual(values = phylum_colors)
-ggsave("heatmap_figs/fasttree_phylum.jpg", width = 8, height = 8)
+
+## Let's root the tree
+is.rooted(fast_tree)
+test_tree <- root(fast_tree, outgroup = "Otu001533", resolve.root = TRUE)
+is.rooted(test_tree)
 
 
 phyfcm_fasttree_df3 <- read.csv("data/fasttree/OTUnames_based_on_RLscores_MANUAL.csv") %>%
@@ -567,230 +552,21 @@ phyfcm_fasttree_df3 <- read.csv("data/fasttree/OTUnames_based_on_RLscores_MANUAL
   dplyr::rename(FCM = fcm_type) %>%
   dplyr::select(Phylum, FCM)
 
-fasttree_p2 <- ggplot(fast_tree, aes(x, y)) + geom_tree() + theme_tree() +
-  geom_tiplab(size=3, align=TRUE, linesize=.5) 
-gheatmap(fasttree_p2, phyfcm_fasttree_df3, offset = 0.1, width=0.3, font.size=3, colnames_angle=0, hjust=0.5) +
+rooted_tree <- 
+  ggplot(test_tree, aes(x, y)) + geom_tree() + theme_tree() +
+  geom_tiplab(size=3, align=TRUE, linesize=.5) #+
+  #geom_nodelab(vjust=-.5, size=3) 
+
+  
+gheatmap(rooted_tree, phyfcm_fasttree_df3, offset = 0.1, width=0.3, font.size=3, colnames_angle=0, hjust=0.5) +
   scale_fill_manual(values = phylum_colors,  
                     breaks = c("Actinobacteria", "Alphaproteobacteria", "Bacteria_unclassified", "Bacteroidetes", "Betaproteobacteria", "Cyanobacteria",
                                "Deltaproteobacteria", "Firmicutes", "Gammaproteobacteria","Omnitrophica", "Planctomycetes", "Proteobacteria_unclassified",
                                "unknown_unclassified", "Verrucomicrobia", "Both", "HNA", "LNA"))
-ggsave("heatmap_figs/fasttree_phylumFCM.jpg", width = 8, height = 8)
+ggsave("heatmap_figs/rooted_fasttree_phylumFCM.jpg", width = 8, height = 8)
 
 
 
 
 
-
-############################################################
-############################################################
-######## EXTRA CODE ########################################
-######## OLDER CODE FOR geom_tile and geom_bar plots #######
-############################################################
-############################################################
-
-# Plot by Lake
-ggplot(lake_dfscores, aes(FCM_type, OTU)) + 
-  geom_tile(aes(fill = RL.ranking),colour = "white") + 
-  scale_fill_gradient2(low = "darkgoldenrod1", high = "deepskyblue4", mid = "white", 
-                       midpoint = 0, na.value = "black") +
-  facet_grid(~Lake) + theme(axis.title.x = element_blank())
-ggsave("heatmap_figs/all_lakes_heat_optimalthreshold_byLake.jpg", width = 8, height = 25)
-
-# Plot by FCM Type
-ggplot(lake_dfscores, aes(Lake, OTU)) + 
-  geom_tile(aes(fill = RL.ranking),colour = "white") + 
-  scale_fill_gradient2(low = "darkgoldenrod1", high = "deepskyblue4", mid = "white", 
-                       midpoint = 0, na.value = "black") +
-  facet_grid(~FCM_type) + theme(axis.title.x = element_blank())
-ggsave("heatmap_figs/all_lakes_heat_optimalthreshold_byFCM_type.jpg", width = 8, height = 25)
-
-
-
-# Read in Data
-#   Thresholds for HNA/LNA Muskegon: 0.09/0.09
-HNA <- read.csv("Final/FS_Scores/Muskegon_fs_scores_HNA_5seq10.csv") %>%
-  rename(OTU = X) %>%
-  dplyr::filter(RL.score > 0.09) %>%
-  mutate(FCM_type = "HNA", 
-         RL.ranking = 1/RL.ranking)
-
-LNA <- read.csv("Final/FS_Scores/Muskegon_fs_scores_LNA_5seq10.csv") %>%
-  rename(OTU = X) %>%
-  dplyr::filter(RL.score > 0.09) %>%
-  mutate(FCM_type = "LNA",
-         RL.ranking = -1/RL.ranking)
-
-scores_df <- bind_rows(HNA, LNA) %>%
-  dplyr::select(OTU, RL.ranking, FCM_type)
-
-ggplot(scores_df, aes(FCM_type, OTU)) + 
-  geom_tile(aes(fill = RL.ranking),colour = "white") + 
-  scale_fill_gradient2(low = "darkgoldenrod1", high = "deepskyblue4", mid = "white", 
-                       midpoint = 0, na.value = "black") +
-  theme(axis.title.x = element_blank())
-
-
-#### Attempt 2
-#   Thresholds for HNA/LNA Muskegon: 0.09/0.09
-# Read in Data
-dfHNA <- read.csv("Final/FS_Scores/Muskegon_fs_scores_HNA_5seq10.csv") %>%
-  dplyr::filter(RL.score > 0.09) %>%
-  mutate(RL.ranking = 1/RL.ranking)%>%
-  rename(OTU = X, RL.ranking.HNA = RL.ranking) %>%
-  dplyr::select(OTU, RL.ranking.HNA)
-
-dfLNA <- read.csv("Final/FS_Scores/Muskegon_fs_scores_LNA_5seq10.csv") %>%
-  dplyr::filter(RL.score > 0.09) %>%
-  mutate(RL.ranking = -1/RL.ranking) %>%
-  rename(OTU = X, RL.ranking.LNA = RL.ranking) %>%
-  dplyr::select(OTU, RL.ranking.LNA)
-
-dfscores <- 
-  full_join(dfHNA, dfLNA, by = "OTU") %>%
-  rename(HNA = RL.ranking.HNA, LNA = RL.ranking.LNA) %>%
-  gather(key = FCM_type, value = RL.ranking, HNA:LNA)
-
-# Bar Plot 
-ggplot(dfscores, aes(y=RL.ranking, x=OTU, fill=FCM_type)) + 
-  geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
-  geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
-  theme_classic() +
-  ylab("Inverse RL Ranking") +
-  scale_fill_manual(values = fcm_colors) +
-  theme(legend.title = element_blank(), legend.position = c(0.9, 0.95))
-ggsave("heatmap_figs/muskegon_bar_0.09.jpg", width = 4, height = 8)
-
-
-
-#### Attempt 3
-ggplot(dfscores, aes(FCM_type, OTU)) + 
-  geom_tile(aes(fill = RL.ranking),colour = "white") + 
-  scale_fill_gradient2(low = "darkgoldenrod1", high = "deepskyblue4", mid = "white", 
-                       midpoint = 0, na.value = "black") +
-  theme(axis.title.x = element_blank())
-ggsave("heatmap_figs/muskegon_heat_0.09.jpg", width = 4, height = 10)
-
-
-######## Read in Data for all of the lakes 
-# Optimal thresholds for HNA/LNA: 
-#   Inland: 0.13/0.108
-#   Michigan: 0.248/0.286
-#   Muskegon: 0.09/0.09
-
-HNA_musk <- read.csv("Final/FS_Scores/Muskegon_fs_scores_HNA_5seq10.csv") %>%
-  rename(OTU = X) %>%
-  dplyr::filter(RL.score > 0.09) %>%
-  mutate(FCM_type = "HNA", Lake = "Muskegon",
-         RL.ranking = 1/RL.ranking)
-LNA_musk <- read.csv("Final/FS_Scores/Muskegon_fs_scores_LNA_5seq10.csv") %>%
-  rename(OTU = X) %>%
-  dplyr::filter(RL.score > 0.09) %>%
-  mutate(FCM_type = "LNA", Lake = "Muskegon",
-         RL.ranking = -1/RL.ranking)
-
-# Inland
-HNA_inland <- read.csv("Final/FS_Scores/Inland_fs_scores_HNA_5seq10.csv") %>%
-  rename(OTU = X) %>%
-  dplyr::filter(RL.score > 0.13) %>%
-  mutate(FCM_type = "HNA", Lake = "Inland",
-         RL.ranking = 1/RL.ranking)
-LNA_inland <- read.csv("Final/FS_Scores/Inland_fs_scores_LNA_5seq10.csv") %>%
-  rename(OTU = X) %>%
-  dplyr::filter(RL.score > 0.108) %>%
-  mutate(FCM_type = "LNA", Lake = "Inland",
-         RL.ranking = -1/RL.ranking)
-
-# Michigan
-HNA_michigan <- read.csv("Final/FS_Scores/Michigan_fs_scores_HNA_5seq10.csv") %>%
-  rename(OTU = X) %>%
-  dplyr::filter(RL.score > 0.248) %>%
-  mutate(FCM_type = "HNA", Lake = "Michigan",
-         RL.ranking = 1/RL.ranking)
-LNA_michigan <- read.csv("Final/FS_Scores/Michigan_fs_scores_LNA_5seq10.csv") %>%
-  rename(OTU = X) %>%
-  dplyr::filter(RL.score > 0.286) %>%
-  mutate(FCM_type = "LNA", Lake = "Michigan",
-         RL.ranking = -1/RL.ranking)
-
-# Combine into one dataframe
-lakes_scores_df <- bind_rows(HNA_musk, LNA_musk, HNA_inland, LNA_inland, HNA_michigan, LNA_michigan) %>%
-  dplyr::select(OTU, RL.ranking, FCM_type, Lake)
-
-ggplot(lakes_scores_df, aes(y=RL.ranking, x=OTU, fill=FCM_type)) + 
-  geom_bar(stat="identity", position="identity") + coord_flip() + #ggtitle("Summed OTUs") +
-  geom_bar(stat="identity", colour = "black", show_guide = FALSE, position="identity") +
-  theme_classic() + 
-  facet_grid(. ~ Lake) +
-  ylab("Inverse RL Ranking") +
-  scale_fill_manual(values = fcm_colors) +
-  theme(legend.title = element_blank(), legend.position = c(0.65, 0.98))
-ggsave("heatmap_figs/all_lakes_bar_optimalthresholds_byLake.jpg", width = 8, height = 25)
-
-
-
-
-
-##### THE TOP 6
-ones <- c("Otu000173", "Otu000029", "Otu000369", "Otu000555", "Otu000025", "Otu000168")
-
-top_inland_otu_tax <- 
-  as.data.frame(tax_table(inland_taxonomy)) %>%
-  tibble::rownames_to_column(var = "OTU") %>%
-  full_join(inlandOTUs, by = "OTU") %>%
-  dplyr::filter(OTU %in% ones) %>%
-  rename(HNA = inland_HNA, LNA = inland_LNA)
-
-top_musk_otu_tax <- 
-  as.data.frame(tax_table(muskegon_taxonomy)) %>%
-  tibble::rownames_to_column(var = "OTU") %>%
-  full_join(muskegonOTUs, by = "OTU") %>%
-  dplyr::filter(OTU %in% ones) %>%
-  rename(HNA = musk_HNA, LNA = musk_LNA)
-
-top_michigan_otu_tax <- 
-  as.data.frame(tax_table(michigan_taxonomy)) %>%
-  tibble::rownames_to_column(var = "OTU") %>%
-  full_join(michiganOTUs, by = "OTU") %>%
-  dplyr::filter(OTU %in% ones) %>%
-  rename(HNA = michigan_HNA, LNA = michigan_LNA)
-
-df <- bind_rows(top_inland_otu_tax, top_musk_otu_tax, top_michigan_otu_tax)
-
-
-
-
-
-
-####
-## Prepare the tax table 
-michigan_otu_tax <- 
-  as.data.frame(tax_table(michigan_taxonomy)) %>%
-  tibble::rownames_to_column(var = "OTU") %>%
-  full_join(michiganOTUs, by = "OTU") %>%
-  rename(HNA = Michigan_HNA, LNA = Michigan_LNA) %>%
-  filter(OTU != "Otu000242")%>%
-  dplyr::select(-c(HNA:LNA))
-
-inland_otu_tax <- 
-  as.data.frame(tax_table(inland_taxonomy)) %>%
-  tibble::rownames_to_column(var = "OTU") %>%
-  full_join(inlandOTUs, by = "OTU") %>%
-  rename(HNA = Inland_HNA, LNA = Inland_LNA)%>%
-  dplyr::select(-c(HNA:LNA))
-
-muskegon_otu_tax <- 
-  as.data.frame(tax_table(muskegon_taxonomy)) %>%
-  tibble::rownames_to_column(var = "OTU") %>%
-  full_join(muskegonOTUs, by = "OTU") %>%
-  rename(HNA = Muskegon_HNA, LNA = Muskegon_LNA) %>%
-  dplyr::select(-c(HNA:LNA))
-
-taxtable <- bind_rows(michigan_otu_tax, inland_otu_tax, muskegon_otu_tax) %>%
-  rename(Domain = Rank1, Phylum = Rank2, Class = Rank3, 
-         Order = Rank4, Family = Rank5, Genus = Rank6, Species = Rank7)
-
-ordered_tax_table <- left_join(tree_tip_order, taxtable, by = "OTU") %>%
-  tibble::column_to_rownames(var = "OTU")
-
-ordered_tax_table$OTU <- row.names(ordered_tax_table)
 
