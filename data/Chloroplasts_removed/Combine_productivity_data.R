@@ -85,6 +85,26 @@ proportionHNA_plot <-
     scale_color_manual(values = fcm_colors) +
     scale_fill_manual(values = fcm_colors) + 
     theme(legend.position = "none")
+ggsave(filename = "data/Chloroplasts_removed/HNA-LNA-proportions.png", 
+       width = 6, height = 3.5, units = "in", dpi = 500)
+
+
+
+df_cells %>%
+  dplyr::select(samples, Lake, FCM_type, num_cells) %>%
+  spread(FCM_type, num_cells) %>%
+  mutate(prop_HNA = HNA/Total * 100,
+         prop_LNA = LNA/Total * 100) %>%
+  dplyr::select(Lake, prop_HNA, prop_LNA) %>%
+  rename(HNA = prop_HNA, LNA = prop_LNA) %>%
+  group_by(Lake) %>%
+  summarize(min_HNA = min(HNA), 
+            max_HNA = max(HNA), 
+            mean_HNA = mean(HNA),
+            min_LNA = min(LNA), 
+            max_LNA = max(LNA), 
+            mean_LNA = mean(LNA))
+
   
 
 df_cells %>%
@@ -97,8 +117,14 @@ df_cells %>%
   summarize(mean_prop_HNA = mean(prop_HNA),
             mean_prop_LNA = mean(prop_LNA))
 
-# More 
-#filter(stats_cells, FCM_type == "Total")
+# DESCRIPTIVE STATS
+totcells_df <- df_cells %>%
+  filter(FCM_type == "Total")
+# Compute the analysis of variance
+totcells_aov <- aov(num_cells ~ Lake, data = totcells_df)
+summary(totcells_aov)
+# Which samples are significant from each other?
+TukeyHSD(totcells_aov)
 
 
 cells_boxplot <- 

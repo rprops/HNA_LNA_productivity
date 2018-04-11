@@ -18,6 +18,46 @@ fcm_colors <- c(
   "LNA" = "darkgoldenrod1",
   "Total" = "black")
 
+# Set global colors for the different taxonomic phyla
+phylum_colors <- c( 
+  Acidobacteria = "navy", 
+  Actinobacteria = "blue", 
+  Alphaproteobacteria = "orangered", 
+  Aminicenantes = "",
+  Armatimonadetes = "wheat", 
+  Bacteria_unclassified = "grey47", 
+  Bacteroidetes = "cornflowerblue", 
+  Betaproteobacteria = "plum1", 
+  "Candidate_division_OP3" = "slategray3",
+  Chlamydiae = "#A20E42",
+  Chlorobi="magenta", 
+  Chloroflexi="black", 
+  Cyanobacteria = "limegreen",
+  "Deinococcus-Thermus" = "black",
+  Deltaproteobacteria = "olivedrab", 
+  Firmicutes = "navy",
+  Gammaproteobacteria = "cyan",
+  Gemmatimonadetes = "yellow",
+  Gracilibacteria = "#FD823F",
+  JTB23 = "#B5D6AA",
+  Latescibacteria = "salmon4",
+  Lentisphaerae = "palevioletred1",
+  Nitrospirae = "forestgreen",
+  Omnitrophica = "red4",
+  Parcubacteria = "#531A4D",
+  Planctomycetes = "darkorange", 
+  Proteobacteria_unclassified = "greenyellow",
+  Spirochaetae = "royalblue",
+  TA06 = "peachpuff",
+  Omnitrophica = "burlywood", 
+  unknown_unclassified = "grey88",
+  Verrucomicrobia = "purple",
+  Proteobacteria_unclassified = "green",
+  Proteobacteria = "red", 
+  HNA =  "deepskyblue4",
+  LNA = "darkgoldenrod1",
+  Both = "black" )
+
 # Optimal Thresholds from March 14th
 # HNA/LNA: Inland: 0.13/0.108,  Michigan: 0.248/0.286,  Muskegon: 0.09/0.09
 
@@ -199,11 +239,11 @@ musk_plot <-
   rename(HNA = Muskegon_HNA, LNA = Muskegon_LNA) %>%
   gather(key = fcm_group, value = RL_score, HNA:LNA) %>%
   dplyr::filter(RL_score > 0.09) %>%
-  ggplot(aes(y = RL_score, x = Rank4, fill = Rank2)) + 
+  ggplot(aes(y = RL_score, x = Rank5, fill = Rank2)) + 
   geom_bar(stat = "identity", position = "stack",color = "black") + 
   facet_wrap(~fcm_group, scale = "free_x") +  ggtitle("Muskegon Lake") +  
-  scale_fill_brewer(palette="Set3", name = "Phylum") + xlab("Order") +
-  scale_y_continuous(expand = c(0,0), limits = c(0, 1)) +
+  scale_fill_manual(values=phylum_colors, name = "Phylum") + xlab("Family") +
+  scale_y_continuous(expand = c(0,0), limits = c(0, 1.3)) +
   theme(legend.position = "right", axis.text.x = element_text(angle=30, hjust = 1, vjust = 1))
 
 as.data.frame(sample_data(muskegon_taxonomy)) %>%
@@ -236,7 +276,7 @@ inland_plot <- as.data.frame(tax_table(inland_taxonomy)) %>%
   dplyr::filter(RL_score > 0.15) %>%
   ggplot(aes(y = RL_score, x = Rank4, fill = Rank2)) +
   geom_bar(stat = "identity", color = "black") + facet_wrap(~fcm_group, scale = "free_x") +
-  scale_fill_brewer(palette="Set1", name = "Phylum") + xlab("Order") +
+  scale_fill_manual(values=phylum_colors, name = "Phylum") + xlab("Order") +
   ggtitle("Inland Lakes") +
   scale_y_continuous(expand = c(0,0), limits = c(0, 1.1)) +
   theme(legend.position = "right", axis.text.x = element_text(angle=30, hjust = 1, vjust = 1))
@@ -267,7 +307,7 @@ michi_plot <- as.data.frame(tax_table(michigan_taxonomy)) %>%
   dplyr::filter(RL_score > 0.15) %>%
   ggplot(aes(y = RL_score, x = Rank5, fill = Rank2)) +
   geom_bar(stat = "identity", color = "black") + facet_wrap(~fcm_group, scale = "free_x") +
-  scale_fill_brewer(palette="Dark2", name = "Phylum") + xlab("Family") +
+  scale_fill_manual(values=phylum_colors, name = "Phylum") + xlab("Family") +
   ggtitle("Lake Michigan") +
   scale_y_continuous(expand = c(0,0), limits = c(0, 1.1)) +
   theme(legend.position = "right", axis.text.x = element_text(angle=30, hjust = 1, vjust = 1))
@@ -335,45 +375,6 @@ t <- tax_table(as.matrix(phy))
 
 tax_table(final_physeq) <- t
 
-# Set global colors for the different taxonomic phyla
-phylum_colors <- c( 
-  Acidobacteria = "navy", 
-  Actinobacteria = "blue", 
-  Alphaproteobacteria = "orangered", 
-  Aminicenantes = "",
-  Armatimonadetes = "wheat", 
-  Bacteria_unclassified = "grey47", 
-  Bacteroidetes = "cornflowerblue", 
-  Betaproteobacteria = "plum1", 
-  "Candidate_division_OP3" = "slategray3",
-  Chlamydiae = "#A20E42",
-  Chlorobi="magenta", 
-  Chloroflexi="black", 
-  Cyanobacteria = "limegreen",
-  "Deinococcus-Thermus" = "black",
-  Deltaproteobacteria = "olivedrab", 
-  Firmicutes = "navy",
-  Gammaproteobacteria = "cyan",
-  Gemmatimonadetes = "yellow",
-  Gracilibacteria = "#FD823F",
-  JTB23 = "#B5D6AA",
-  Latescibacteria = "salmon4",
-  Lentisphaerae = "palevioletred1",
-  Nitrospirae = "forestgreen",
-  Omnitrophica = "red4",
-  Parcubacteria = "#531A4D",
-  Planctomycetes = "darkorange", 
-  Proteobacteria_unclassified = "greenyellow",
-  Spirochaetae = "royalblue",
-  TA06 = "peachpuff",
-  Omnitrophica = "burlywood", 
-  unknown_unclassified = "grey88",
-  Verrucomicrobia = "purple",
-  Proteobacteria_unclassified = "green",
-  Proteobacteria = "red", 
-  HNA =  "deepskyblue4",
-  LNA = "darkgoldenrod1",
-  Both = "black" )
 
 
 tax <- data.frame(tax_table(final_physeq)) %>%
