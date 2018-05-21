@@ -160,6 +160,30 @@ ggplot(df_cells,
 #ggsave(filename = "data/Chloroplasts_removed/HNA-LNA-lakes.png", 
 #       width = 4, height = 3.5, units = "in", dpi = 500)
 
+####################################################################################
+####################################################################################
+########################  Analysis of HNA & LNA Correlations
+
+# 1. Run the linear model 
+lm_NA_corr <- lm(LNA.cells ~ HNA.cells, data = muskegon)
+
+## 2. Extract the R2 and p-value from the linear model: 
+lm_NA_corr_stats <- paste("atop(R^2 ==", round(summary(lm_NA_corr)$adj.r.squared, digits = 3), ",",
+                      "p ==", round(unname(summary(lm_NA_corr)$coefficients[,4][2]), digits = 3), ")")
+
+# 3. Plot it
+ggplot(muskegon, aes(x = HNA.cells, y = LNA.cells)) + 
+  geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey") + 
+  geom_errorbar(aes(ymin = LNA.cells - LNA.sd, max = LNA.cells + LNA.sd), color = "grey") + 
+  geom_point(size = 3, shape = 22, fill = "black") + 
+  geom_smooth(method = "lm", color = "black") + 
+  labs(y = "LNA Cell Density (cells/mL)", x = "HNA Cell Density (cells/mL)") +
+  scale_x_continuous(labels = function(x) format(x, scientific = TRUE), 
+                     breaks = c(2e+06, 3e+06)) +
+  annotate("text", x=3e+06, y=3e+06, label=lm_NA_corr_stats, parse = TRUE, color = "black", size = 4) 
+
+ggsave(filename = "data/Chloroplasts_removed/HNA-LNA-correlation.png", 
+       width = 4, height = 3.5, units = "in", dpi = 500)
 
 
 ####################################################################################
