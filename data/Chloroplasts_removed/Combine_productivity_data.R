@@ -288,3 +288,130 @@ ggsave(plot = fHNA_comparison,
        filename = "data/Chloroplasts_removed/fHNA_vs_productivity.png", 
        width = 7, height = 3.5, units = "in", dpi = 500)
 
+
+
+####################################################################################
+####################################################################################
+######################## CORRELATED HNA AND LNA
+
+musk_all_df <- read.table(file="data/Chloroplasts_removed/ByLake_Filtering/5in10/muskegon/muskegon_sampledata_5in10.tsv", header = TRUE) %>%
+  mutate(norep_filter_name = paste(substr(Sample_16S,1,4), substr(Sample_16S,6,9), sep = "")) %>%
+  arrange(norep_filter_name)
+
+mich_all_df <- read.table(file="data/Chloroplasts_removed/ByLake_Filtering/5in10/michigan/michigan_sampledata_5in10.tsv", header = TRUE) %>%
+  mutate(norep_filter_name = paste(substr(Sample_16S,1,4), substr(Sample_16S,6,9), sep = "")) %>%
+  arrange(norep_filter_name)
+
+inla_all_df <- read.table(file="data/Chloroplasts_removed/ByLake_Filtering/5in10/inland/inland_sampledata_5in10.tsv", header = TRUE) %>%
+  mutate(norep_filter_name = paste(substr(Sample_16S,1,4), substr(Sample_16S,6,9), sep = "")) %>%
+  arrange(norep_filter_name)
+
+stopifnot(colnames(musk_all_df) == colnames(mich_all_df))
+stopifnot(colnames(musk_all_df) == colnames(inla_all_df))
+
+lakes <- bind_rows(musk_all_df, mich_all_df, inla_all_df)
+
+# 1. Run the linear model 
+lm_allNA_corr <- lm(LNA.cells ~ HNA.cells, data = lakes)
+summary(lm(LNA.cells ~ HNA.cells * Lake, data = lakes))
+
+## 2. Extract the R2 and p-value from the linear model: 
+lm_allNA_corr_stats <- paste("atop(R^2 ==", round(summary(lm_allNA_corr)$adj.r.squared, digits = 2), ",",
+                          "p ==", round(unname(summary(lm_allNA_corr)$coefficients[,4][2]), digits = 24), ")")
+
+lake_colors <- c(
+  "Muskegon" = "#FF933F",   #"#1AB58A",
+  "Michigan" =  "#EC4863", #"#FFC543",
+  "Inland" =  "#5C2849")  #"#FF2151")
+
+mytheme <- theme(legend.text = element_text(size = 8), legend.title = element_text(size = 8, face = "bold"), 
+                 plot.title = element_text(size = 10),
+                 axis.title = element_text(size = 10, face = "bold"), axis.text = element_text(size = 8),
+                 legend.key.width=unit(0.1,"line"), legend.key.height=unit(0.1,"line")) 
+
+
+
+# 3. Plot it
+ggplot(lakes, aes(x = HNA.cells, y = LNA.cells)) + 
+  geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey", alpha = 0.8) + 
+  geom_errorbar(aes(ymin = LNA.cells - LNA.sd, max = LNA.cells + LNA.sd), color = "grey", alpha = 0.8) + 
+  geom_point(size = 2.5, shape = 22, alpha = 0.8, aes(fill = Lake)) + 
+  geom_smooth(method = "lm", color = "black") + 
+  scale_fill_manual(values = lake_colors) +
+  labs(y = "LNA Cell Density (cells/mL)", x = "HNA Cell Density (cells/mL)") +
+  scale_x_continuous(labels = function(x) format(x, scientific = TRUE), limits = c(0, 6.1e+06)) +
+  scale_y_continuous(labels = function(x) format(x, scientific = TRUE), limits = c(0, 1e+07)) +
+  annotate("text", x=5e+06, y=0.8e+06, label=lm_allNA_corr_stats, parse = TRUE, color = "black", size = 3) +
+  mytheme + theme(legend.position = c(0.01, 0.9))
+
+ggsave(filename = "data/Chloroplasts_removed/AllLakes-HNA-LNA-correlation.png", 
+       width = 4, height = 3.5, units = "in", dpi = 500)
+
+
+
+### MUSKEGON
+# 1. Run the linear model 
+lm_muskNA_corr <- lm(LNA.cells ~ HNA.cells, data = musk_all_df)
+
+## 2. Extract the R2 and p-value from the linear model: 
+lm_muskNA_corr_stats <- paste("atop(R^2 ==", round(summary(lm_muskNA_corr)$adj.r.squared, digits = 2), ",",
+                             "p ==", round(unname(summary(lm_muskNA_corr)$coefficients[,4][2]), digits = 9), ")")
+
+musk_corr_plot <- ggplot(musk_all_df, aes(x = HNA.cells, y = LNA.cells)) + 
+  geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey") + 
+  geom_errorbar(aes(ymin = LNA.cells - LNA.sd, max = LNA.cells + LNA.sd), color = "grey") + 
+  geom_point(size = 3, shape = 22, aes(fill = Lake)) + 
+  geom_smooth(method = "lm", color = "black") + 
+  ggtitle("Muskegon Lake") + scale_fill_manual(values = lake_colors) +
+  scale_x_continuous(labels = function(x) format(x, scientific = TRUE), limits = c(0, 6.1e+06)) +
+  scale_y_continuous(labels = function(x) format(x, scientific = TRUE), limits = c(0, 1e+07)) +
+  labs(y = "LNA Cell Density (cells/mL)", x = "HNA Cell Density (cells/mL)") +
+  annotate("text", x=5e+06, y=0.8e+06, label=lm_muskNA_corr_stats, parse = TRUE, color = "black", size = 3) +
+  mytheme
+
+### INLAND
+# 1. Run the linear model 
+lm_inlaNA_corr <- lm(LNA.cells ~ HNA.cells, data = filter(inla_all_df, Sample_16S != "Z14003F"))
+
+## 2. Extract the R2 and p-value from the linear model: 
+lm_inlaNA_corr_stats <- paste("atop(R^2 ==", round(summary(lm_inlaNA_corr)$adj.r.squared, digits = 2), ",",
+                              "p ==", round(unname(summary(lm_inlaNA_corr)$coefficients[,4][2]), digits = 2), ")")
+
+inla_corr_plot <- ggplot(filter(inla_all_df, Sample_16S != "Z14003F"), aes(x = HNA.cells, y = LNA.cells)) + 
+  geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey") + 
+  geom_errorbar(aes(ymin = LNA.cells - LNA.sd, max = LNA.cells + LNA.sd), color = "grey") + 
+  geom_point(size = 3, shape = 22, aes(fill = Lake)) + 
+  geom_smooth(method = "lm", color = "black") + 
+  scale_x_continuous(labels = function(x) format(x, scientific = TRUE), limits = c(0, 6.1e+06)) +
+  scale_y_continuous(labels = function(x) format(x, scientific = TRUE), limits = c(0, 1e+07)) +
+  ggtitle("Inland Lakes") + scale_fill_manual(values = lake_colors) +
+  labs(y = "LNA Cell Density (cells/mL)", x = "HNA Cell Density (cells/mL)") +
+  annotate("text", x=5e+06, y=0.8e+06, label=lm_inlaNA_corr_stats, parse = TRUE, color = "black", size = 3) +
+  mytheme
+
+### MICHIGAN
+# 1. Run the linear model 
+lm_michNA_corr <- lm(LNA.cells ~ HNA.cells, data = mich_all_df)
+
+## 2. Extract the R2 and p-value from the linear model: 
+lm_michNA_corr_stats <- paste("atop(R^2 ==", round(summary(lm_michNA_corr)$adj.r.squared, digits = 2), ",",
+                              "p ==", round(unname(summary(lm_michNA_corr)$coefficients[,4][2]), digits = 11), ")")
+
+mich_corr_plot <- ggplot(mich_all_df, aes(x = HNA.cells, y = LNA.cells)) + 
+  geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey") + 
+  geom_errorbar(aes(ymin = LNA.cells - LNA.sd, max = LNA.cells + LNA.sd), color = "grey") + 
+  geom_point(size = 3, shape = 22, aes(fill = Lake)) + 
+  geom_smooth(method = "lm", color = "black") + 
+  scale_x_continuous(labels = function(x) format(x, scientific = TRUE), limits = c(0, 6.1e+06)) +
+  scale_y_continuous(labels = function(x) format(x, scientific = TRUE), limits = c(0, 1e+07)) +
+  ggtitle("Lake Michigan") + scale_fill_manual(values = lake_colors) +
+  labs(y = "LNA Cell Density (cells/mL)", x = "HNA Cell Density (cells/mL)") +
+  annotate("text", x=5e+06, y=0.8e+06, label=lm_michNA_corr_stats, parse = TRUE, color = "black", size = 3) +
+  mytheme
+
+plot_grid(mich_corr_plot, inla_corr_plot, musk_corr_plot, 
+          labels = c("A", "B", "C"), 
+          nrow = 1, ncol = 3)
+
+ggsave(filename = "data/Chloroplasts_removed/AllLakes-separate-HNA-LNA-correlation.png", 
+       width = 10, height = 3.5, units = "in", dpi = 500)
