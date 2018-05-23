@@ -11,12 +11,23 @@ library(tibble)
 library(d3heatmap)
 library(phytools)
 library(ggtree)
+library(ape)
 
 # Set HNA and LNA discrete colors
 fcm_colors <- c(
   "HNA" = "deepskyblue4",
   "LNA" = "darkgoldenrod1",
   "Total" = "black")
+
+lake_colors <- c(
+  "Muskegon" = "#FF933F",   #"#1AB58A",
+  "Michigan" =  "#EC4863", #"#FFC543",
+  "Inland" =  "#5C2849")  #"#FF2151")
+
+lake_shapes <- c(
+  "Inland" = 21, 
+  "Michigan" = 23, 
+  "Muskegon" = 22)
 
 # Set global colors for the different taxonomic phyla
 phylum_colors <- c( 
@@ -149,7 +160,7 @@ matrix_scores[is.na(matrix_scores)] <- 0
 breakers <- seq(min(matrix_scores, na.rm = T), max(matrix_scores, na.rm = T), length.out = 21)
 my_palette <- colorRampPalette(c("white","gray65", "red")) (n=20)
 
-colz <- c("pink", "pink", "green", "green", "orange", "orange")
+colz <- c("#FF933F", "#FF933F", "#EC4863", "#EC4863", "#5C2849", "#5C2849")
 
 jpeg(file = "heatmap_figs/clustering_heatmap_all.jpg", 
      units = "in", width = 8, height = 10, res = 300)
@@ -345,7 +356,7 @@ otu_scores_df <- matrix_scores %>%
   as.data.frame() %>%
   tibble::rownames_to_column(var = "OTU") 
 
-library(phytools)
+
 HNALNA_otu_tree <- read.tree(file="data/fasttree/RAxML_bipartitions.newick_tree_HNALNA_rmN.tre")
 
 tree_tip_order <- data.frame(HNALNA_otu_tree$tip.label) %>%
@@ -390,7 +401,6 @@ p_fcm <- ggplot(HNALNA_otu_tree, aes(x, y)) + geom_tree() + theme_tree() +
 gheatmap(p_fcm, fcm_groups_df, offset = 0.2, width=0.15, font.size=0, colnames_angle=0, hjust=0.5) +
   scale_fill_manual(values = c("black", "deepskyblue4", "darkgoldenrod1"))
 ggsave("heatmap_figs/phylogenetic_tree_fcm_only.jpg", width = 8, height = 8)
-
 
 
 
@@ -472,8 +482,6 @@ t <- tax_table(as.matrix(phy))
 
 tax_table(outgroup_physeq) <- t
 
-library(ggtree)
-
 outgroup_tax <- data.frame(tax_table(outgroup_physeq)) %>%
   tibble::rownames_to_column(var = "OTU")
 
@@ -506,7 +514,6 @@ gheatmap(outgroup_p2, outgroup_df2, offset = 0.5, width=0.5, font.size=3, colnam
 
 
 ######################################### FASTTREE
-library(ape)
 fast_tree <- read.tree(file="data/fasttree/fasttree_newick_tree_HNALNA_rmN.tre")
 
 fast_tree_tip_order <- data.frame(fast_tree$tip.label) %>%
@@ -564,7 +571,70 @@ gheatmap(rooted_tree, phyfcm_fasttree_df3, offset = 0.1, width=0.3, font.size=3,
                     breaks = c("Actinobacteria", "Alphaproteobacteria", "Bacteria_unclassified", "Bacteroidetes", "Betaproteobacteria", "Cyanobacteria",
                                "Deltaproteobacteria", "Firmicutes", "Gammaproteobacteria","Omnitrophica", "Planctomycetes", "Proteobacteria_unclassified",
                                "unknown_unclassified", "Verrucomicrobia", "Both", "HNA", "LNA"))
-ggsave("heatmap_figs/rooted_fasttree_phylumFCM.jpg", width = 8, height = 8)
+
+
+#ggsave("heatmap_figs/rooted_fasttree_phylumFCM.jpg", width = 8, height = 8)
+
+
+
+musk_LNA_kendall <- read.csv("Final/FS_Scores/Muskegon_fs_scores_LNA_5seq10.csv", header = TRUE) %>%
+  mutate(predictor = "LNA", Lake = "Muskegon") %>%
+  rename(OTU = X, LNA.musk.kendall.sig = kendall.significant) %>%
+  dplyr::select(OTU, LNA.musk.kendall.sig)
+
+musk_HNA_kendall <- read.csv("Final/FS_Scores/Muskegon_fs_scores_HNA_5seq10.csv", header = TRUE) %>%
+  mutate(predictor = "HNA", Lake = "Muskegon") %>%
+  rename(OTU = X, HNA.musk.kendall.sig = kendall.significant) %>%
+  dplyr::select(OTU, HNA.musk.kendall.sig)
+
+mich_LNA_kendall <- read.csv("Final/FS_Scores/Michigan_fs_scores_LNA_5seq10.csv", header = TRUE) %>%
+  mutate(predictor = "LNA", Lake = "Michigan") %>%
+  rename(OTU = X, LNA.mich.kendall.sig = kendall.significant) %>%
+  dplyr::select(OTU, LNA.mich.kendall.sig)
+
+mich_HNA_kendall <- read.csv("Final/FS_Scores/Michigan_fs_scores_HNA_5seq10.csv", header = TRUE) %>%
+  mutate(predictor = "HNA", Lake = "Michigan") %>%
+  rename(OTU = X, HNA.mich.kendall.sig = kendall.significant) %>%
+  dplyr::select(OTU, HNA.mich.kendall.sig)
+
+inla_LNA_kendall <- read.csv("Final/FS_Scores/Inland_fs_scores_LNA_5seq10.csv", header = TRUE) %>%
+  mutate(predictor = "LNA", Lake = "Inland") %>%
+  rename(OTU = X, LNA.inla.kendall.sig = kendall.significant) %>%
+  dplyr::select(OTU, LNA.inla.kendall.sig)
+
+inla_HNA_kendall <- read.csv("Final/FS_Scores/Inland_fs_scores_HNA_5seq10.csv", header = TRUE) %>%
+  mutate(predictor = "HNA", Lake = "Inland") %>%
+  rename(OTU = X, HNA.inla.kendall.sig = kendall.significant) %>%
+  dplyr::select(OTU, HNA.inla.kendall.sig)
+
+
+kendall_df <- phyfcm_fasttree_df3 %>%
+  tibble::rownames_to_column(var = "OTU") %>%
+  left_join(., musk_LNA_kendall, by = "OTU") %>%
+  left_join(., musk_HNA_kendall, by = "OTU") %>%
+  left_join(., mich_LNA_kendall, by = "OTU") %>%
+  left_join(., mich_HNA_kendall, by = "OTU") %>%
+  left_join(., inla_LNA_kendall, by = "OTU") %>%
+  left_join(., inla_HNA_kendall, by = "OTU") %>%
+  mutate(LNA.musk.kendall.sig = as.character(LNA.musk.kendall.sig),
+         HNA.musk.kendall.sig = as.character(HNA.musk.kendall.sig),
+         LNA.mich.kendall.sig = as.character(LNA.mich.kendall.sig),
+         HNA.mich.kendall.sig = as.character(HNA.mich.kendall.sig),
+         LNA.inla.kendall.sig = as.character(LNA.inla.kendall.sig),
+         HNA.inla.kendall.sig = as.character(HNA.inla.kendall.sig),
+         musk.kendall = ifelse(LNA.musk.kendall.sig == HNA.musk.kendall.sig, LNA.musk.kendall.sig, "DISAGREEMENT"),
+         mich.kendall = ifelse(LNA.mich.kendall.sig == HNA.mich.kendall.sig, LNA.mich.kendall.sig, "DISAGREEMENT"),
+         inla.kendall = ifelse(LNA.inla.kendall.sig == HNA.inla.kendall.sig, LNA.inla.kendall.sig, "DISAGREEMENT")) #%>%
+  #dplyr::select(OTU, Phylum, FCM, musk.kendall, mich.kendall, inla.kendall) 
+  
+write.csv(kendall_df, "heatmap_figs/kendall_OTU_df.csv", row.names = FALSE)
+
+
+
+
+
+
+
 
 
 
