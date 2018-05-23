@@ -7,19 +7,38 @@ library(tidyr)
 library(ggplot2)
 library(cowplot)
 
+
+####################### SET COLORS
 fcm_colors <- c(
   "HNA" = "deepskyblue4",
   "LNA" = "darkgoldenrod1",
   "Total" = "black")
 
+lake_colors <- c(
+  "Muskegon" = "#FF933F",   #"#1AB58A",
+  "Michigan" =  "#EC4863", #"#FFC543",
+  "Inland" =  "#5C2849")  #"#FF2151")
+
+lake_shapes <- c(
+  "Inland" = 21, 
+  "Michigan" = 23, 
+  "Muskegon" = 22)
+
+
+####################### SET GGPLOT THEME
+mytheme <- theme(legend.text = element_text(size = 8), legend.title = element_text(size = 8, face = "bold"), 
+                 plot.title = element_text(size = 10), legend.position = c(0.01, 0.9),
+                 axis.title = element_text(size = 10, face = "bold"), axis.text = element_text(size = 8),
+                 legend.key.width=unit(0.1,"line"), legend.key.height=unit(0.1,"line")) 
+
 # Read in the data 
-updated_data <- read.table(file="data/Chloroplasts_removed/ByLake_Filtering/5in10/muskegon/muskegon_sampledata_5in10.tsv", header = TRUE) %>%
+raw_data <- read.table(file="data/Chloroplasts_removed/old/nochloro_HNA_LNA.tsv", header = TRUE) %>%
   mutate(norep_filter_name = paste(substr(Sample_16S,1,4), substr(Sample_16S,6,9), sep = "")) %>%
   arrange(norep_filter_name)
 
 
 # Subset out only the Muskegon and Surface samples 
-muskegon_data <- updated_data %>%
+muskegon_data <- raw_data %>%
   dplyr::filter(Lake == "Muskegon" & Depth == "Surface") %>%
   dplyr::select(norep_filter_name)
 
@@ -40,7 +59,7 @@ stopifnot(muskegon_data$norep_filter_name == production$norep_filter_name)
 combined_data <- left_join(muskegon_data, production, by = "norep_filter_name")
 
 # Merge the combined data back into the original data frame (data)
-data <- left_join(updated_data, combined_data, by = "norep_filter_name")
+data <- left_join(raw_data, combined_data, by = "norep_filter_name")
 
 # Write out the file 
 #write.table(data, file="data/Chloroplasts_removed/productivity_data.tsv", row.names=TRUE)
@@ -160,31 +179,6 @@ ggplot(df_cells,
 #ggsave(filename = "data/Chloroplasts_removed/HNA-LNA-lakes.png", 
 #       width = 4, height = 3.5, units = "in", dpi = 500)
 
-####################################################################################
-####################################################################################
-########################  Analysis of HNA & LNA Correlations
-
-# 1. Run the linear model 
-lm_NA_corr <- lm(LNA.cells ~ HNA.cells, data = muskegon)
-
-## 2. Extract the R2 and p-value from the linear model: 
-lm_NA_corr_stats <- paste("atop(R^2 ==", round(summary(lm_NA_corr)$adj.r.squared, digits = 3), ",",
-                      "p ==", round(unname(summary(lm_NA_corr)$coefficients[,4][2]), digits = 3), ")")
-
-# 3. Plot it
-ggplot(muskegon, aes(x = HNA.cells, y = LNA.cells)) + 
-  geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey") + 
-  geom_errorbar(aes(ymin = LNA.cells - LNA.sd, max = LNA.cells + LNA.sd), color = "grey") + 
-  geom_point(size = 3, shape = 22, fill = "black") + 
-  geom_smooth(method = "lm", color = "black") + 
-  labs(y = "LNA Cell Density (cells/mL)", x = "HNA Cell Density (cells/mL)") +
-  scale_x_continuous(labels = function(x) format(x, scientific = TRUE), 
-                     breaks = c(2e+06, 3e+06)) +
-  annotate("text", x=3e+06, y=3e+06, label=lm_NA_corr_stats, parse = TRUE, color = "black", size = 4) 
-
-ggsave(filename = "data/Chloroplasts_removed/HNA-LNA-correlation.png", 
-       width = 4, height = 3.5, units = "in", dpi = 500)
-
 
 ####################################################################################
 ####################################################################################
@@ -198,14 +192,15 @@ lm_HNA_stats <- paste("atop(R^2 ==", round(summary(lm_HNA)$adj.r.squared, digits
 
 # 3. Plot it
 HNA_vs_prod <- ggplot(muskegon, aes(x = HNA.cells, y = tot_bacprod)) + 
-  geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey") + 
-  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey") + 
-  geom_point(size = 3, shape = 22, fill = "deepskyblue4") + 
+  geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey", alpha = 0.8) + 
+  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey", alpha = 0.8) + 
+  geom_point(size = 2, shape = 22, fill = "deepskyblue4") + 
   geom_smooth(method = "lm", color = "deepskyblue4") + 
-  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "HNA Cell Density (cells/mL)") +
+  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "HNA Cell Density \n(cells/mL)") +
   scale_x_continuous(labels = function(x) format(x, scientific = TRUE), 
                      breaks = c(2e+06, 3e+06)) +
-  annotate("text", x=1.5e+06, y=60, label=lm_HNA_stats, parse = TRUE, color = "black", size = 4) 
+  annotate("text", x=1.65e+06, y=60, label=lm_HNA_stats, parse = TRUE, color = "black", size = 3) +
+  mytheme
 
 
 # 1. Run the linear model 
@@ -217,12 +212,13 @@ lm_LNA_stats <- paste("atop(R^2 ==", round(summary(lm_LNA)$adj.r.squared, digits
 
 # 3. Plot it
 LNA_vs_prod <- ggplot(muskegon, aes(x = LNA.cells, y = tot_bacprod)) + 
-  geom_errorbarh(aes(xmin = LNA.cells - LNA.sd, xmax = LNA.cells + LNA.sd), color = "grey") + 
-  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey") + 
-  geom_point(size = 3, shape = 22, fill = "darkgoldenrod1") + 
-  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "LNA Cell Density (cells/mL)") +
+  geom_errorbarh(aes(xmin = LNA.cells - LNA.sd, xmax = LNA.cells + LNA.sd), color = "grey", alpha = 0.8) + 
+  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey", alpha = 0.8) + 
+  geom_point(size = 2.5, shape = 22, fill = "darkgoldenrod1") + 
+  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "LNA Cell Density \n(cells/mL)") +
   geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "darkgoldenrod1") + 
-  annotate("text", x=2.5e+06, y=60, label=lm_LNA_stats, parse = TRUE, color = "red", size = 4) 
+  annotate("text", x=2.75e+06, y=60, label=lm_LNA_stats, parse = TRUE, color = "red", size = 3) +
+  mytheme
 
 
 
@@ -235,14 +231,28 @@ lm_total_stats <- paste("atop(R^2 ==", round(summary(lm_total)$adj.r.squared, di
 
 # 3. Plot it 
 Total_vs_prod <- ggplot(muskegon, aes(x = Total.cells, y = tot_bacprod)) + 
-  geom_errorbarh(aes(xmin = Total.cells - Total.count.sd, xmax = Total.cells + Total.count.sd), color = "grey") + 
-  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey") + 
-  scale_shape_manual(values = c(21, 22, 23, 24)) +
-  geom_point(size = 3, shape = 22, fill = "black") + 
-  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "Cell Density (cells/mL)") +
+  geom_errorbarh(aes(xmin = Total.cells - Total.count.sd, xmax = Total.cells + Total.count.sd), color = "grey", alpha = 0.8) + 
+  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey", alpha = 0.8) + 
+  scale_shape_manual(values = lake_shapes) +
+  geom_point(size = 2.5, shape = 22, fill = "black") + 
+  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "Cell Density \n(cells/mL)") +
   geom_smooth(method = "lm", color = "black") + 
   #geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "red") + 
-  annotate("text", x=5e+06, y=60, label=lm_total_stats, parse = TRUE, color = "black", size = 4) 
+  annotate("text", x=5.25e+06, y=60, label=lm_total_stats, parse = TRUE, color = "black", size = 3) +
+  mytheme
+
+
+#### ONLY THE THREE PLOTS 
+# Put all three plots together into one 
+plot_grid(HNA_vs_prod + theme(legend.position = "none"), 
+          LNA_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"), 
+          Total_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"),
+          labels = c("A", "B", "C"), 
+          ncol = 3, rel_widths = c(0.95, 0.8, 0.8))
+
+ggsave(filename = "data/Chloroplasts_removed/productivity_correlations.png", 
+       width = 6.5, height = 2.75, units = "in", dpi = 500)
+
 
 
 # Put all three plots together into one 
@@ -290,6 +300,7 @@ ggsave(plot = fHNA_comparison,
 
 
 
+
 ####################################################################################
 ####################################################################################
 ######################## CORRELATED HNA AND LNA
@@ -319,20 +330,8 @@ summary(lm(LNA.cells ~ HNA.cells * Lake, data = lakes))
 lm_allNA_corr_stats <- paste("atop(R^2 ==", round(summary(lm_allNA_corr)$adj.r.squared, digits = 2), ",",
                           "p ==", round(unname(summary(lm_allNA_corr)$coefficients[,4][2]), digits = 24), ")")
 
-lake_colors <- c(
-  "Muskegon" = "#FF933F",   #"#1AB58A",
-  "Michigan" =  "#EC4863", #"#FFC543",
-  "Inland" =  "#5C2849")  #"#FF2151")
-
-mytheme <- theme(legend.text = element_text(size = 8), legend.title = element_text(size = 8, face = "bold"), 
-                 plot.title = element_text(size = 10),
-                 axis.title = element_text(size = 10, face = "bold"), axis.text = element_text(size = 8),
-                 legend.key.width=unit(0.1,"line"), legend.key.height=unit(0.1,"line")) 
-
-
-
 # 3. Plot it
-ggplot(lakes, aes(x = HNA.cells, y = LNA.cells)) + 
+combined_HNA_LNA_corr_plot <- ggplot(lakes, aes(x = HNA.cells, y = LNA.cells)) + 
   geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey", alpha = 0.8) + 
   geom_errorbar(aes(ymin = LNA.cells - LNA.sd, max = LNA.cells + LNA.sd), color = "grey", alpha = 0.8) + 
   geom_point(size = 2.5, shape = 22, alpha = 0.8, aes(fill = Lake)) + 
@@ -342,11 +341,11 @@ ggplot(lakes, aes(x = HNA.cells, y = LNA.cells)) +
   scale_x_continuous(labels = function(x) format(x, scientific = TRUE), limits = c(0, 6.1e+06)) +
   scale_y_continuous(labels = function(x) format(x, scientific = TRUE), limits = c(0, 1e+07)) +
   annotate("text", x=5e+06, y=0.8e+06, label=lm_allNA_corr_stats, parse = TRUE, color = "black", size = 3) +
-  mytheme + theme(legend.position = c(0.01, 0.9))
+  mytheme
+combined_HNA_LNA_corr_plot
 
-ggsave(filename = "data/Chloroplasts_removed/AllLakes-HNA-LNA-correlation.png", 
+ggsave(combined_HNA_LNA_corr_plot, filename = "data/Chloroplasts_removed/AllLakes-HNA-LNA-correlation.png", 
        width = 4, height = 3.5, units = "in", dpi = 500)
-
 
 
 ### MUSKEGON
@@ -415,3 +414,64 @@ plot_grid(mich_corr_plot, inla_corr_plot, musk_corr_plot,
 
 ggsave(filename = "data/Chloroplasts_removed/AllLakes-separate-HNA-LNA-correlation.png", 
        width = 10, height = 3.5, units = "in", dpi = 500)
+
+
+
+p1 <- ggplot(df_cells, aes(x = FCM_type, y = num_cells, fill = Lake, color = Lake, shape = Lake)) + 
+  geom_point(size = 1.5, position = position_jitterdodge(), color = "black") + 
+  geom_boxplot(alpha = 0.7, outlier.shape = NA, show.legend = FALSE, color = "black") +
+  scale_color_manual(values = lake_colors,  guide = "none") +
+  scale_fill_manual(values = lake_colors) +
+  scale_shape_manual(values = lake_shapes) +
+  labs(y = "Number of Cells (cells/mL)", x = "FCM Type") +
+  mytheme + theme(legend.title = element_blank(), legend.position = c(0.01, 0.95)) +
+  guides(colour = guide_legend(override.aes = list(size=2.5)),
+         shape = guide_legend(override.aes = list(size=2.5)),
+         fill = guide_legend(override.aes = list(size=2.5)))
+
+
+p2 <- ggplot(lakes, aes(x = HNA.cells, y = LNA.cells)) + 
+  geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey", alpha = 0.8) + 
+  geom_errorbar(aes(ymin = LNA.cells - LNA.sd, max = LNA.cells + LNA.sd), color = "grey", alpha = 0.8) + 
+  geom_point(size = 2.5, alpha = 0.9, aes(fill = Lake, shape = Lake)) + 
+  scale_fill_manual(values = lake_colors) +
+  scale_shape_manual(values = lake_shapes) +
+  geom_smooth(method = "lm", color = "black") + 
+  labs(y = "LNA Cell Density (cells/mL)", x = "HNA Cell Density (cells/mL)") +
+  scale_x_continuous(labels = function(x) format(x, scientific = TRUE), limits = c(0, 6.1e+06)) +
+  scale_y_continuous(labels = function(x) format(x, scientific = TRUE), limits = c(0, 1e+07)) +
+  annotate("text", x=5e+06, y=0.8e+06, label=lm_allNA_corr_stats, parse = TRUE, color = "black", size = 3) +
+  mytheme + theme(legend.position = "none") #theme(legend.title = element_blank(), legend.position = c(0.01, 0.95))
+
+
+plot_grid(p1, p2, ncol = 2, nrow =1, labels = c("A","B"), rel_widths = c(0.95, 1))
+
+
+ggsave(filename = "data/Chloroplasts_removed/Cell-densities.png", 
+       width = 5.5, height = 2.75, units = "in", dpi = 500)
+
+
+####################################################################################
+####################################################################################
+########################  Analysis of HNA & LNA Correlations
+
+# 1. Run the linear model 
+lm_NA_corr <- lm(LNA.cells ~ HNA.cells, data = muskegon)
+
+## 2. Extract the R2 and p-value from the linear model: 
+lm_NA_corr_stats <- paste("atop(R^2 ==", round(summary(lm_NA_corr)$adj.r.squared, digits = 3), ",",
+                          "p ==", round(unname(summary(lm_NA_corr)$coefficients[,4][2]), digits = 3), ")")
+
+# 3. Plot it
+ggplot(muskegon, aes(x = HNA.cells, y = LNA.cells)) + 
+  geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey") + 
+  geom_errorbar(aes(ymin = LNA.cells - LNA.sd, max = LNA.cells + LNA.sd), color = "grey") + 
+  geom_point(size = 3, shape = 22, fill = "black") + 
+  geom_smooth(method = "lm", color = "black") + 
+  labs(y = "LNA Cell Density (cells/mL)", x = "HNA Cell Density (cells/mL)") +
+  scale_x_continuous(labels = function(x) format(x, scientific = TRUE), 
+                     breaks = c(2e+06, 3e+06)) +
+  annotate("text", x=3e+06, y=3e+06, label=lm_NA_corr_stats, parse = TRUE, color = "black", size = 4) 
+
+ggsave(filename = "data/Chloroplasts_removed/HNA-LNA-correlation.png", 
+       width = 4, height = 3.5, units = "in", dpi = 500)
