@@ -12,62 +12,7 @@ library(d3heatmap)
 library(phytools)
 library(ggtree)
 library(ape)
-
-# Set HNA and LNA discrete colors
-fcm_colors <- c(
-  "HNA" = "deepskyblue4",
-  "LNA" = "darkgoldenrod1",
-  "Total" = "black")
-
-lake_colors <- c(
-  "Muskegon" = "#FF933F",   #"#1AB58A",
-  "Michigan" =  "#EC4863", #"#FFC543",
-  "Inland" =  "#5C2849")  #"#FF2151")
-
-lake_shapes <- c(
-  "Inland" = 21, 
-  "Michigan" = 23, 
-  "Muskegon" = 22)
-
-# Set global colors for the different taxonomic phyla
-phylum_colors <- c( 
-  Acidobacteria = "navy", 
-  Actinobacteria = "blue", 
-  Alphaproteobacteria = "orangered", 
-  Aminicenantes = "",
-  Armatimonadetes = "wheat", 
-  Bacteria_unclassified = "grey47", 
-  Bacteroidetes = "cornflowerblue", 
-  Betaproteobacteria = "plum1", 
-  "Candidate_division_OP3" = "slategray3",
-  Chlamydiae = "#A20E42",
-  Chlorobi="magenta", 
-  Chloroflexi="black", 
-  Cyanobacteria = "limegreen",
-  "Deinococcus-Thermus" = "black",
-  Deltaproteobacteria = "olivedrab", 
-  Firmicutes = "navy",
-  Gammaproteobacteria = "cyan",
-  Gemmatimonadetes = "yellow",
-  Gracilibacteria = "#FD823F",
-  JTB23 = "#B5D6AA",
-  Latescibacteria = "salmon4",
-  Lentisphaerae = "palevioletred1",
-  Nitrospirae = "forestgreen",
-  Omnitrophica = "red4",
-  Parcubacteria = "#531A4D",
-  Planctomycetes = "darkorange", 
-  Proteobacteria_unclassified = "greenyellow",
-  Spirochaetae = "royalblue",
-  TA06 = "peachpuff",
-  Omnitrophica = "burlywood", 
-  unknown_unclassified = "grey88",
-  Verrucomicrobia = "purple",
-  Proteobacteria_unclassified = "green",
-  Proteobacteria = "red", 
-  HNA =  "deepskyblue4",
-  LNA = "darkgoldenrod1",
-  Both = "black" )
+source("code/set_colors.R")           # Set Colors for plotting
 
 # Optimal Thresholds from March 14th
 # HNA/LNA: Inland: 0.13/0.108,  Michigan: 0.248/0.286,  Muskegon: 0.09/0.09

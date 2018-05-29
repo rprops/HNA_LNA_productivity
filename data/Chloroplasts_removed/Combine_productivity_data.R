@@ -7,24 +7,6 @@ library(tidyr)
 library(ggplot2)
 library(cowplot)
 
-
-####################### SET COLORS
-fcm_colors <- c(
-  "HNA" = "deepskyblue4",
-  "LNA" = "darkgoldenrod1",
-  "Total" = "black")
-
-lake_colors <- c(
-  "Muskegon" = "#FF933F",   #"#1AB58A",
-  "Michigan" =  "#EC4863", #"#FFC543",
-  "Inland" =  "#5C2849")  #"#FF2151")
-
-lake_shapes <- c(
-  "Inland" = 21, 
-  "Michigan" = 23, 
-  "Muskegon" = 22)
-
-
 ####################### SET GGPLOT THEME
 mytheme <- theme(legend.text = element_text(size = 8), legend.title = element_text(size = 8, face = "bold"), 
                  plot.title = element_text(size = 10), legend.position = c(0.01, 0.9),
@@ -190,6 +172,7 @@ lm_HNA <- lm(tot_bacprod ~ HNA.cells, data = muskegon)
 lm_HNA_stats <- paste("atop(R^2 ==", round(summary(lm_HNA)$adj.r.squared, digits = 2), ",",
                                     "p ==", round(unname(summary(lm_HNA)$coefficients[,4][2]), digits = 5), ")")
 
+
 # 3. Plot it
 HNA_vs_prod <- ggplot(muskegon, aes(x = HNA.cells, y = tot_bacprod)) + 
   geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey", alpha = 0.8) + 
@@ -201,7 +184,7 @@ HNA_vs_prod <- ggplot(muskegon, aes(x = HNA.cells, y = tot_bacprod)) +
                      breaks = c(2e+06, 3e+06)) +
   annotate("text", x=1.65e+06, y=60, label=lm_HNA_stats, parse = TRUE, color = "black", size = 3) +
   mytheme
-
+HNA_vs_prod
 
 # 1. Run the linear model 
 lm_LNA <- lm(tot_bacprod ~ LNA.cells, data = muskegon)
@@ -219,7 +202,7 @@ LNA_vs_prod <- ggplot(muskegon, aes(x = LNA.cells, y = tot_bacprod)) +
   geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "darkgoldenrod1") + 
   annotate("text", x=2.75e+06, y=60, label=lm_LNA_stats, parse = TRUE, color = "red", size = 3) +
   mytheme
-
+LNA_vs_prod
 
 
 # 1. Run the linear model 
@@ -235,7 +218,7 @@ Total_vs_prod <- ggplot(muskegon, aes(x = Total.cells, y = tot_bacprod)) +
   geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey", alpha = 0.8) + 
   scale_shape_manual(values = lake_shapes) +
   geom_point(size = 2.5, shape = 22, fill = "black") + 
-  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "Cell Density \n(cells/mL)") +
+  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "Total Cell Density \n(cells/mL)") +
   geom_smooth(method = "lm", color = "black") + 
   #geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "red") + 
   annotate("text", x=5.25e+06, y=60, label=lm_total_stats, parse = TRUE, color = "black", size = 3) +
