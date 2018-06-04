@@ -437,6 +437,51 @@ plot_grid(HNA_vs_prod + theme(legend.position = "none"),
           align = "h") 
 ```
 
+## Alternative Figure 1: 
+```{r alt-fig-1, fig.width = 7, fig.height = 6.5}
+first_row <- plot_grid(HNA_vs_prod + theme(legend.position = "none"), 
+          LNA_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"), 
+          Total_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"),
+          labels = c("A", "B", "C"), 
+          ncol = 3, nrow = 1, 
+          rel_widths = c(0.95, 0.8, 0.8))
+
+plot_for_legend <- 
+  ggplot(df_cells, aes(x = Lake, y = num_cells, fill = FCM_type, color = FCM_type)) + 
+  geom_point(size = 1, shape = 25, position = position_jitterdodge()) + 
+  scale_fill_manual(values = fcm_colors) + 
+  scale_color_manual(values = fcm_colors, guide = "none") + 
+  scale_shape_manual(values = 25) +
+  scale_y_continuous(labels = function(x) format(x, scientific = TRUE)) +
+  labs(y = "Number of Cells \n (cells/mL)", x = "Lake") +
+  theme(legend.position = "right",
+           legend.title = element_text(size = 12, face = "bold"), 
+           legend.text = element_text(size = 12),
+           legend.key.width=unit(1,"line"), 
+           legend.key.height=unit(1,"line")) +
+  guides(fill = guide_legend(override.aes = list(size=4.5)))
+
+legend1 <- get_legend(plot_for_legend)
+
+legend2 <- get_legend(p2 + theme(legend.position = "right",
+           legend.title = element_text(size = 12, face = "bold"), 
+           legend.text = element_text(size = 12),
+           legend.key.width=unit(1,"line"), 
+           legend.key.height=unit(1,"line")) +
+  guides(fill = guide_legend(override.aes = list(size=5))))
+
+
+leg_positions <- plot_grid(legend1, legend2, nrow = 2, ncol = 1)
+
+second_row <- plot_grid(NULL, p2, leg_positions, 
+                        labels = c("", "D", ""),
+                        ncol = 3, nrow = 1,
+                        rel_widths = c(0.5, 1, 0.5))
+
+## PLOT THE FIGURE 
+plot_grid(first_row, second_row,
+          nrow = 2, ncol = 1)
+```
 
 # Figure 4: Heatmap
 
