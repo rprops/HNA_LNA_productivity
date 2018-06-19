@@ -438,7 +438,7 @@ plot_grid(HNA_vs_prod + theme(legend.position = "none"),
 ```
 
 ## Alternative Figure 1: 
-```{r alt-fig-1, fig.width = 6.25, fig.height = 5}
+```{r alt-fig-1, fig.width = 6.5, fig.height = 5.2}
 first_row <- plot_grid(HNA_vs_prod + theme(legend.position = "none"), 
           LNA_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"), 
           Total_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"),
@@ -480,6 +480,27 @@ second_row <- plot_grid(NULL, p2, leg_positions,
 
 ## PLOT THE FIGURE 
 plot_grid(first_row, second_row,
+          nrow = 2, ncol = 1)
+
+
+# REPOSITION PLOTS FOR NEW ORDER OF TEXT
+
+new_leg_positions <- plot_grid(legend2, legend1, nrow = 2, ncol = 1)
+
+
+swap_row1 <- plot_grid(NULL, p2, new_leg_positions, 
+                        labels = c("", "A", ""),
+                        ncol = 3, nrow = 1,
+                        rel_widths = c(0.5, 1, 0.5))
+
+swap_row2 <- plot_grid(HNA_vs_prod + theme(legend.position = "none"), 
+          LNA_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"), 
+          Total_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"),
+          labels = c("B", "C", "D"), 
+          ncol = 3, nrow = 1, 
+          rel_widths = c(0.95, 0.8, 0.8))
+
+plot_grid(swap_row1, swap_row2,
           nrow = 2, ncol = 1)
 ```
 
