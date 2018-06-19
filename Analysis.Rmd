@@ -438,7 +438,7 @@ plot_grid(HNA_vs_prod + theme(legend.position = "none"),
 ```
 
 ## Alternative Figure 1: 
-```{r alt-fig-1, fig.width = 7, fig.height = 6.5}
+```{r alt-fig-1, fig.width = 6.25, fig.height = 5}
 first_row <- plot_grid(HNA_vs_prod + theme(legend.position = "none"), 
           LNA_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"), 
           Total_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"),
@@ -448,10 +448,10 @@ first_row <- plot_grid(HNA_vs_prod + theme(legend.position = "none"),
 
 plot_for_legend <- 
   ggplot(df_cells, aes(x = Lake, y = num_cells, fill = FCM_type, color = FCM_type)) + 
-  geom_point(size = 1, shape = 25, position = position_jitterdodge()) + 
+  geom_point(size = 1, shape = 22, position = position_jitterdodge()) + 
   scale_fill_manual(values = fcm_colors) + 
   scale_color_manual(values = fcm_colors, guide = "none") + 
-  scale_shape_manual(values = 25) +
+  scale_shape_manual(values = 22) +
   scale_y_continuous(labels = function(x) format(x, scientific = TRUE)) +
   labs(y = "Number of Cells \n (cells/mL)", x = "Lake") +
   theme(legend.position = "right",
@@ -459,7 +459,7 @@ plot_for_legend <-
            legend.text = element_text(size = 12),
            legend.key.width=unit(1,"line"), 
            legend.key.height=unit(1,"line")) +
-  guides(fill = guide_legend(override.aes = list(size=4.5)))
+  guides(fill = guide_legend(override.aes = list(size=3.5)))
 
 legend1 <- get_legend(plot_for_legend)
 
@@ -468,7 +468,7 @@ legend2 <- get_legend(p2 + theme(legend.position = "right",
            legend.text = element_text(size = 12),
            legend.key.width=unit(1,"line"), 
            legend.key.height=unit(1,"line")) +
-  guides(fill = guide_legend(override.aes = list(size=5))))
+  guides(fill = guide_legend(override.aes = list(size=3.5))))
 
 
 leg_positions <- plot_grid(legend1, legend2, nrow = 2, ncol = 1)
@@ -485,8 +485,8 @@ plot_grid(first_row, second_row,
 
 # Figure 4: Heatmap
 
-## Load RL Score data
-```{r load-RL-scores}
+## Load RL Ranking data
+```{r load-RL-ranking}
 # Read in Data
 dfHNA_musk <- read.csv("Final/FS_Scores/Muskegon_fs_scores_HNA_5seq10.csv") %>%
   dplyr::filter(RL.score > 0.09) %>%
@@ -536,14 +536,15 @@ lake_dfscores <-
   gather(key = FCM_type, value = RL.ranking, HNA:LNA)
 ```
 
-## Plot figure 4
-```{r heatmap, fig.width = 8, fig.height = 10}
+
+## Plot figure 4: 1/RL Ranking
+```{r heatmap-ranking, fig.width = 8, fig.height = 10}
 # Reformat data to be matrix style for heatmapping
 # HNA/LNA: Inland: 0.13/0.108,  Michigan: 0.248/0.286,  Muskegon: 0.09/0.09
 musk_dat <- 
   muskegon_df %>%
   dplyr::select(-Lake) %>%
-  dplyr::filter(RL.ranking.HNA > 0.09 | RL.ranking.LNA < -0.09) %>%
+  dplyr::filter(RL.ranking.HNA > 0.09 | RL.ranking.LNA < -0.09) %>%  # THIS IS A MISTAKE
   rename(Muskegon_HNA = RL.ranking.HNA, 
          Muskegon_LNA = RL.ranking.LNA)%>%
   mutate(Muskegon_LNA = Muskegon_LNA * -1) 
@@ -551,7 +552,7 @@ musk_dat <-
 inland_dat <- 
   inland_df %>%
   dplyr::select(-Lake) %>%
-  dplyr::filter(RL.ranking.HNA > 0.13 | RL.ranking.LNA < -0.108) %>%
+  dplyr::filter(RL.ranking.HNA > 0.13 | RL.ranking.LNA < -0.108) %>%  # THIS IS A MISTAKE
   rename(Inland_HNA = RL.ranking.HNA, 
          Inland_LNA = RL.ranking.LNA) %>%
   mutate(Inland_LNA = Inland_LNA * -1)
@@ -559,7 +560,7 @@ inland_dat <-
 michigan_dat <- 
   michigan_df %>%
   dplyr::select(-Lake) %>%
-  dplyr::filter(RL.ranking.HNA > 0.248 | RL.ranking.LNA < -0.286) %>%
+  dplyr::filter(RL.ranking.HNA > 0.248 | RL.ranking.LNA < -0.286) %>%  # THIS IS A MISTAKE
   rename(Michigan_HNA = RL.ranking.HNA, 
          Michigan_LNA = RL.ranking.LNA) %>%
   mutate(Michigan_LNA = Michigan_LNA * -1)
@@ -585,6 +586,107 @@ heatmap.2(matrix_scores,
           margins=c(5.5,7), cexRow=1.25,cexCol=1.25,
           key.xlab="1/RL Score",
           ColSideColors=colz)
+```
+
+
+## Load RL Score data
+```{r RL-scores}
+# Read in Data
+dfHNA_musk_scores <- read.csv("Final/FS_Scores/Muskegon_fs_scores_HNA_5seq10.csv") %>%
+  dplyr::filter(RL.score > 0.09) %>%
+  mutate(Lake = "Muskegon")%>%
+  rename(OTU = X, RL.score.HNA = RL.score) %>%
+  dplyr::select(OTU, RL.score.HNA)
+
+dfLNA_musk_scores <- read.csv("Final/FS_Scores/Muskegon_fs_scores_LNA_5seq10.csv") %>%
+  dplyr::filter(RL.score > 0.09) %>%
+  mutate(Lake = "Muskegon") %>%
+  rename(OTU = X, RL.score.LNA = RL.score) %>%
+  dplyr::select(OTU, RL.score.LNA)
+
+dfHNA_inland_scores <- read.csv("Final/FS_Scores/Inland_fs_scores_HNA_5seq10.csv") %>%
+  dplyr::filter(RL.score > 0.13) %>%
+  mutate(Lake = "Inland")%>%
+  rename(OTU = X, RL.score.HNA = RL.score) %>%
+  dplyr::select(OTU, RL.score.HNA)
+
+dfLNA_inland_scores <- read.csv("Final/FS_Scores/Inland_fs_scores_LNA_5seq10.csv") %>%
+  dplyr::filter(RL.score > 0.108) %>%
+  mutate(Lake = "Inland") %>%
+  rename(OTU = X, RL.score.LNA = RL.score) %>%
+  dplyr::select(OTU, RL.score.LNA)
+
+dfHNA_michigan_scores <- read.csv("Final/FS_Scores/Michigan_fs_scores_HNA_5seq10.csv") %>%
+  dplyr::filter(RL.score > 0.248) %>%
+  mutate(Lake = "Michigan")%>%
+  rename(OTU = X, RL.score.HNA = RL.score) %>%
+  dplyr::select(OTU, RL.score.HNA)
+
+dfLNA_michigan_scores <- read.csv("Final/FS_Scores/Michigan_fs_scores_LNA_5seq10.csv") %>%
+  dplyr::filter(RL.score > 0.286) %>%
+  mutate(Lake = "Michigan") %>%
+  rename(OTU = X, RL.score.LNA = RL.score) %>%
+  dplyr::select(OTU, RL.score.LNA)
+
+# Combine HNA and LNA datasets together
+muskegon_df_scores <- full_join(dfHNA_musk_scores, dfLNA_musk_scores, by = "OTU") %>%   mutate(Lake = "Muskegon")
+inland_df_scores <- full_join(dfHNA_inland_scores, dfLNA_inland_scores, by = "OTU") %>%  mutate(Lake = "Inland")
+michigan_df_scores <- full_join(dfHNA_michigan_scores, dfLNA_michigan_scores, by = "OTU") %>%  mutate(Lake = "Michigan")
+
+# Combine all of the three lakes together into one dataframe! 
+scores_RL_df <-
+  bind_rows(muskegon_df_scores, inland_df_scores, michigan_df_scores) %>%
+  rename(HNA = RL.score.HNA, LNA = RL.score.LNA) %>%
+  gather(key = FCM_type, value = RL.ranking, HNA:LNA)
+```
+
+## Plot figure 4: 1/RL Ranking
+```{r heatmap-RLscore, fig.width = 8, fig.height = 20}
+# Reformat data to be matrix style for heatmapping
+# HNA/LNA: Inland: 0.13/0.108,  Michigan: 0.248/0.286,  Muskegon: 0.09/0.09
+musk_dat_scores <- 
+  muskegon_df_scores %>%
+  dplyr::select(-Lake) %>%
+  dplyr::filter(RL.score.HNA > 0.09 | RL.score.LNA < 0.09) %>%
+  rename(Muskegon_HNA = RL.score.HNA, 
+         Muskegon_LNA = RL.score.LNA)
+
+inland_dat_scores <- 
+  inland_df_scores %>%
+  dplyr::select(-Lake) %>%
+  dplyr::filter(RL.score.HNA > 0.13 | RL.score.LNA < 0.108) %>%
+  rename(Inland_HNA = RL.score.HNA, 
+         Inland_LNA = RL.score.LNA) 
+
+michigan_dat_scores <- 
+  michigan_df_scores %>%
+  dplyr::select(-Lake) %>%
+  dplyr::filter(RL.score.HNA > 0.248 | RL.score.LNA < 0.286) %>%
+  rename(Michigan_HNA = RL.score.HNA, 
+         Michigan_LNA = RL.score.LNA) 
+
+matrix_RLscores <- 
+  full_join(musk_dat_scores, inland_dat_scores, by = "OTU") %>%
+  full_join(michigan_dat_scores, by = "OTU") %>%
+  tibble::column_to_rownames(var = "OTU") %>%
+  as.matrix()
+
+matrix_RLscores[is.na(matrix_RLscores)] <- 0
+
+breakers <- seq(min(matrix_RLscores, na.rm = T), max(matrix_RLscores, na.rm = T), length.out = 21)
+my_palette <- colorRampPalette(c("white","gray65", "red")) (n=20)
+
+# Set the colors of the different columns going in
+colz <- c("#FF933F", "#FF933F", "#EC4863", "#EC4863", "#5C2849", "#5C2849")
+
+heatmap.2(matrix_RLscores, 
+          distfun = function(x) dist(x, method = "euclidean"),
+          hclustfun = function(x) hclust(x,method = "complete"),
+          col = my_palette, breaks = breakers, trace = "none",
+          key = TRUE, symkey = FALSE, density.info = "none", srtCol = 30,
+          margins=c(5.5,7), cexRow = 1.25,cexCol = 1.25,
+          key.xlab = "RL Score",ColSideColors = colz,
+          lhei = c(1,9))
 ```
 
 
