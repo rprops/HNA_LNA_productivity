@@ -61,6 +61,7 @@ library(ggtree)     # Pretty ggplot-esque phylogenetic trees
 library(ape)        # Working with phylogenetic trees
 library(DT)         # Pretty Tables 
 library(gplots)     # Heatmap.2 function
+library(stringr)    # To replace zeros in OTU names
 source("code/set_colors.R")           # Set Colors for plotting
 
 # Set some global ggplot parameters
@@ -661,7 +662,7 @@ scores_RL_df <-
   gather(key = FCM_type, value = RL.ranking, HNA:LNA)
 ```
 
-## Plot figure 4: 1/RL Ranking
+## Plot figure 4: RL Scores
 ```{r heatmap-RLscore, fig.width = 8, fig.height = 20}
 # Reformat data to be matrix style for heatmapping
 # HNA/LNA: Inland: 0.13/0.108,  Michigan: 0.248/0.286,  Muskegon: 0.09/0.09
@@ -692,7 +693,7 @@ matrix_RLscores <-
   tibble::column_to_rownames(var = "OTU") %>%
   as.matrix()
 
-matrix_RLscores[is.na(matrix_RLscores)] <- 0
+matrix_RLscores[is.na(matrix_RLscores)] <- 0  
 
 breakers <- seq(min(matrix_RLscores, na.rm = T), max(matrix_RLscores, na.rm = T), length.out = 21)
 my_palette <- colorRampPalette(c("white","gray65", "red")) (n=20)
@@ -710,6 +711,51 @@ heatmap.2(matrix_RLscores,
           lhei = c(1,9))
 ```
 
+
+### Top 10 from Fig 4 Scores
+```{r top10-fig4, fig.width=6, fig.height=8}
+
+mich_top10 <- michigan_dat_scores %>%
+  top_n(., 10, Michigan_HNA)
+
+inland_top10_HNA <- inland_dat_scores %>%
+  select(OTU, Inland_HNA) %>%
+  top_n(., 10, Inland_HNA)
+
+inland_top10_LNA <- inland_dat_scores %>%
+  select(OTU, Inland_LNA) %>%
+  top_n(., 10, Inland_LNA)
+  
+musk_top10_HNA <- musk_dat_scores %>%
+  select(OTU, Muskegon_HNA) %>%
+  top_n(., 10, Muskegon_HNA)
+
+musk_top10_LNA <- musk_dat_scores %>%
+  select(OTU, Muskegon_LNA) %>%
+  top_n(., 10, Muskegon_LNA)
+
+matrix_top10 <- musk_top10_HNA %>%
+  full_join(., musk_top10_LNA, by = "OTU") %>%
+  full_join(., mich_top10,  by = "OTU") %>%
+  full_join(., inland_top10_HNA,  by = "OTU") %>%
+  full_join(., inland_top10_LNA,  by = "OTU") %>%
+  # Remove the zeros in the OTU names 
+  mutate(OTU = str_replace(OTU, "00", "")) %>%
+  tibble::column_to_rownames(var = "OTU") %>%
+  as.matrix()
+
+# The heatmap won't work with NAs 
+matrix_top10[is.na(matrix_top10)] <- 0
+
+heatmap.2(matrix_top10, 
+          distfun = function(x) dist(x, method = "euclidean"),
+          hclustfun = function(x) hclust(x,method = "complete"),
+          col = my_palette, breaks = breakers, trace = "none",
+          key = TRUE, symkey = FALSE, density.info = "none", srtCol = 30,
+          margins=c(5.5,7), cexRow = 1.25,cexCol = 1.25,
+          key.xlab = "RL Score",ColSideColors = colz,
+          lhei = c(1,9))
+```
 
 # Figure 5: Phylogenetic Tree
 ```{r phylo-tree}
