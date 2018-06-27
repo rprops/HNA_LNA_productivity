@@ -714,7 +714,6 @@ heatmap.2(matrix_RLscores,
 
 ### Top 10 from Fig 4 Scores
 ```{r top10-fig4, fig.width=6, fig.height=8}
-
 mich_top10 <- michigan_dat_scores %>%
   top_n(., 10, Michigan_HNA)
 
@@ -734,11 +733,13 @@ musk_top10_LNA <- musk_dat_scores %>%
   select(OTU, Muskegon_LNA) %>%
   top_n(., 10, Muskegon_LNA)
 
-matrix_top10 <- musk_top10_HNA %>%
+df_top10 <- musk_top10_HNA %>%
   full_join(., musk_top10_LNA, by = "OTU") %>%
   full_join(., mich_top10,  by = "OTU") %>%
   full_join(., inland_top10_HNA,  by = "OTU") %>%
-  full_join(., inland_top10_LNA,  by = "OTU") %>%
+  full_join(., inland_top10_LNA,  by = "OTU")
+
+matrix_top10 <- df_top10 %>%
   # Remove the zeros in the OTU names 
   mutate(OTU = str_replace(OTU, "00", "")) %>%
   tibble::column_to_rownames(var = "OTU") %>%
@@ -747,14 +748,40 @@ matrix_top10 <- musk_top10_HNA %>%
 # The heatmap won't work with NAs 
 matrix_top10[is.na(matrix_top10)] <- 0
 
+#png("Analysis_Figures/clustering_top10.png", units = "in", width = 6, height = 8, res = 300)
+
 heatmap.2(matrix_top10, 
-          distfun = function(x) dist(x, method = "euclidean"),
-          hclustfun = function(x) hclust(x,method = "complete"),
-          col = my_palette, breaks = breakers, trace = "none",
-          key = TRUE, symkey = FALSE, density.info = "none", srtCol = 30,
-          margins=c(5.5,7), cexRow = 1.25,cexCol = 1.25,
-          key.xlab = "RL Score",ColSideColors = colz,
-          lhei = c(1,9))
+        distfun = function(x) dist(x, method = "euclidean"),
+        hclustfun = function(x) hclust(x,method = "complete"),
+        col = my_palette, breaks = breakers, trace = "none",
+        key = TRUE, symkey = FALSE, density.info = "none", srtCol = 30,
+        margins=c(5.5,7), cexRow = 1.25,cexCol = 1.25,
+        key.xlab = "RL Score",ColSideColors = colz,
+        lhei = c(1.5,9), key.title=NA)
+
+#dev.off()
+
+# WITHOUT the clustering!
+heatmap.2(matrix_top10,
+        dendrogram = "none", Rowv = FALSE, Colv = FALSE,
+        col = my_palette, breaks = breakers, trace = "none",
+        key = TRUE, symkey = FALSE, density.info = "none", srtCol = 30,
+        margins=c(5.5,7), cexRow = 1.25,cexCol = 1.25,
+        key.xlab = "RL Score",ColSideColors = colz,
+        lhei = c(1,9), #lmat = rbind(1,2),
+        key.title=NA)
+```
+
+### ggplot heatmap 
+```{r ggplot-heatmap-top10, fig.width=5, fig.height=7}
+# In the order of OTUs without 
+df_top10 %>% 
+  mutate(OTU = str_replace(OTU, "00", "")) %>% 
+  gather(Lake_FCM, RL_score, Muskegon_HNA:Inland_LNA) %>%
+  ggplot(aes(x=Lake_FCM, y= fct_rev(OTU))) +
+    geom_tile(aes(fill=RL_score)) +
+    scale_fill_gradient2(na.value = "white", low = "grey", high = "red") +
+    theme(axis.title = element_blank(), axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
 ```
 
 # Figure 5: Phylogenetic Tree
