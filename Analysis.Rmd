@@ -635,9 +635,11 @@ michigan_dat_scores <-
   rename(Michigan_HNA = RL.score.HNA, 
          Michigan_LNA = RL.score.LNA) 
 
-matrix_RLscores <- 
+df_RLscores <- 
   full_join(musk_dat_scores, inland_dat_scores, by = "OTU") %>%
-  full_join(michigan_dat_scores, by = "OTU") %>%
+  full_join(michigan_dat_scores, by = "OTU") 
+  
+matrix_RLscores <- df_RLscores %>%
   tibble::column_to_rownames(var = "OTU") %>%
   as.matrix()
 
@@ -753,16 +755,21 @@ df_top10 %>%
 ```
 
 # Figure 5: Phylogenetic Tree
-```{r phylo-tree}
+```{r phylo-tree, fig.width=9, fig.height=14}
 #### PHYLOGENETIC ANALYSIS
 load("data/phyloseq.RData")
 physeq.otu
 
+# With all of the OTUs that pass the RL score threshold
 otu_scores_df <- matrix_RLscores %>%
   as.data.frame() %>%
   tibble::rownames_to_column("OTU")
 
 vector_of_otus <- as.vector(otu_scores_df$OTU)
+
+# Write to a file
+#write(vector_of_otus, file = "data/fasttree/Figure5/OTUnames_RLscores_155.txt",
+#      ncolumns = 1, append = FALSE, sep = "\n")
 
 physeq <- physeq.otu %>%
   subset_taxa(., taxa_names(physeq.otu) %in% vector_of_otus)  
@@ -772,7 +779,7 @@ setdiff(sort(vector_of_otus), sort(taxa_names(physeq)))
 setdiff(sort(taxa_names(physeq)), sort(vector_of_otus))
 
 ######################################### FASTTREE
-fast_tree <- read.tree(file="data/fasttree/fasttree_newick_tree_HNALNA_rmN.tre")
+fast_tree <- read.tree(file="data/fasttree/Figure5/newick_tree_OTUs155.tre")
 
 fast_tree_tip_order <- data.frame(fast_tree$tip.label) %>%
   rename(OTU = fast_tree.tip.label)
@@ -800,50 +807,123 @@ tax_table(fasttree_physeq) <- t
 fasttree_tax <- data.frame(tax_table(fasttree_physeq)) %>%
   tibble::rownames_to_column(var = "OTU")
 
-fasttree_df2 <- read.csv("data/fasttree/OTUnames_based_on_RLscores_MANUAL.csv") %>%
-  left_join(., fasttree_tax, by = "OTU") %>%
-  tibble::column_to_rownames("OTU") %>%
-  dplyr::select(Phylum)
-
 
 ## Let's root the tree
 is.rooted(fast_tree)
-test_tree <- root(fast_tree, outgroup = "Otu001533", resolve.root = TRUE)
-is.rooted(test_tree)
+rooted_tree <- root(fast_tree, outgroup = "Otu001533", resolve.root = TRUE)
+is.rooted(rooted_tree) # Sanity Check
 
+# Need to make a manual file based off of FIgure 4 - it starts with OTU names
+#write.csv(df_RLscores, file = "data/fasttree/Figure5/OTUs155_MANUAL.csv", row.names = FALSE)
+# Next I manually filled in the fcm_type and lake columns :/ 
 
-phyfcm_fasttree_df3 <- read.csv("data/fasttree/OTUnames_based_on_RLscores_MANUAL.csv") %>%
+phyfcm_fasttree_df <- read.csv("data/fasttree/Figure5/OTUs155_MANUAL.csv") %>%
   left_join(., fasttree_tax, by = "OTU") %>%
   tibble::column_to_rownames("OTU") %>%
   dplyr::rename(FCM = fcm_type) %>%
   dplyr::select(Phylum, FCM)
 
 rooted_tree <- 
-  ggplot(test_tree, aes(x, y)) + geom_tree() + theme_tree() +
+  ggplot(rooted_tree, aes(x, y)) + geom_tree() + theme_tree() +
   geom_tiplab(size=3, align=TRUE, linesize=.5) #+
   #geom_nodelab(vjust=-.5, size=3) 
 
-  
-gheatmap(rooted_tree, phyfcm_fasttree_df3, offset = 0.1, width=0.3, font.size=3, colnames_angle=0, hjust=0.5) +
-  scale_fill_manual(values = phylum_colors,  
-                    breaks = c("Actinobacteria", "Alphaproteobacteria", "Bacteria_unclassified", "Bacteroidetes", "Betaproteobacteria",
-                               "Cyanobacteria","Deltaproteobacteria", "Firmicutes", "Gammaproteobacteria","Omnitrophica", "Planctomycetes",
-                               "Proteobacteria_unclassified", "unknown_unclassified", "Verrucomicrobia", "Both", "HNA", "LNA"))
+gheatmap(rooted_tree, phyfcm_fasttree_df, offset = 0.1, width=0.3, font.size=3, colnames_angle=0, hjust=0.5) +
+  scale_fill_manual(values = phylum_colors, 
+                    breaks = c("Acidobacteria","Actinobacteria", "Alphaproteobacteria", "Bacteria_unclassified", "Bacteroidetes", "Betaproteobacteria", 
+                               "Chlorobi", "Chloroflexi","Cyanobacteria","Deltaproteobacteria", "Epsilonproteobacteria", "Firmicutes", 
+                               "Gammaproteobacteria","Gemmatimonadetes","Omnitrophica","Parcubacteria","Planctomycetes",
+                               "Proteobacteria_unclassified", "TA18","unknown_unclassified", "Verrucomicrobia", 
+                               # FCM Groups
+                               "Both", "HNA", "LNA")) +
+  guides(fill=guide_legend(ncol=1))
 ```
 
 
-```{r test-phylo, include=FALSE}
-test <- ggplot(test_tree, aes(x, y)) + geom_tree() + theme_tree() +
+
+
+
+## Figure 5 with Top 10 OTUs from Each System
+```{r tree-top10, fig.width=7, fig.height=9}
+# Get the OTU names
+top10_otu_scores_df <- df_top10 %>%
+  as.data.frame() 
+top10_vector_of_otus <- as.vector(top10_otu_scores_df$OTU)
+
+# Write the OTU names to a file
+#write(top10_vector_of_otus, file = "data/fasttree/Figure5/OTUnames_RLscores_top10.txt",
+#      ncolumns = 1, append = FALSE, sep = "\n")
+
+
+top10_physeq <- physeq.otu %>%
+  subset_taxa(., taxa_names(physeq.otu) %in% top10_vector_of_otus)  
+
+# Which OTU is missing?
+setdiff(sort(top10_vector_of_otus), sort(taxa_names(top10_physeq)))
+setdiff(sort(taxa_names(top10_physeq)), sort(top10_vector_of_otus))
+
+######################################### FASTTREE
+top10_fasttree <- read.tree(file="data/fasttree/Figure5/newick_tree_top10.tre")
+
+top10_fasttree_tip_order <- data.frame(top10_fasttree$tip.label) %>%
+  rename(OTU = top10_fasttree.tip.label)
+
+top10_fasttree_physeq <- merge_phyloseq(physeq, phy_tree(top10_fasttree))
+
+# Fix the taxonomy names 
+colnames(tax_table(top10_fasttree_physeq)) <- c("Kingdom","Phylum","Class","Order","Family","Genus","Species")
+
+###################################################################### ADD THE PROTEOBACTERIA TO THE PHYLA
+phy <- data.frame(tax_table(top10_fasttree_physeq))
+Phylum <- as.character(phy$Phylum)
+Class <- as.character(phy$Class)
+
+for  (i in 1:length(Phylum)){ 
+  if (Phylum[i] == "Proteobacteria"){
+    Phylum[i] <- Class[i]  } }
+
+phy$Phylum <- Phylum # Add the new phylum level data back to phy
+
+t <- tax_table(as.matrix(phy))
+tax_table(top10_fasttree_physeq) <- t
+
+top10_fasttree_tax <- data.frame(tax_table(top10_fasttree_physeq)) %>%
+  tibble::rownames_to_column(var = "OTU")
+
+# Make a dataframe 
+phymerge_df <- phyfcm_fasttree_df %>%
+  tibble::rownames_to_column("OTU")
+
+phyfcm_top10_df <- 
+  top10_otu_scores_df %>%
+  select(OTU) %>%
+  left_join(phymerge_df, by = "OTU") %>%
+  tibble::column_to_rownames("OTU")
+  
+
+## Let's root the tree
+is.rooted(top10_fasttree)
+top10_rooted_tree <- root(top10_fasttree, outgroup = "Otu001533", resolve.root = TRUE)
+is.rooted(top10_rooted_tree) # Sanity Check
+
+top10_rooted_tree_plot <- 
+  ggplot(top10_rooted_tree, aes(x, y)) + geom_tree() + theme_tree() +
   geom_tiplab(size=3, align=TRUE, linesize=.5) #+
   #geom_nodelab(vjust=-.5, size=3) 
 
-  
-gheatmap(test, phyfcm_fasttree_df3, offset = 0.1, width=0.3, font.size=3, colnames_angle=0, hjust=0.5) +
-  scale_fill_manual(values = phylum_colors,  
-                    breaks = c("Actinobacteria", "Alphaproteobacteria", "Bacteria_unclassified", "Bacteroidetes", "Betaproteobacteria",
-                               "Cyanobacteria","Deltaproteobacteria", "Firmicutes", "Gammaproteobacteria","Omnitrophica", "Planctomycetes",
-                               "Proteobacteria_unclassified", "unknown_unclassified", "Verrucomicrobia", "Both", "HNA", "LNA"))
+gheatmap(top10_rooted_tree_plot, phyfcm_top10_df, offset = 0.1, width=0.3, font.size=3, colnames_angle=0, hjust=0.5) +
+  scale_fill_manual(values = phylum_colors, 
+                    breaks = c("Actinobacteria", "Alphaproteobacteria", "Bacteria_unclassified", "Bacteroidetes", 
+                               "Betaproteobacteria", "Chlorobi","Chloroflexi", "Cyanobacteria", "Deltaproteobacteria", 
+                               "Epsilonproteobacteria", "Firmicutes", "Gammaproteobacteria", "Lentisphaerae", "Omnitrophica", 
+                               "Planctomycetes", "Proteobacteria_unclassified", "unknown_unclassified", "Verrucomicrobia", 
+                               # FCM Groups
+                               "Both", "HNA", "LNA")) +
+  guides(fill=guide_legend(ncol=1))
 ```
+
+
+
 
 
 
