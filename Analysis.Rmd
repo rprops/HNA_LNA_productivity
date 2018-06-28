@@ -189,7 +189,7 @@ datatable(prop_stats, caption = "Statistics of the percentage of each flow cytom
 
 
 # Figure 1
-```{r fig-1, fig.width = 5.5, fig.height = 2.75}
+```{r boxplot, fig.width = 5.5, fig.height = 2.75}
 # Load in the data from each lake 
 musk_all_df <- read.table(file="data/Chloroplasts_removed/ByLake_Filtering/5in10/muskegon/muskegon_sampledata_5in10.tsv", header = TRUE) %>%
   mutate(norep_filter_name = paste(substr(Sample_16S,1,4), substr(Sample_16S,6,9), sep = "")) %>%
@@ -319,7 +319,7 @@ plot_grid(mich_corr_plot, inla_corr_plot, musk_corr_plot,
 
 
 # Figure 2: FCM vs Productivity
-```{r fig-2, fig.width = 6.5, fig.height = 2.75,}
+```{r prod-HNALNA, fig.width = 6.5, fig.height = 2.75,}
 ########################  Analysis of HNA/LNA/Total Cells vs Total Productivity
 # 1. Run the linear model 
 lm_HNA <- lm(tot_bacprod ~ HNA.cells, data = muskegon)
@@ -439,7 +439,7 @@ plot_grid(HNA_vs_prod + theme(legend.position = "none"),
 ```
 
 ## Alternative Figure 1: 
-```{r alt-fig-1, fig.width = 6.5, fig.height = 5.2}
+```{r fig1, fig.width = 6.5, fig.height = 5.2}
 first_row <- plot_grid(HNA_vs_prod + theme(legend.position = "none"), 
           LNA_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"), 
           Total_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"),
@@ -611,7 +611,7 @@ scores_RL_df <-
 ```
 
 ## Plot figure 4: RL Scores
-```{r heatmap-RLscore, fig.width = 8, fig.height = 20}
+```{r fig4-allOTUs, fig.width = 8, fig.height = 20}
 # Reformat data to be matrix style for heatmapping
 # HNA/LNA: Inland: 0.13/0.108,  Michigan: 0.248/0.286,  Muskegon: 0.09/0.09
 musk_dat_scores <- 
@@ -661,9 +661,8 @@ heatmap.2(matrix_RLscores,
           lhei = c(1,9))
 ```
 
-
 ### Top 10 from Fig 4 Scores
-```{r top10-fig4, fig.width=6, fig.height=8}
+```{r fig4-top10-noclust, fig.width=6, fig.height=8}
 mich_top10 <- michigan_dat_scores %>%
   top_n(., 10, Michigan_HNA)
 
@@ -722,8 +721,7 @@ heatmap.2(matrix_top10,
         key.title=NA)
 ```
 
-
-```{r fig4_columnsOnly, fig.width=6, fig.height=8}
+```{r fig4columnsOnly, fig.width=6, fig.height=8}
 # Only cluster the columns
 heatmap.2(matrix_top10, 
         distfun = function(x) dist(x, method = "euclidean"),
@@ -738,7 +736,7 @@ heatmap.2(matrix_top10,
 ```
 
 ### ggplot heatmap 
-```{r ggplot-heatmap-top10, fig.width=5, fig.height=7}
+```{r fig4-ggheat-top10, fig.width=5, fig.height=7}
 # In the order of OTUs without 
 lake_ordered_OTUs <- row.names(matrix_top10)
 
@@ -755,7 +753,7 @@ df_top10 %>%
 ```
 
 # Figure 5: Phylogenetic Tree
-```{r phylo-tree, fig.width=9, fig.height=14}
+```{r fig5-all, fig.width=9, fig.height=14}
 #### PHYLOGENETIC ANALYSIS
 load("data/phyloseq.RData")
 physeq.otu
@@ -840,11 +838,8 @@ gheatmap(rooted_tree, phyfcm_fasttree_df, offset = 0.1, width=0.3, font.size=3, 
 ```
 
 
-
-
-
 ## Figure 5 with Top 10 OTUs from Each System
-```{r tree-top10, fig.width=7, fig.height=9}
+```{r fig5-top10, fig.width=7, fig.height=9}
 # Get the OTU names
 top10_otu_scores_df <- df_top10 %>%
   as.data.frame() 
@@ -921,10 +916,6 @@ gheatmap(top10_rooted_tree_plot, phyfcm_top10_df, offset = 0.1, width=0.3, font.
                                "Both", "HNA", "LNA")) +
   guides(fill=guide_legend(ncol=1))
 ```
-
-
-
-
 
 
 # Session Information 
