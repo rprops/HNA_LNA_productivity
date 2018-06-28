@@ -559,58 +559,6 @@ lake_dfscores <-
 ```
 
 
-## Plot figure 4: 1/RL Ranking
-```{r heatmap-ranking, fig.width = 8, fig.height = 10}
-# Reformat data to be matrix style for heatmapping
-# HNA/LNA: Inland: 0.13/0.108,  Michigan: 0.248/0.286,  Muskegon: 0.09/0.09
-musk_dat <- 
-  muskegon_df %>%
-  dplyr::select(-Lake) %>%
-  dplyr::filter(RL.ranking.HNA > 0.09 | RL.ranking.LNA < -0.09) %>%  # THIS IS A MISTAKE
-  rename(Muskegon_HNA = RL.ranking.HNA, 
-         Muskegon_LNA = RL.ranking.LNA)%>%
-  mutate(Muskegon_LNA = Muskegon_LNA * -1) 
-
-inland_dat <- 
-  inland_df %>%
-  dplyr::select(-Lake) %>%
-  dplyr::filter(RL.ranking.HNA > 0.13 | RL.ranking.LNA < -0.108) %>%  # THIS IS A MISTAKE
-  rename(Inland_HNA = RL.ranking.HNA, 
-         Inland_LNA = RL.ranking.LNA) %>%
-  mutate(Inland_LNA = Inland_LNA * -1)
-
-michigan_dat <- 
-  michigan_df %>%
-  dplyr::select(-Lake) %>%
-  dplyr::filter(RL.ranking.HNA > 0.248 | RL.ranking.LNA < -0.286) %>%  # THIS IS A MISTAKE
-  rename(Michigan_HNA = RL.ranking.HNA, 
-         Michigan_LNA = RL.ranking.LNA) %>%
-  mutate(Michigan_LNA = Michigan_LNA * -1)
-
-matrix_scores <- 
-  full_join(musk_dat, inland_dat, by = "OTU") %>%
-  full_join(michigan_dat, by = "OTU") %>%
-  tibble::column_to_rownames(var = "OTU") %>%
-  as.matrix()
-
-matrix_scores[is.na(matrix_scores)] <- 0
-
-breakers <- seq(min(matrix_scores, na.rm = T), max(matrix_scores, na.rm = T), length.out = 21)
-my_palette <- colorRampPalette(c("white","gray65", "red")) (n=20)
-
-colz <- c("#FF933F", "#FF933F", "#EC4863", "#EC4863", "#5C2849", "#5C2849")
-
-heatmap.2(matrix_scores, 
-          distfun = function(x) dist(x, method = "euclidean"),
-          hclustfun = function(x) hclust(x,method = "complete"),
-          col = my_palette, breaks=breakers, trace="none",
-          key=TRUE, symkey=FALSE, density.info="none", srtCol=30,
-          margins=c(5.5,7), cexRow=1.25,cexCol=1.25,
-          key.xlab="1/RL Score",
-          ColSideColors=colz)
-```
-
-
 ## Load RL Score data
 ```{r RL-scores}
 # Read in Data
@@ -696,7 +644,7 @@ matrix_RLscores <-
 matrix_RLscores[is.na(matrix_RLscores)] <- 0  
 
 breakers <- seq(min(matrix_RLscores, na.rm = T), max(matrix_RLscores, na.rm = T), length.out = 21)
-my_palette <- colorRampPalette(c("white","gray65", "red")) (n=20)
+my_palette <- colorRampPalette(c("white", "red")) (n=20)
 
 # Set the colors of the different columns going in
 colz <- c("#FF933F", "#FF933F", "#EC4863", "#EC4863", "#5C2849", "#5C2849")
@@ -772,15 +720,35 @@ heatmap.2(matrix_top10,
         key.title=NA)
 ```
 
+
+```{r fig4_columnsOnly, fig.width=6, fig.height=8}
+# Only cluster the columns
+heatmap.2(matrix_top10, 
+        distfun = function(x) dist(x, method = "euclidean"),
+        hclustfun = function(x) hclust(x,method = "complete"),
+        # Do not cluster based on rows
+        dendrogram = "column",Rowv = FALSE, 
+        col = my_palette, breaks = breakers, trace = "none",
+        key = TRUE, symkey = FALSE, density.info = "none", srtCol = 30,
+        margins=c(5.5,7), cexRow = 1.25,cexCol = 1.25,
+        key.xlab = "RL Score",ColSideColors = colz,
+        lhei = c(1.5,9), key.title=NA)
+```
+
 ### ggplot heatmap 
 ```{r ggplot-heatmap-top10, fig.width=5, fig.height=7}
 # In the order of OTUs without 
+lake_ordered_OTUs <- row.names(matrix_top10)
+
 df_top10 %>% 
-  mutate(OTU = str_replace(OTU, "00", "")) %>% 
+  mutate(OTU = str_replace(OTU, "00", ""),
+         OTU = as.factor(OTU),
+         OTU = fct_relevel(OTU, lake_ordered_OTUs)) %>% 
   gather(Lake_FCM, RL_score, Muskegon_HNA:Inland_LNA) %>%
   ggplot(aes(x=Lake_FCM, y= fct_rev(OTU))) +
     geom_tile(aes(fill=RL_score)) +
     scale_fill_gradient2(na.value = "white", low = "grey", high = "red") +
+    #scale_y_discrete(limits=OTU) +
     theme(axis.title = element_blank(), axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
 ```
 
@@ -790,7 +758,7 @@ df_top10 %>%
 load("data/phyloseq.RData")
 physeq.otu
 
-otu_scores_df <- matrix_scores %>%
+otu_scores_df <- matrix_RLscores %>%
   as.data.frame() %>%
   tibble::rownames_to_column("OTU")
 
