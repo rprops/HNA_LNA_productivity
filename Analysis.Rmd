@@ -635,6 +635,7 @@ michigan_dat_scores <-
   rename(Michigan_HNA = RL.score.HNA, 
          Michigan_LNA = RL.score.LNA) 
 
+# Combine into a full dataset
 df_RLscores <- 
   full_join(musk_dat_scores, inland_dat_scores, by = "OTU") %>%
   full_join(michigan_dat_scores, by = "OTU") 
@@ -663,30 +664,38 @@ heatmap.2(matrix_RLscores,
 
 ### Top 10 from Fig 4 Scores
 ```{r fig4-top10-noclust, fig.width=6, fig.height=8}
-mich_top10 <- michigan_dat_scores %>%
-  top_n(., 10, Michigan_HNA)
+# Extract the top 10 OTUs 
+mich_top10_OTUs <- michigan_dat_scores %>%
+  top_n(., 10, Michigan_HNA) %>%
+  dplyr::select(OTU)
 
-inland_top10_HNA <- inland_dat_scores %>%
-  select(OTU, Inland_HNA) %>%
-  top_n(., 10, Inland_HNA)
+inland_top10_HNA_OTUs <- inland_dat_scores %>%
+  dplyr::select(OTU, Inland_HNA) %>%
+  top_n(., 10, Inland_HNA) %>%
+  dplyr::select(OTU)
 
-inland_top10_LNA <- inland_dat_scores %>%
-  select(OTU, Inland_LNA) %>%
-  top_n(., 10, Inland_LNA)
+inland_top10_LNA_OTUs <- inland_dat_scores %>%
+  dplyr::select(OTU, Inland_LNA) %>%
+  top_n(., 10, Inland_LNA) %>%
+  dplyr::select(OTU) 
   
-musk_top10_HNA <- musk_dat_scores %>%
-  select(OTU, Muskegon_HNA) %>%
-  top_n(., 10, Muskegon_HNA)
+musk_top10_HNA_OTUs <- musk_dat_scores %>%
+  dplyr::select(OTU, Muskegon_HNA) %>%
+  top_n(., 10, Muskegon_HNA) %>%
+  dplyr::select(OTU)
 
-musk_top10_LNA <- musk_dat_scores %>%
-  select(OTU, Muskegon_LNA) %>%
-  top_n(., 10, Muskegon_LNA)
+musk_top10_LNA_OTUs <- musk_dat_scores %>%
+  dplyr::select(OTU, Muskegon_LNA) %>%
+  top_n(., 10, Muskegon_LNA) %>%
+  dplyr::select(OTU)
 
-df_top10 <- musk_top10_HNA %>%
-  full_join(., musk_top10_LNA, by = "OTU") %>%
-  full_join(., mich_top10,  by = "OTU") %>%
-  full_join(., inland_top10_HNA,  by = "OTU") %>%
-  full_join(., inland_top10_LNA,  by = "OTU")
+# The above code pulls out the OTUs and we'll match this with the data from the full dataset
+df_OTUs <- bind_rows(mich_top10_OTUs, inland_top10_HNA_OTUs, inland_top10_LNA_OTUs, musk_top10_HNA_OTUs, musk_top10_LNA_OTUs) %>%
+  unique()
+
+# Do a filtering join 
+df_top10 <- df_OTUs %>%
+  left_join(df_RLscores, by = "OTU")
 
 matrix_top10 <- df_top10 %>%
   # Remove the zeros in the OTU names 
