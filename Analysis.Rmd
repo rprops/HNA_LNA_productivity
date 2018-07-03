@@ -1,7 +1,7 @@
 ---
 title: "Analyses by Marian" 
 author: "Marian L. Schmidt, marschmi@umich.edu, @micro_marian"
-date: "May 29th, 2018"
+date: "July 3rd, 2018"
 output:
   html_document:
     code_folding: show
@@ -507,145 +507,68 @@ plot_grid(swap_row1, swap_row2,
 
 # Figure 4: Heatmap
 
-## Load RL Ranking data
-```{r load-RL-ranking}
-# Read in Data
-dfHNA_musk <- read.csv("Final/FS_Scores/Muskegon_fs_scores_HNA_5seq10.csv") %>%
-  dplyr::filter(RL.score > 0.09) %>%
-  mutate(RL.ranking = 1/RL.ranking, Lake = "Muskegon")%>%
-  rename(OTU = X, RL.ranking.HNA = RL.ranking) %>%
-  dplyr::select(OTU, RL.ranking.HNA)
-
-dfLNA_musk <- read.csv("Final/FS_Scores/Muskegon_fs_scores_LNA_5seq10.csv") %>%
-  dplyr::filter(RL.score > 0.09) %>%
-  mutate(RL.ranking = -1/RL.ranking, Lake = "Muskegon") %>%
-  rename(OTU = X, RL.ranking.LNA = RL.ranking) %>%
-  dplyr::select(OTU, RL.ranking.LNA)
-
-dfHNA_inland <- read.csv("Final/FS_Scores/Inland_fs_scores_HNA_5seq10.csv") %>%
-  dplyr::filter(RL.score > 0.13) %>%
-  mutate(RL.ranking = 1/RL.ranking, Lake = "Inland")%>%
-  rename(OTU = X, RL.ranking.HNA = RL.ranking) %>%
-  dplyr::select(OTU, RL.ranking.HNA)
-
-dfLNA_inland <- read.csv("Final/FS_Scores/Inland_fs_scores_LNA_5seq10.csv") %>%
-  dplyr::filter(RL.score > 0.108) %>%
-  mutate(RL.ranking = -1/RL.ranking, Lake = "Inland") %>%
-  rename(OTU = X, RL.ranking.LNA = RL.ranking) %>%
-  dplyr::select(OTU, RL.ranking.LNA)
-
-dfHNA_michigan <- read.csv("Final/FS_Scores/Michigan_fs_scores_HNA_5seq10.csv") %>%
-  dplyr::filter(RL.score > 0.248) %>%
-  mutate(RL.ranking = 1/RL.ranking, Lake = "Michigan")%>%
-  rename(OTU = X, RL.ranking.HNA = RL.ranking) %>%
-  dplyr::select(OTU, RL.ranking.HNA)
-
-dfLNA_michigan <- read.csv("Final/FS_Scores/Michigan_fs_scores_LNA_5seq10.csv") %>%
-  dplyr::filter(RL.score > 0.286) %>%
-  mutate(RL.ranking = -1/RL.ranking, Lake = "Michigan") %>%
-  rename(OTU = X, RL.ranking.LNA = RL.ranking) %>%
-  dplyr::select(OTU, RL.ranking.LNA)
-
-# Combine HNA and LNA datasets together
-muskegon_df <- full_join(dfHNA_musk, dfLNA_musk, by = "OTU") %>%   mutate(Lake = "Muskegon")
-inland_df <- full_join(dfHNA_inland, dfLNA_inland, by = "OTU") %>%  mutate(Lake = "Inland")
-michigan_df <- full_join(dfHNA_michigan, dfLNA_michigan, by = "OTU") %>%  mutate(Lake = "Michigan")
-
-# Combine all of the three lakes together into one dataframe! 
-lake_dfscores <-
-  bind_rows(muskegon_df, inland_df, michigan_df) %>%
-  rename(HNA = RL.ranking.HNA, LNA = RL.ranking.LNA) %>%
-  gather(key = FCM_type, value = RL.ranking, HNA:LNA)
-```
-
-
 ## Load RL Score data
 ```{r RL-scores}
 # Read in Data
-dfHNA_musk_scores <- read.csv("Final/FS_Scores/Muskegon_fs_scores_HNA_5seq10.csv") %>%
+dfHNA_musk_scores <- read.csv("FS_final/Muskegon_fs_scores_HNA_5seq10.csv") %>%
   dplyr::filter(RL.score > 0.09) %>%
   mutate(Lake = "Muskegon")%>%
   rename(OTU = X, RL.score.HNA = RL.score) %>%
   dplyr::select(OTU, RL.score.HNA)
 
-dfLNA_musk_scores <- read.csv("Final/FS_Scores/Muskegon_fs_scores_LNA_5seq10.csv") %>%
+dfLNA_musk_scores <- read.csv("FS_final/Muskegon_fs_scores_LNA_5seq10.csv") %>%
   dplyr::filter(RL.score > 0.09) %>%
   mutate(Lake = "Muskegon") %>%
   rename(OTU = X, RL.score.LNA = RL.score) %>%
   dplyr::select(OTU, RL.score.LNA)
 
-dfHNA_inland_scores <- read.csv("Final/FS_Scores/Inland_fs_scores_HNA_5seq10.csv") %>%
+dfHNA_inland_scores <- read.csv("FS_final/Inland_fs_scores_HNA_5seq10.csv") %>%
   dplyr::filter(RL.score > 0.13) %>%
   mutate(Lake = "Inland")%>%
   rename(OTU = X, RL.score.HNA = RL.score) %>%
   dplyr::select(OTU, RL.score.HNA)
 
-dfLNA_inland_scores <- read.csv("Final/FS_Scores/Inland_fs_scores_LNA_5seq10.csv") %>%
+dfLNA_inland_scores <- read.csv("FS_final/Inland_fs_scores_LNA_5seq10.csv") %>%
   dplyr::filter(RL.score > 0.108) %>%
   mutate(Lake = "Inland") %>%
   rename(OTU = X, RL.score.LNA = RL.score) %>%
   dplyr::select(OTU, RL.score.LNA)
 
-dfHNA_michigan_scores <- read.csv("Final/FS_Scores/Michigan_fs_scores_HNA_5seq10.csv") %>%
+dfHNA_michigan_scores <- read.csv("FS_final/Michigan_fs_scores_HNA_5seq10.csv") %>%
   dplyr::filter(RL.score > 0.248) %>%
   mutate(Lake = "Michigan")%>%
   rename(OTU = X, RL.score.HNA = RL.score) %>%
   dplyr::select(OTU, RL.score.HNA)
 
-dfLNA_michigan_scores <- read.csv("Final/FS_Scores/Michigan_fs_scores_LNA_5seq10.csv") %>%
+dfLNA_michigan_scores <- read.csv("FS_final/Michigan_fs_scores_LNA_5seq10.csv") %>%
   dplyr::filter(RL.score > 0.286) %>%
   mutate(Lake = "Michigan") %>%
   rename(OTU = X, RL.score.LNA = RL.score) %>%
   dplyr::select(OTU, RL.score.LNA)
 
 # Combine HNA and LNA datasets together
-muskegon_df_scores <- full_join(dfHNA_musk_scores, dfLNA_musk_scores, by = "OTU") %>%   mutate(Lake = "Muskegon")
-inland_df_scores <- full_join(dfHNA_inland_scores, dfLNA_inland_scores, by = "OTU") %>%  mutate(Lake = "Inland")
-michigan_df_scores <- full_join(dfHNA_michigan_scores, dfLNA_michigan_scores, by = "OTU") %>%  mutate(Lake = "Michigan")
-
-# Combine all of the three lakes together into one dataframe! 
-scores_RL_df <-
-  bind_rows(muskegon_df_scores, inland_df_scores, michigan_df_scores) %>%
-  rename(HNA = RL.score.HNA, LNA = RL.score.LNA) %>%
-  gather(key = FCM_type, value = RL.ranking, HNA:LNA)
-```
-
-## Plot figure 4: RL Scores
-```{r fig4-allOTUs, fig.width = 8, fig.height = 20}
-# Reformat data to be matrix style for heatmapping
-# HNA/LNA: Inland: 0.13/0.108,  Michigan: 0.248/0.286,  Muskegon: 0.09/0.09
-musk_dat_scores <- 
-  muskegon_df_scores %>%
-  dplyr::select(-Lake) %>%
-  dplyr::filter(RL.score.HNA > 0.09 | RL.score.LNA < 0.09) %>%
-  rename(Muskegon_HNA = RL.score.HNA, 
-         Muskegon_LNA = RL.score.LNA)
-
-inland_dat_scores <- 
-  inland_df_scores %>%
-  dplyr::select(-Lake) %>%
-  dplyr::filter(RL.score.HNA > 0.13 | RL.score.LNA < 0.108) %>%
-  rename(Inland_HNA = RL.score.HNA, 
-         Inland_LNA = RL.score.LNA) 
-
-michigan_dat_scores <- 
-  michigan_df_scores %>%
-  dplyr::select(-Lake) %>%
-  dplyr::filter(RL.score.HNA > 0.248 | RL.score.LNA < 0.286) %>%
-  rename(Michigan_HNA = RL.score.HNA, 
-         Michigan_LNA = RL.score.LNA) 
+muskegon_df_scores <- full_join(dfHNA_musk_scores, dfLNA_musk_scores, by = "OTU") %>%
+  rename(Muskegon_HNA = RL.score.HNA, Muskegon_LNA = RL.score.LNA) # Rename the column to have the lake and FCM
+inland_df_scores <- full_join(dfHNA_inland_scores, dfLNA_inland_scores, by = "OTU") %>%
+  rename(Inland_HNA = RL.score.HNA, Inland_LNA = RL.score.LNA) # Rename the column to have the lake and FCM
+michigan_df_scores <- full_join(dfHNA_michigan_scores, dfLNA_michigan_scores, by = "OTU") %>%
+  rename(Michigan_HNA = RL.score.HNA, Michigan_LNA = RL.score.LNA) # Rename the column to have the lake and FCM
 
 # Combine into a full dataset
 df_RLscores <- 
-  full_join(musk_dat_scores, inland_dat_scores, by = "OTU") %>%
-  full_join(michigan_dat_scores, by = "OTU") 
+  full_join(muskegon_df_scores, inland_df_scores, by = "OTU") %>%
+  full_join(michigan_df_scores, by = "OTU") 
   
 matrix_RLscores <- df_RLscores %>%
   tibble::column_to_rownames(var = "OTU") %>%
   as.matrix()
 
+# Replace the NA values with 0 
 matrix_RLscores[is.na(matrix_RLscores)] <- 0  
+```
 
+## Plot figure 4: RL Scores
+```{r fig4-allOTUs, fig.width = 8, fig.height = 20}
 breakers <- seq(min(matrix_RLscores, na.rm = T), max(matrix_RLscores, na.rm = T), length.out = 21)
 my_palette <- colorRampPalette(c("white", "red")) (n=20)
 
@@ -665,26 +588,26 @@ heatmap.2(matrix_RLscores,
 ### Top 10 from Fig 4 Scores
 ```{r fig4-top10-noclust, fig.width=6, fig.height=8}
 # Extract the top 10 OTUs 
-mich_top10_OTUs <- michigan_dat_scores %>%
+mich_top10_OTUs <- michigan_df_scores %>%
   top_n(., 10, Michigan_HNA) %>%
   dplyr::select(OTU)
 
-inland_top10_HNA_OTUs <- inland_dat_scores %>%
+inland_top10_HNA_OTUs <- inland_df_scores %>%
   dplyr::select(OTU, Inland_HNA) %>%
   top_n(., 10, Inland_HNA) %>%
   dplyr::select(OTU)
 
-inland_top10_LNA_OTUs <- inland_dat_scores %>%
+inland_top10_LNA_OTUs <- inland_df_scores %>%
   dplyr::select(OTU, Inland_LNA) %>%
   top_n(., 10, Inland_LNA) %>%
   dplyr::select(OTU) 
   
-musk_top10_HNA_OTUs <- musk_dat_scores %>%
+musk_top10_HNA_OTUs <- muskegon_df_scores %>%
   dplyr::select(OTU, Muskegon_HNA) %>%
   top_n(., 10, Muskegon_HNA) %>%
   dplyr::select(OTU)
 
-musk_top10_LNA_OTUs <- musk_dat_scores %>%
+musk_top10_LNA_OTUs <- muskegon_df_scores %>%
   dplyr::select(OTU, Muskegon_LNA) %>%
   top_n(., 10, Muskegon_LNA) %>%
   dplyr::select(OTU)
@@ -730,7 +653,7 @@ heatmap.2(matrix_top10,
         key.title=NA)
 ```
 
-```{r fig4columnsOnly, fig.width=6, fig.height=8}
+```{r fig4-columns-only, fig.width=6, fig.height=8}
 # Only cluster the columns
 heatmap.2(matrix_top10, 
         distfun = function(x) dist(x, method = "euclidean"),
@@ -762,7 +685,7 @@ df_top10 %>%
 ```
 
 # Figure 5: Phylogenetic Tree
-```{r fig5-all, fig.width=9, fig.height=14}
+```{r fig5-all, fig.width=9, fig.height=18}
 #### PHYLOGENETIC ANALYSIS
 load("data/phyloseq.RData")
 physeq.otu
@@ -772,10 +695,11 @@ otu_scores_df <- matrix_RLscores %>%
   as.data.frame() %>%
   tibble::rownames_to_column("OTU")
 
+# Subset the vector with names of the OTUs
 vector_of_otus <- as.vector(otu_scores_df$OTU)
 
 # Write to a file
-#write(vector_of_otus, file = "data/fasttree/Figure5/OTUnames_RLscores_155.txt",
+#write(vector_of_otus, file = "data/fasttree/Figure5/OTUnames_RLscores_258.txt",
 #      ncolumns = 1, append = FALSE, sep = "\n")
 
 physeq <- physeq.otu %>%
@@ -786,11 +710,13 @@ setdiff(sort(vector_of_otus), sort(taxa_names(physeq)))
 setdiff(sort(taxa_names(physeq)), sort(vector_of_otus))
 
 ######################################### FASTTREE
-fast_tree <- read.tree(file="data/fasttree/Figure5/newick_tree_OTUs155.tre")
+fast_tree <- read.tree(file="data/fasttree/Figure5/newick_tree_OTUs258.tre")
 
 fast_tree_tip_order <- data.frame(fast_tree$tip.label) %>%
   rename(OTU = fast_tree.tip.label)
 
+# Make sure the OTUs match 
+stopifnot(sort(vector_of_otus)==sort(as.character(fast_tree_tip_order$OTU)))
 
 fasttree_physeq <- merge_phyloseq(physeq, phy_tree(fast_tree))
 
@@ -821,13 +747,12 @@ rooted_tree <- root(fast_tree, outgroup = "Otu001533", resolve.root = TRUE)
 is.rooted(rooted_tree) # Sanity Check
 
 # Need to make a manual file based off of FIgure 4 - it starts with OTU names
-#write.csv(df_RLscores, file = "data/fasttree/Figure5/OTUs155_MANUAL.csv", row.names = FALSE)
+# write.csv(df_RLscores, file = "data/fasttree/Figure5/OTUs258_MANUAL.csv", row.names = FALSE)
 # Next I manually filled in the fcm_type and lake columns :/ 
 
-phyfcm_fasttree_df <- read.csv("data/fasttree/Figure5/OTUs155_MANUAL.csv") %>%
+phyfcm_fasttree_df <- read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
   left_join(., fasttree_tax, by = "OTU") %>%
   tibble::column_to_rownames("OTU") %>%
-  dplyr::rename(FCM = fcm_type) %>%
   dplyr::select(Phylum, FCM)
 
 rooted_tree <- 
@@ -848,16 +773,17 @@ gheatmap(rooted_tree, phyfcm_fasttree_df, offset = 0.1, width=0.3, font.size=3, 
 
 
 ## Figure 5 with Top 10 OTUs from Each System
-```{r fig5-top10, fig.width=7, fig.height=9}
-# Get the OTU names
+```{r fig5-top10, fig.width=9, fig.height=9}
+# Get the Top 10 OTU names
 top10_otu_scores_df <- df_top10 %>%
   as.data.frame() 
+
+# Subset the vector with names of the OTUs
 top10_vector_of_otus <- as.vector(top10_otu_scores_df$OTU)
 
 # Write the OTU names to a file
 #write(top10_vector_of_otus, file = "data/fasttree/Figure5/OTUnames_RLscores_top10.txt",
 #      ncolumns = 1, append = FALSE, sep = "\n")
-
 
 top10_physeq <- physeq.otu %>%
   subset_taxa(., taxa_names(physeq.otu) %in% top10_vector_of_otus)  
