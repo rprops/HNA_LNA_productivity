@@ -685,7 +685,7 @@ df_top10 %>%
 ```
 
 # Figure 5: Phylogenetic Tree
-```{r fig5-all, fig.width=9, fig.height=18}
+```{r fig5-all, fig.width=11, fig.height=18}
 #### PHYLOGENETIC ANALYSIS
 load("data/phyloseq.RData")
 physeq.otu
@@ -852,6 +852,42 @@ gheatmap(top10_rooted_tree_plot, phyfcm_top10_df, offset = 0.1, width=0.3, font.
   guides(fill=guide_legend(ncol=1))
 ```
 
+
+```{r iTOL, eval=FALSE}
+OTU258_and_phylum <- read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
+  left_join(., fasttree_tax, by = "OTU") %>%
+  dplyr::select(OTU, Phylum) 
+
+OTU258_and_FCM <- read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
+  left_join(., fasttree_tax, by = "OTU") %>%
+  dplyr::select(OTU, FCM) %>%
+  rename(Phylum = FCM) # To extract from phylum_colors
+
+itol_colors <- 
+  phylum_colors %>%
+  as.list() %>%
+  as.matrix() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("Phylum") %>%
+  rename(color_name = V1) %>%
+  mutate(hex = col2hex(color_name)) %>%
+  dplyr::select(hex, Phylum)
+
+itol_phylum_df <- left_join(OTU258_and_phylum, itol_colors, by = "Phylum") %>%
+  mutate(itol_label = "range") %>%
+  dplyr::select(OTU, itol_label, hex, Phylum)
+
+#write.csv(itol_phylum_df, file = "data/fasttree/Figure5/itol_df.csv", row.names = FALSE)
+
+#itol_phylum_df %>%
+#  dplyr::select(OTU, hex, Phylum) %>%
+#  write.csv(file = "data/fasttree/Figure5/itol_PHYLUM_df.csv", row.names = FALSE)
+
+itol_FCM_df <- left_join(OTU258_and_FCM, itol_colors, by = "Phylum") %>%
+  rename(FCM = Phylum) %>% 
+  dplyr::select(OTU, hex, FCM)
+#write.csv(itol_FCM_df, file = "data/fasttree/Figure5/itol_FCM_df.csv", row.names = FALSE)
+```
 
 # Session Information 
 ```{r session-info}
