@@ -772,87 +772,6 @@ gheatmap(rooted_tree, phyfcm_fasttree_df, offset = 0.1, width=0.3, font.size=3, 
 ```
 
 
-## Figure 5 with Top 10 OTUs from Each System
-```{r fig5-top10, fig.width=9, fig.height=9}
-# Get the Top 10 OTU names
-top10_otu_scores_df <- df_top10 %>%
-  as.data.frame() 
-
-# Subset the vector with names of the OTUs
-top10_vector_of_otus <- as.vector(top10_otu_scores_df$OTU)
-
-# Write the OTU names to a file
-#write(top10_vector_of_otus, file = "data/fasttree/Figure5/OTUnames_RLscores_top10.txt",
-#      ncolumns = 1, append = FALSE, sep = "\n")
-
-top10_physeq <- physeq.otu %>%
-  subset_taxa(., taxa_names(physeq.otu) %in% top10_vector_of_otus)  
-
-# Which OTU is missing?
-setdiff(sort(top10_vector_of_otus), sort(taxa_names(top10_physeq)))
-setdiff(sort(taxa_names(top10_physeq)), sort(top10_vector_of_otus))
-
-######################################### FASTTREE
-top10_fasttree <- read.tree(file="data/fasttree/Figure5/newick_tree_top10.tre")
-
-top10_fasttree_tip_order <- data.frame(top10_fasttree$tip.label) %>%
-  rename(OTU = top10_fasttree.tip.label)
-
-top10_fasttree_physeq <- merge_phyloseq(physeq, phy_tree(top10_fasttree))
-
-# Fix the taxonomy names 
-colnames(tax_table(top10_fasttree_physeq)) <- c("Kingdom","Phylum","Class","Order","Family","Genus","Species")
-
-###################################################################### ADD THE PROTEOBACTERIA TO THE PHYLA
-phy <- data.frame(tax_table(top10_fasttree_physeq))
-Phylum <- as.character(phy$Phylum)
-Class <- as.character(phy$Class)
-
-for  (i in 1:length(Phylum)){ 
-  if (Phylum[i] == "Proteobacteria"){
-    Phylum[i] <- Class[i]  } }
-
-phy$Phylum <- Phylum # Add the new phylum level data back to phy
-
-t <- tax_table(as.matrix(phy))
-tax_table(top10_fasttree_physeq) <- t
-
-top10_fasttree_tax <- data.frame(tax_table(top10_fasttree_physeq)) %>%
-  tibble::rownames_to_column(var = "OTU")
-
-# Make a dataframe 
-phymerge_df <- phyfcm_fasttree_df %>%
-  tibble::rownames_to_column("OTU")
-
-phyfcm_top10_df <- 
-  top10_otu_scores_df %>%
-  select(OTU) %>%
-  left_join(phymerge_df, by = "OTU") %>%
-  tibble::column_to_rownames("OTU")
-  
-
-## Let's root the tree
-is.rooted(top10_fasttree)
-top10_rooted_tree <- root(top10_fasttree, outgroup = "Otu001533", resolve.root = TRUE)
-is.rooted(top10_rooted_tree) # Sanity Check
-
-top10_rooted_tree_plot <- 
-  ggplot(top10_rooted_tree, aes(x, y)) + geom_tree() + theme_tree() +
-  geom_tiplab(size=3, align=TRUE, linesize=.5) #+
-  #geom_nodelab(vjust=-.5, size=3) 
-
-gheatmap(top10_rooted_tree_plot, phyfcm_top10_df, offset = 0.1, width=0.3, font.size=3, colnames_angle=0, hjust=0.5) +
-  scale_fill_manual(values = phylum_colors, 
-                    breaks = c("Actinobacteria", "Alphaproteobacteria", "Bacteria_unclassified", "Bacteroidetes", 
-                               "Betaproteobacteria", "Chlorobi","Chloroflexi", "Cyanobacteria", "Deltaproteobacteria", 
-                               "Epsilonproteobacteria", "Firmicutes", "Gammaproteobacteria", "Lentisphaerae", "Omnitrophica", 
-                               "Planctomycetes", "Proteobacteria_unclassified", "unknown_unclassified", "Verrucomicrobia", 
-                               # FCM Groups
-                               "Both", "HNA", "LNA")) +
-  guides(fill=guide_legend(ncol=1))
-```
-
-
 ```{r iTOL, eval=FALSE}
 OTU258_and_phylum <- read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
   left_join(., fasttree_tax, by = "OTU") %>%
@@ -887,6 +806,71 @@ itol_FCM_df <- left_join(OTU258_and_FCM, itol_colors, by = "Phylum") %>%
   rename(FCM = Phylum) %>% 
   dplyr::select(OTU, hex, FCM)
 #write.csv(itol_FCM_df, file = "data/fasttree/Figure5/itol_FCM_df.csv", row.names = FALSE)
+
+
+
+# FOR RL SCORE in iTOL
+# Write a file for HNA
+#read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
+#  dplyr::select(OTU, Muskegon_HNA, Inland_HNA, Michigan_HNA) %>%
+#  write.csv(file = "data/fasttree/Figure5/HNA_RLscores.csv", row.names = FALSE)
+# Write a file for LNA
+#read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
+#  dplyr::select(OTU, Muskegon_LNA, Inland_LNA, Michigan_LNA) %>%
+#  write.csv(file = "data/fasttree/Figure5/LNA_RLscores.csv", row.names = FALSE)
+
+#read.csv("data/fasttree/Figure5/LNA_RLscores.csv") %>%
+#  dplyr::select(OTU, RL_score) %>%
+#  rename(LNA_score = RL_score) %>%
+#  write.csv(file = "data/fasttree/Figure5/iTOL_LNA_RLscores.csv", row.names = FALSE)
+
+#read.csv("data/fasttree/Figure5/HNA_RLscores.csv") %>%
+#  dplyr::select(OTU, RL_score) %>%
+#  rename(HNA_score = RL_score) %>%  
+#  write.csv(file = "data/fasttree/Figure5/iTOL_HNA_RLscores.csv", row.names = FALSE)
+
+LNA_lake <- read.csv("data/fasttree/Figure5/LNA_RLscores.csv") %>%
+  dplyr::select(OTU, lake) %>%
+  mutate(lake = as.character(lake)) %>%
+  rename(LNA_Lake = lake)
+  
+HNA_lake <- read.csv("data/fasttree/Figure5/HNA_RLscores.csv") %>%
+  dplyr::select(OTU, lake) %>%
+  mutate(lake = as.character(lake)) %>%
+  rename(HNA_Lake = lake)
+
+OTU_preferred_lake <- HNA_lake %>%
+  left_join(LNA_lake, by = "OTU") %>%
+  mutate(lake = ifelse(is.na(LNA_Lake), HNA_Lake,
+                       ifelse(is.na(HNA_Lake), LNA_Lake,
+                              ifelse(HNA_Lake == LNA_Lake, HNA_Lake,
+                                     "Mismatch")))) %>%
+  dplyr::select(OTU, lake)
+
+
+itol_lake_colors <- c(
+  "Muskegon" = "#FF933F",  
+  "Michigan" =  "#EC4863", 
+  "Inland" =  "#5C2849",
+  "All" = "#8b6914",
+  "Muskegon-Inland" = "#FFD3B5",
+  "Mismatch" = "#CD0000")  
+
+lake_col_df <- 
+  itol_lake_colors %>%
+  as.list() %>%
+  as.matrix() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("lake") %>%
+  rename(color_name = V1) %>%
+  mutate(color_name = as.character(color_name))
+
+
+OTU_preferred_lake %>%
+  left_join(lake_col_df, by = "lake") %>%
+  dplyr::select(OTU, color_name, lake) %>%
+  write.csv(file = "data/fasttree/Figure5/iTOL_Lake.csv", row.names = FALSE)
+
 ```
 
 # Session Information 
