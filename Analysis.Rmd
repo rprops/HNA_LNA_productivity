@@ -62,6 +62,7 @@ library(ape)        # Working with phylogenetic trees
 library(DT)         # Pretty Tables 
 library(gplots)     # Heatmap.2 function
 library(stringr)    # To replace zeros in OTU names
+library(adephylo)   # Testing phylogenetic autocorrelation
 source("code/set_colors.R")           # Set Colors for plotting
 
 # Set some global ggplot parameters
@@ -755,12 +756,12 @@ phyfcm_fasttree_df <- read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
   tibble::column_to_rownames("OTU") %>%
   dplyr::select(Phylum, FCM)
 
-rooted_tree <- 
+rooted_tree_plot <- 
   ggplot(rooted_tree, aes(x, y)) + geom_tree() + theme_tree() +
   geom_tiplab(size=3, align=TRUE, linesize=.5) #+
   #geom_nodelab(vjust=-.5, size=3) 
 
-gheatmap(rooted_tree, phyfcm_fasttree_df, offset = 0.1, width=0.3, font.size=3, colnames_angle=0, hjust=0.5) +
+gheatmap(rooted_tree_plot, phyfcm_fasttree_df, offset = 0.1, width=0.3, font.size=3, colnames_angle=0, hjust=0.5) +
   scale_fill_manual(values = phylum_colors, 
                     breaks = c("Acidobacteria","Actinobacteria", "Alphaproteobacteria", "Bacteria_unclassified", "Bacteroidetes", "Betaproteobacteria", 
                                "Chlorobi", "Chloroflexi","Cyanobacteria","Deltaproteobacteria", "Epsilonproteobacteria", "Firmicutes", 
@@ -770,6 +771,8 @@ gheatmap(rooted_tree, phyfcm_fasttree_df, offset = 0.1, width=0.3, font.size=3, 
                                "Both", "HNA", "LNA")) +
   guides(fill=guide_legend(ncol=1))
 ```
+
+
 
 
 ```{r iTOL, eval=FALSE}
@@ -819,9 +822,9 @@ itol_FCM_df <- left_join(OTU258_and_FCM, itol_colors, by = "Phylum") %>%
 #  dplyr::select(OTU, Muskegon_LNA, Inland_LNA, Michigan_LNA) %>%
 #  write.csv(file = "data/fasttree/Figure5/LNA_RLscores.csv", row.names = FALSE)
 
-#read.csv("data/fasttree/Figure5/LNA_RLscores.csv") %>%
-#  dplyr::select(OTU, RL_score) %>%
-#  rename(LNA_score = RL_score) %>%
+read.csv("data/fasttree/Figure5/LNA_RLscores.csv") %>%
+  dplyr::select(OTU, RL_score) %>%
+  rename(LNA_score = RL_score) %>%
 #  write.csv(file = "data/fasttree/Figure5/iTOL_LNA_RLscores.csv", row.names = FALSE)
 
 #read.csv("data/fasttree/Figure5/HNA_RLscores.csv") %>%
@@ -866,11 +869,122 @@ lake_col_df <-
   mutate(color_name = as.character(color_name))
 
 
-OTU_preferred_lake %>%
-  left_join(lake_col_df, by = "lake") %>%
-  dplyr::select(OTU, color_name, lake) %>%
-  write.csv(file = "data/fasttree/Figure5/iTOL_Lake.csv", row.names = FALSE)
+#OTU_preferred_lake %>%
+#  left_join(lake_col_df, by = "lake") %>%
+#  dplyr::select(OTU, color_name, lake) %>%
+#  write.csv(file = "data/fasttree/Figure5/iTOL_Lake.csv", row.names = FALSE)
 
+```
+
+
+# Phylogenetic Signal
+```{r phylo-sig-dataprep}
+LNA_scores_df <- read.csv("data/fasttree/Figure5/LNA_RLscores.csv") %>%
+  dplyr::select(OTU, RL_score) %>%
+  rename(LNA_score = RL_score)
+
+HNA_scores_df <- read.csv("data/fasttree/Figure5/HNA_RLscores.csv") %>%
+  dplyr::select(OTU, RL_score) %>%
+  rename(HNA_score = RL_score)
+
+stopifnot(dim(LNA_scores_df) == dim(HNA_scores_df))
+
+# Put them into one 
+summarized_RL_scores <- HNA_scores_df %>%
+  left_join(LNA_scores_df, by = "OTU") 
+
+# For simpliclity, make sure the vectors of OTUs match the OTU order in the phylogeny
+summarized_RL_scores <- summarized_RL_scores[match(rooted_tree$tip.label, summarized_RL_scores$OTU),]
+stopifnot(rooted_tree$tip.label == summarized_RL_scores$OTU)
+```
+
+## Pagel's Lambda
+```{r pagels-lambda}
+# Pagels lambda 
+# We chose HNA and LNA RL Score as the trait we are testing for phylogenetic signal, with 999 randomizations:
+# Does the HNA RL Score have phylogenetic signal?
+HNAscores <- summarized_RL_scores$HNA_score
+names(HNAscores) <- summarized_RL_scores$OTU
+phylosig(rooted_tree, HNAscores, method = "lambda", test = TRUE, nsim = 999)
+
+# Does the LNA RL Score have phylogenetic signal?
+LNAscores <- summarized_RL_scores$LNA_score
+names(LNAscores) <- summarized_RL_scores$OTU
+phylosig(rooted_tree, LNAscores, method = "lambda", test = TRUE, nsim = 999)
+```
+
+## Blomberg's K
+```{r blombergs-k}
+# Blomberg's K
+# HNA
+phylosig(tree = rooted_tree, x = HNAscores, method = "K", test = TRUE, nsim = 999)
+
+# LNA
+phylosig(tree = rooted_tree, x = LNAscores, method = "K", test = TRUE, nsim = 999)
+```
+
+## Moran's I
+```{r morans-I, fig.width=3,fig.height=3}
+# HNA
+# Subset all of the HNA OTUs
+HNA_df_phydist <- summarized_RL_scores %>%
+  select(OTU, HNA_score) %>%
+  na.omit()
+
+# Trip the larger tree to only have the HNA OTUs
+HNA_rooted_tree <- drop.tip(phy = rooted_tree, tip = rooted_tree$tip.label[-match(HNA_df_phydist$OTU, rooted_tree$tip.label)])
+
+# Make sure OTUs are in the same order for the test 
+HNA_df_phydist <- HNA_df_phydist[match(HNA_rooted_tree$tip.label, HNA_df_phydist$OTU),]
+stopifnot(HNA_df_phydist$OTU == HNA_rooted_tree$tip.label)
+
+# Calculate the pairwise distances of the OTUs in the HNA phylogeny
+HNA_rooted_phy_dist <- cophenetic(HNA_rooted_tree)
+
+# Do HNA OTUs have phylogenetic autocorrelation? 
+# Moran's I test 
+moran_HNA_test <- abouheif.moran(x = HNA_df_phydist$HNA_score, W = HNA_rooted_phy_dist, method = "Abouheif", nrepet = 999)
+moran_HNA_test
+plot(moran_HNA_test)
+
+
+
+# LNA
+# Subset all of the HNA OTUs
+LNA_df_phydist <- summarized_RL_scores %>%
+  select(OTU, LNA_score) %>%
+  na.omit()
+
+# Trip the larger tree to only have the HNA OTUs
+LNA_rooted_tree <- drop.tip(phy = rooted_tree, tip = rooted_tree$tip.label[-match(LNA_df_phydist$OTU, rooted_tree$tip.label)])
+
+# Make sure OTUs are in the same order for the test 
+LNA_df_phydist <- LNA_df_phydist[match(LNA_rooted_tree$tip.label, LNA_df_phydist$OTU),]
+stopifnot(LNA_df_phydist$OTU == LNA_rooted_tree$tip.label)
+
+# Calculate the pairwise distances of the OTUs in the HNA phylogeny
+LNA_rooted_phy_dist <- cophenetic(LNA_rooted_tree)
+
+# Do LNA OTUs have phylogenetic autocorrelation? 
+# Moran's I
+moran_LNA_test <- abouheif.moran(x = LNA_df_phydist$LNA_score, W = LNA_rooted_phy_dist, method = "Abouheif", nrepet = 999)
+moran_LNA_test
+plot(moran_LNA_test)
+```
+
+## Abouheif's Cmean
+```{r abouheif-C, fig.width=3,fig.height=3}
+# HNA
+# Perform an Abouheif moran test using Monte Carlo simulations (default is 999 randomizations)
+abouheif_HNA_test <- abouheif.moran(x = HNA_df_phydist$HNA_score, W = HNA_rooted_phy_dist, method = "oriAbouheif", nrepet = 999)
+abouheif_HNA_test
+plot(abouheif_HNA_test)
+
+# LNA
+# Perform an Abouheifmoran test using Monte Carlo simulations (default is 999 randomizations)
+abouheif_LNA_test <- abouheif.moran(x = LNA_df_phydist$LNA_score, W = LNA_rooted_phy_dist, method = "oriAbouheif", nrepet = 999)
+abouheif_LNA_test
+plot(abouheif_LNA_test)
 ```
 
 # Session Information 
