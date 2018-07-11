@@ -172,3 +172,68 @@ FPcorSeq <- function(fp, phy, cor_thresh = 0.5, fp_thresh = 1e-10,
   cat(date(), paste0("---- Done!\n"))
   return(results_cat)
 }
+
+
+FPcorProd <- function(fp, prod, cor_thresh = 0.5, fp_thresh = 1e-10,
+                     d = 10, param = c("FL1-H", "FL3-H"),
+                     cor_m = "pearson", npoint = 10){
+  
+  # Make sure the phyloseq and flowbasis object are in same order
+  fp@basis <- fp@basis[rownames(fp@basis) %in% prod$names, ]
+  prod <- prod[match(rownames(fp@basis),
+                     prod$names), ]
+  cat(paste0("\t", "Check if sample names match between fbasis and productivity data:", 
+             "\n"))
+  cat(paste(rownames(fp@basis),"-", prod$names, "\n"))
+  
+  # Normalize fingerprint
+  fp@basis <- fp@basis/apply(fp@basis, 1, max)
+  
+  # Give bins coordinates
+  nbin <- fp@nbin
+  Y <- c()
+  for (i in 1:nbin) Y <- c(Y, rep(i, nbin))
+  X <- rep(1:nbin, nbin)
+  
+  # Position of data in @basis
+  npos <- seq(1:nrow(fp@param))[fp@param[, 1] == param[1] & fp@param[, 2] == 
+                                  param[2]]
+  region <- ((npos - 1) * nbin * nbin + 1):(npos * nbin * nbin)
+  
+  fp@basis <- fp@basis[, region]
+  
+  # Additional filtering to reduce number of bins
+  X <- X[colSums(fp@basis) > fp_thresh]
+  Y <- Y[colSums(fp@basis) > fp_thresh]
+  fp@basis <- fp@basis[, colSums(fp@basis) > fp_thresh]
+  
+  cat(paste0("\t",sum(colSums(fp@basis) > fp_thresh)," bins used to calculate correlation with OTUs: ", min(region), " - ", max(region), 
+             "\n"))
+  
+  # Calculate correlations
+  cat(date(), paste0("---- Returning correlations >", 
+                     cor_thresh, "\n"))
+  for(i in 1:ncol(fp@basis)){
+    if(i%%1000 == 0) cat(date(), paste0("---- at bin ", i, "/",  ncol(fp@basis), "\n"))
+    cor_temp <- c(); p_temp <- c(); npoint_temp <- c()
+    # for(j in 1:dim(otu_table(phy))[2]){
+    #   cor_temp[j] <- cor(fp@basis[,i], prod$total_bac_abund, method = cor_m)
+    #   # p_temp[j] <- cor.test(fp@basis[,i], otu_table(phy)[,j], method = cor_m)$p.value
+    #   # npoint_temp[j] <- sum((otu_table(phy)[, j] > 0)&(round(fp@basis[,i], d) > fp_thresh))
+    # }
+    cor_temp <- cor(fp@basis[,i], prod$total_bac_abund, method = cor_m)
+    results_m <- data.frame(cor = cor_temp, 
+                            X = X[i], Y = Y[i])
+    
+    if(i == 1) results_cat <- results_m
+    results_cat <- rbind(results_cat, results_m)
+  }
+  
+  ### Filter out low correlation values
+  ### and correlation values calculated with low number of points
+  results_cat <- results_cat[abs(results_cat$cor) > cor_thresh, ]
+  colnames(results_cat)[2:3] <- param
+  cat(date(), paste0("---- Done!\n"))
+  return(results_cat)
+}
+

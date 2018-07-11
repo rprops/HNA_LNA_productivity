@@ -42,6 +42,7 @@ library("phyloseq")
 library("ggrepel")
 library("Phenoflow")
 library("RColorBrewer")
+library("scales")
 source("./data/Chloroplasts_removed/old/Nov2017_Filtering/functions.R")
 ```
 
@@ -62,17 +63,18 @@ seq_samples <- c(sample_names(rare_inland_physeq_1in3_rel),
   
 # Import FCM data and FCM data list mapping seq to FCM files
 loc_fcs <- grep("_filtered", list.dirs("./data"),
-     value = TRUE)[1:4]
+     value = TRUE)[1:6]
 
 # These are denoised already (see Filter_Count_FCS.R script) and 
 # only have the four parameters of interest left (FL1/FL3/FSC/SSC)
-fs1 <- read.flowSet(path = loc_fcs[1], pattern = "_filtered")
-fs2 <- read.flowSet(path = loc_fcs[2], pattern = "_filtered")
-fs3 <- read.flowSet(path = loc_fcs[3], pattern = "_filtered")
-fs4 <- read.flowSet(path = loc_fcs[4], pattern = "_filtered")
-fs <- rbind2(fs1,fs2); fs <- rbind2(fs, fs3)
-fs <- rbind2(fs, fs4)
-remove(fs1, fs2, fs3, fs4)
+# fs1 <- read.flowSet(path = loc_fcs[1], pattern = "_filtered")
+# fs2 <- read.flowSet(path = loc_fcs[2], pattern = "_filtered")
+# fs3 <- read.flowSet(path = loc_fcs[3], pattern = "_filtered")
+# fs4 <- read.flowSet(path = loc_fcs[4], pattern = "_filtered")
+# fs <- rbind2(fs1,fs2); fs <- rbind2(fs, fs3)
+# fs <- rbind2(fs, fs4)
+fs <- read.flowSet(path = loc_fcs[6], pattern = "_filtered")
+# remove(fs1, fs2, fs3, fs4)
 
 ### Chunk for exporting renamed fcs files for Peter ###############################
 ###################################################################################
@@ -82,7 +84,7 @@ remove(fs1, fs2, fs3, fs4)
 # labs_FCM <- read.csv2("./data/Chloroplasts_removed/old/Nov2017_Filtering/lab_FCM_16S.csv")
 # labs_FCM$Sample_16S <- gsub("-", "", labs_FCM$Sample_16S)
 # 
-# stubs_rep <- c(do.call(rbind, strsplit(flowCore::sampleNames(fs), 
+# stubs_rep <- c(do.call(rbind, strsplit(flowCore::sampleNames(fs),
 #                                         "_filtered"))
 # )
 # stubs_reps <- rep(c("rep1_filtered.fcs", "rep2_filtered.fcs", "rep3_filtered.fcs"), 188)
@@ -104,15 +106,15 @@ remove(fs1, fs2, fs3, fs4)
 
 # Pool replicates
 stubs <- c(unique(do.call(rbind, strsplit(flowCore::sampleNames(fs), 
-                                        "_rep.\\.fcs_filtered"))
+                                        "_rep.\\_filtered.fcs"))
 ))
-
 fs_pool <- FCS_pool(fs, stubs); remove(fs)
 
 # Change some erronous names
 labs_FCM <- read.csv2("./data/Chloroplasts_removed/old/Nov2017_Filtering/lab_FCM_16S.csv")
 labs_FCM$Sample_16S <- gsub("-", "", labs_FCM$Sample_16S)
 flowCore::sampleNames(fs_pool) <- gsub("MI5", "M15", flowCore::sampleNames(fs_pool))
+# flowCore::sampleNames(fs_pool) <- gsub("-", "", flowCore::sampleNames(fs_pool))
 
 # Filter out samples that correspond to the sequencing data
 labs_FCM$Sample_fcm <- gsub("_rep.\\.fcs", "",labs_FCM$Sample_fcm)
@@ -133,8 +135,8 @@ fs_pool <- transform(fs_pool,`FL1-H`=asinh(`FL1-H`),
                                    `FSC-H`=asinh(`FSC-H`))
 
 # Rename flow cytometry samples into sequencing names
-flowCore::sampleNames(fs_pool) <- labs_FCM$Sample_16S[match(flowCore::sampleNames(fs_pool),
-                                                             labs_FCM$Sample_fcm)]
+# flowCore::sampleNames(fs_pool) <- labs_FCM$Sample_16S[match(flowCore::sampleNames(fs_pool),
+#                                                              labs_FCM$Sample_fcm)]
 # Order samples according to samples in phyloseq objects
 
 
@@ -159,27 +161,27 @@ fbasis <- flowBasis(fs_pool, param, nbin=128,
 #                    probBin = TRUE)
 remove(fs_pool)
 
-# Import lists with scores
-path_scores <- list.files("./Scores")[c(1:6, 13:18)]
-
-scores_df <- data.frame()
-for(i in path_scores){
-  tmp <- read.csv(paste("./Scores/", i, sep = ""))[, 1:2]
-  if(!is.null(read.csv(paste("./Scores/", i, sep = ""))[, 7])){
-      tmp2 <- read.csv(paste("./Scores/", i, sep = ""))[, 7]
-        tmp <- cbind(tmp, gsub("_rel.*$","",i), gsub(".csv","", do.call(rbind, strsplit(i, "_"))[,5]),
-               tmp2)
-  } else {
-    tmp <- cbind(tmp, gsub("_rel.*$","",i), gsub(".csv","", do.call(rbind, strsplit(i, "_"))[,5]),
-               NA)
-  }
-  if(i == path_scores[1]){
-    scores_df <- tmp
-  } else {
-      scores_df <- rbind(scores_df, tmp)
-    }
-}
-colnames(scores_df) <- c("OTU", "Score", "method", "Environment", "p_kendall")
+# Import lists with scores (old files so neglect this)
+# path_scores <- list.files("./Scores")[c(1:6, 13:18)]
+# 
+# scores_df <- data.frame()
+# for(i in path_scores){
+#   tmp <- read.csv(paste("./Scores/", i, sep = ""))[, 1:2]
+#   if(!is.null(read.csv(paste("./Scores/", i, sep = ""))[, 7])){
+#       tmp2 <- read.csv(paste("./Scores/", i, sep = ""))[, 7]
+#         tmp <- cbind(tmp, gsub("_rel.*$","",i), gsub(".csv","", do.call(rbind, strsplit(i, "_"))[,5]),
+#                tmp2)
+#   } else {
+#     tmp <- cbind(tmp, gsub("_rel.*$","",i), gsub(".csv","", do.call(rbind, strsplit(i, "_"))[,5]),
+#                NA)
+#   }
+#   if(i == path_scores[1]){
+#     scores_df <- tmp
+#   } else {
+#       scores_df <- rbind(scores_df, tmp)
+#     }
+# }
+# colnames(scores_df) <- c("OTU", "Score", "method", "Environment", "p_kendall")
 
 # sample names for each environment to partition calculates
 sam_mi <- grep("M15|M45|110", seq_samples, value = TRUE)
@@ -236,23 +238,26 @@ rare_muskegon_physeq_5in10_rel_clr <- transform_sample_counts(rare_muskegon_phys
 ################################################################################
 
 ## for 1seq3 
-fixed_thresh <- 0.35
-tuned_thresh <- 0.15
-list_fix <- list(scores_df %>% dplyr::filter(method == "hnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Michigan"), 
-                    scores_df %>% dplyr::filter(method == "hnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Inland"), 
-                    scores_df %>% dplyr::filter(method == "hnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Muskegon"),
-                 scores_df %>% dplyr::filter(method == "lnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Muskegon"),
-                 scores_df %>% dplyr::filter(method == "lnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Muskegon"),
-                 scores_df %>% dplyr::filter(method == "lnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Muskegon")
-)
+# fixed_thresh <- 0.35
+# tuned_thresh <- 0.15
+# list_fix <- list(scores_df %>% dplyr::filter(method == "hnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Michigan"), 
+#                     scores_df %>% dplyr::filter(method == "hnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Inland"), 
+#                     scores_df %>% dplyr::filter(method == "hnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Muskegon"),
+#                  scores_df %>% dplyr::filter(method == "lnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Muskegon"),
+#                  scores_df %>% dplyr::filter(method == "lnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Muskegon"),
+#                  scores_df %>% dplyr::filter(method == "lnascores_otus_1seq3" & Score > fixed_thresh & Environment == "Muskegon")
+# )
 
-HNA_physeq_1in3 <- rep(list(rare_michigan_physeq_1in3_rel,  rare_muskegon_physeq_1in3_rel, rare_inland_physeq_1in3_rel),2)
+HNA_physeq_1in3 <- rep(list(rare_michigan_physeq_1in3_rel_norm, 
+                            rare_muskegon_physeq_1in3_rel_norm, rare_inland_physeq_1in3_rel_norm),2)
 
 
 # Calculate correlations for each environment separately and then concantenate
 # results
+new_otu_lust <- c("Otu000369","Otu000025", "Otu000173") # after boruta only these three OTUs remain
 for(i in 1:length(rep(sams,2))){
-  HNA_physeq_1in3_fix <- prune_taxa(taxa = as.character(list_fix[[i]]$OTU), HNA_physeq_1in3[[i]])
+  # HNA_physeq_1in3_fix <- prune_taxa(taxa = as.character(list_fix[[i]]$OTU), HNA_physeq_1in3[[i]])
+  HNA_physeq_1in3_fix <- phyloseq::prune_taxa(taxa = new_otu_lust, HNA_physeq_1in3[[i]])
   phy_tmp <- prune_samples(rep(sams,2)[[i]], HNA_physeq_1in3_fix)
   fp_tmp <- fbasis
   fp_tmp@basis <- fp_tmp@basis[rownames(fp_tmp@basis) %in% rep(sams,2)[[i]], ]
@@ -264,7 +269,7 @@ for(i in 1:length(rep(sams,2))){
   # fp_tmp@basis <- apply(fp_tmp@basis, 1, FUN = function(x) compositions::clr(x))
   ################################################################################
   res_HNA_1in3_tmp <- FPcorSeq(phy = phy_tmp, fp = fp_tmp,
-                        cor_thresh = 0.1, fp_thresh = 1e-4, 
+                        cor_thresh = 0.05, fp_thresh = 1e-3, 
                         cor_m = "kendall")
   res_HNA_1in3_tmp <- data.frame(res_HNA_1in3_tmp, Environment =  rep(env,2)[i], fraction = frac[i])
   if(i == 1) {
@@ -305,13 +310,14 @@ list_fix <- list(scores_df %>% dplyr::filter(method == "hnascores_otus_5seq10"
                                              & Score > fixed_thresh & Environment == "Muskegon")
 )
 
-HNA_physeq_5in10 <- rep(list(rare_michigan_physeq_5in10_rel,  rare_muskegon_physeq_5in10_rel, rare_inland_physeq_5in10_rel),2)
+HNA_physeq_5in10 <- rep(list(rare_michigan_physeq_5in10_rel_norm,  rare_muskegon_physeq_5in10_rel_norm, rare_inland_physeq_5in10_rel_norm),2)
 
 
 # Calculate correlations for each environment separately and then concantenate
 # results
 for(i in 1:length(rep(sams,2))){
-  HNA_physeq_5in10_fix <- prune_taxa(taxa = as.character(list_fix[[i]]$OTU), HNA_physeq_5in10[[i]])
+  # HNA_physeq_5in10_fix <- prune_taxa(taxa = as.character(list_fix[[i]]$OTU), HNA_physeq_5in10[[i]])
+  HNA_physeq_5in10_fix <- prune_taxa(taxa = new_otu_lust, HNA_physeq_5in10[[i]])
   phy_tmp <- prune_samples(rep(sams,2)[[i]], HNA_physeq_5in10_fix)
   fp_tmp <- fbasis
   fp_tmp@basis <- fp_tmp@basis[rownames(fp_tmp@basis) %in% rep(sams,2)[[i]], ]
@@ -324,296 +330,164 @@ for(i in 1:length(rep(sams,2))){
   ################################################################################
   print(nrow(fp_tmp@basis))
   print(dim(phy_tmp@otu_table)[1])
-  # res_HNA_5in10_tmp <- FPcorSeq(phy = phy_tmp, fp = fp_tmp,
-  #                       cor_thresh = 0.1, fp_thresh = 1e-4, 
-  #                       cor_m = "kendall")
-  # res_HNA_5in10_tmp <- data.frame(res_HNA_5in10_tmp, Environment = rep(env,2)[i], fraction = frac[i])
-  # if(i == 1) {
-  #   res_HNA_5in10_fix <- res_HNA_5in10_tmp
-  # } else{
-  #   res_HNA_5in10_fix <- rbind(res_HNA_5in10_fix, res_HNA_5in10_tmp)
-  # }
-}
-
-scores_sb <- scores_df %>% dplyr::filter(grepl("*5seq10*", method))
-scores_sb$Environment <- plyr::revalue(scores_sb$Environment, c("Michigan"="Lake Michigan",
-                                                                "Muskegon"="Muskegon Lake",
-                                                                "Inland" = "Inland Lakes"))
-res_NA_5in10_fix <- dplyr::left_join(res_HNA_5in10_fix, scores_sb, by = c("taxa" = "OTU", "Environment"))
-res_NA_5in10_fix$fraction <- as.character(res_NA_5in10_fix$fraction)
-res_NA_5in10_fix$Pool <- res_NA_5in10_fix$fraction
-res_NA_5in10_fix$Pool[res_NA_5in10_fix$fraction == "HNA"][res_NA_5in10_fix$taxa[res_NA_5in10_fix$fraction == "HNA"] %in% res_NA_5in10_fix$taxa[res_NA_5in10_fix$fraction == "LNA"]] <- "Shared"
-res_NA_5in10_fix$Pool[res_NA_5in10_fix$fraction == "LNA"][res_NA_5in10_fix$taxa[res_NA_5in10_fix$fraction == "LNA"] %in% res_NA_5in10_fix$taxa[res_NA_5in10_fix$fraction == "HNA"]] <- "Shared"
-res_NA_5in10_fix$Pool <- factor(res_NA_5in10_fix$Pool, levels = c("LNA", "Shared", "HNA"))
-
-# Make heatmap plots
-# Visualize correlations for top OTUs
-for(i in 1:3){
-  v_LNA_1in3_fix <- res_NA_1in3_fix %>% dplyr::filter(Environment == env[i], Pool == "LNA") %>% 
-  ggplot2::ggplot(ggplot2::aes(`FL1.H`, `FL3.H`, z = cor))+
-  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
-  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
-                      # color = "transparent")+
-  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.6,0.6)) + 
-  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
-  ggplot2::theme_bw()+
-  # ggplot2::geom_contour(color = "white", alpha = 1)+
-  facet_wrap(~taxa, nrow = 2)+
-  ylim(0,150)+
-  xlim(40,150)+
-    theme(axis.title=element_text(size=16), strip.text=element_text(size=16),
-        legend.title=element_text(size=15),legend.text=element_text(size=14),
-        axis.text = element_text(size=14),title=element_text(size=20),
-        strip.background=element_rect(fill=adjustcolor("lightgray",0.2))
-        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
-        )+
-  ggtitle("LNA population")
-  
-  if(dim(res_NA_1in3_fix %>% dplyr::filter(Environment == env[i], Pool == "Shared"))[1]>0){
-      v_shared_1in3_fix <- res_NA_1in3_fix %>% dplyr::filter(Environment == env[i], Pool == "Shared") %>% 
-  ggplot2::ggplot(ggplot2::aes(`FL1.H`, `FL3.H`, z = cor))+
-  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
-  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
-                      # color = "transparent")+
-  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.6,0.6)) + 
-  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
-  ggplot2::theme_bw()+
-  # ggplot2::geom_contour(color = "white", alpha = 1)+
-  facet_wrap(~taxa, nrow = 2)+
-  ylim(0,150)+
-  xlim(40,150)+
-    theme(axis.title=element_text(size=16), strip.text=element_text(size=16),
-        legend.title=element_text(size=15),legend.text=element_text(size=14),
-        axis.text = element_text(size=14),title=element_text(size=20),
-        strip.background=element_rect(fill=adjustcolor("lightgray",0.2))
-        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
-        )+
-  ggtitle("Shared population")
-    
-    png(file = paste("./fingerprint_plots/FPcorSEQ_1in3_shared_notrans_", env[i], ".png", sep =""), width = 7, height = 6, 
-    units  = "in", res = 500, bg = "transparent")
-    print(v_shared_1in3_fix)
-    dev.off()
+  res_HNA_5in10_tmp <- FPcorSeq(phy = phy_tmp, fp = fp_tmp,
+                        cor_thresh = 0.05, fp_thresh = 1e-2,
+                        cor_m = "kendall")
+  res_HNA_5in10_tmp <- data.frame(res_HNA_5in10_tmp, Environment = rep(env,2)[i], fraction = frac[i])
+  if(i == 1) {
+    res_HNA_5in10_fix <- res_HNA_5in10_tmp
+  } else{
+    res_HNA_5in10_fix <- rbind(res_HNA_5in10_fix, res_HNA_5in10_tmp)
   }
-        v_HNA_1in3_fix <- res_NA_1in3_fix %>% dplyr::filter(Environment == env[i], Pool == "HNA") %>% 
-  ggplot2::ggplot(ggplot2::aes(`FL1.H`, `FL3.H`, z = cor))+
-  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
-  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
-                      # color = "transparent")+
-  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.6,0.6)) + 
-  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
-  ggplot2::theme_bw()+
-  # ggplot2::geom_contour(color = "white", alpha = 1)+
-  facet_wrap(~taxa, nrow = 2)+
-  ylim(0,150)+
-  xlim(40,150)+
-    theme(axis.title=element_text(size=16), strip.text=element_text(size=16),
-        legend.title=element_text(size=15),legend.text=element_text(size=14),
-        axis.text = element_text(size=14),title=element_text(size=20),
-        strip.background=element_rect(fill=adjustcolor("lightgray",0.2))
-        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
-        )+
-  ggtitle("HNA population")
-
-png(file = paste("./fingerprint_plots/FPcorSEQ_1in3_unique_notrans_", env[i], ".png", sep =""), width = 20, height = 10, 
-    units  = "in", res = 500, bg = "transparent")
-grid_arrange_shared_legend(v_LNA_1in3_fix, v_HNA_1in3_fix, ncol = 2, position = "right")
-dev.off()
 }
 
+# scores_sb <- scores_df %>% dplyr::filter(grepl("*5seq10*", method))
+# scores_sb$Environment <- plyr::revalue(scores_sb$Environment, c("Michigan"="Lake Michigan",
+#                                                                 "Muskegon"="Muskegon Lake",
+#                                                                 "Inland" = "Inland Lakes"))
+# res_NA_5in10_fix <- dplyr::left_join(res_HNA_5in10_fix, scores_sb, by = c("taxa" = "OTU", "Environment"))
+# res_NA_5in10_fix$fraction <- as.character(res_NA_5in10_fix$fraction)
+# res_NA_5in10_fix$Pool <- res_NA_5in10_fix$fraction
+# res_NA_5in10_fix$Pool[res_NA_5in10_fix$fraction == "HNA"][res_NA_5in10_fix$taxa[res_NA_5in10_fix$fraction == "HNA"] %in% res_NA_5in10_fix$taxa[res_NA_5in10_fix$fraction == "LNA"]] <- "Shared"
+# res_NA_5in10_fix$Pool[res_NA_5in10_fix$fraction == "LNA"][res_NA_5in10_fix$taxa[res_NA_5in10_fix$fraction == "LNA"] %in% res_NA_5in10_fix$taxa[res_NA_5in10_fix$fraction == "HNA"]] <- "Shared"
+# res_NA_5in10_fix$Pool <- factor(res_NA_5in10_fix$Pool, levels = c("LNA", "Shared", "HNA"))
+
+res_NA_5in10_fix <- res_HNA_5in10_fix
 # Make heatmap plots
 # Visualize correlations for top OTUs
 
-for(i in 1:3){
-  v_LNA_5in10_fix <- res_NA_5in10_fix %>% dplyr::filter(Environment == env[i], Pool == "LNA") %>% 
+res_NA_5in10_fix$taxa <- factor(res_NA_5in10_fix$taxa, levels = new_otu_lust)
+
+v_NA_5in10_OTU1 <- res_NA_5in10_fix %>% 
+  dplyr::filter(taxa == "Otu000369" & Environment == "Inland Lakes") %>% 
   ggplot2::ggplot(ggplot2::aes(`FL1.H`, `FL3.H`, z = cor))+
   ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
   # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
                       # color = "transparent")+
-  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.6,0.6)) + 
+  ggplot2::scale_fill_distiller("",
+                                palette="RdYlBu", na.value="white", 
+                                limits = c(-0.5, 0.5), oob=squish) + 
   # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
   ggplot2::theme_bw()+
   # ggplot2::geom_contour(color = "white", alpha = 1)+
-  facet_wrap(~taxa, nrow = 2)+
-  ylim(0,150)+
-  xlim(40,150)+
+  facet_wrap(~taxa, nrow = 1)+
+  scale_y_continuous(breaks = seq(0, 120, 20), labels = seq(0, 120, 20), limits = c(0,128))+
+  xlim(40,128)+
     theme(axis.title=element_text(size=16), strip.text=element_text(size=16),
         legend.title=element_text(size=15),legend.text=element_text(size=14),
-        axis.text = element_text(size=14),title=element_text(size=20),
-        strip.background=element_rect(fill=adjustcolor("lightgray",0.2))
-        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
-        )+
-    ggtitle("LNA population")
-  
-    v_shared_5in10_fix <- res_NA_5in10_fix %>% dplyr::filter(Environment == env[i], Pool == "Shared") %>% 
-  ggplot2::ggplot(ggplot2::aes(`FL1.H`, `FL3.H`, z = cor))+
-  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
-  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
-                      # color = "transparent")+
-  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.6,0.6)) + 
-  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
-  ggplot2::theme_bw()+
-  # ggplot2::geom_contour(color = "white", alpha = 1)+
-  facet_wrap(~taxa, nrow = 2)+
-  ylim(0,150)+
-  xlim(40,150)+
-    theme(axis.title=element_text(size=16), strip.text=element_text(size=16),
-        legend.title=element_text(size=15),legend.text=element_text(size=14),
-        axis.text = element_text(size=14),title=element_text(size=20),
-        strip.background=element_rect(fill=adjustcolor("lightgray",0.2))
-        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
-        )+
-      ggtitle("Shared population")
-    
-        v_HNA_5in10_fix <- res_NA_5in10_fix %>% dplyr::filter(Environment == env[i], Pool == "HNA") %>% 
-  ggplot2::ggplot(ggplot2::aes(`FL1.H`, `FL3.H`, z = cor))+
-  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
-  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
-                      # color = "transparent")+
-  ggplot2::scale_fill_distiller(palette="RdBu", na.value="white", limits = c(-0.6,0.6)) + 
-  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
-  ggplot2::theme_bw()+
-  # ggplot2::geom_contour(color = "white", alpha = 1)+
-  facet_wrap(~taxa, nrow = 2)+
-  ylim(0,150)+
-  xlim(40,150)+
-    theme(axis.title=element_text(size=16), strip.text=element_text(size=16),
-        legend.title=element_text(size=15),legend.text=element_text(size=14),
-        axis.text = element_text(size=14),title=element_text(size=20),
-        strip.background=element_rect(fill=adjustcolor("lightgray",0.2))
-        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
-        )+
-  ggtitle("HNA population")
-
-
-png(file = paste("./fingerprint_plots/FPcorSEQ_5in10_unique_notrans_", env[i], ".png", sep =""), width = 20, height = 10, 
-    units  = "in", res = 500, bg = "transparent")
-grid_arrange_shared_legend(v_LNA_5in10_fix, v_HNA_5in10_fix, ncol = 2, position = "right")
-dev.off()
-
-png(file = paste("./fingerprint_plots/FPcorSEQ_5in10_shared_notrans_", env[i], ".png", sep =""), width = 7, height = 6, 
-    units  = "in", res = 500, bg = "transparent")
-print(v_shared_5in10_fix)
-dev.off()
-}
-
-# From here on focus on Muskegon lake
-res_NA_5in10_musk <- res_NA_5in10_fix %>% dplyr::filter(Environment == env[2])
-res_NA_1in3_musk <- res_NA_1in3_fix %>% dplyr::filter(Environment == env[2])
-
-res_NA_5in10_musk_shared <- res_NA_5in10_musk %>% dplyr::filter(Pool == "Shared")
-
-v_musk_5in10_shared <- res_NA_5in10_musk_shared %>% 
-  ggplot2::ggplot(ggplot2::aes(`FL1.H`, `FL3.H`, z = cor))+
-  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
-  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
-                      # color = "transparent")+
-  ggplot2::scale_fill_distiller("Kendall's\ntau-b\n", palette="RdBu", na.value="white", limits = c(-0.6,0.6),
-                                breaks = round(seq(-0.6,0.6,0.3), 1)) + 
-  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
-  ggplot2::theme_bw()+
-  # ggplot2::geom_contour(color = "white", alpha = 1)+
-  facet_wrap(~taxa, ncol = 5)+
-  ylim(0,150)+
-  xlim(40,150)+
-    theme(axis.title=element_text(size=16), strip.text=element_text(size=16),
-        legend.text=element_text(size=14),
         axis.text = element_text(size=14),title=element_text(size=20),
         strip.background=element_rect(fill=adjustcolor("lightgray",0.2)),
-        legend.title = element_text("Kendall's\ntau-b\n",size=15)
-        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
+        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = "white")
         )+
-      ggtitle("")+
-  xlab("Green fluorescence intensity (FL1-H - a.u.)")+
-  ylab("Red fluorescence intensity (FL3-H - a.u.)")
+    geom_vline(xintercept = 75.3, linetype = 2)+
+  labs(y = "Red fluorescence" , x = "Green fluorescence")
 
-# Make extra factor for coloring background of panels according to p_kendal
-res_NA_5in10_musk_HNA <- res_NA_5in10_musk %>% dplyr::filter(Pool == "HNA", method == "hnascores_otus_5seq10")
-res_NA_5in10_musk_LNA <- res_NA_5in10_musk %>% dplyr::filter(Pool == "LNA", method == "lnascores_otus_5seq10")
-res_NA_5in10_musk_HNA$cor_sign <- factor(res_NA_5in10_musk_HNA$p_kendall > 0)
-res_NA_5in10_musk_LNA$cor_sign <- factor(res_NA_5in10_musk_LNA$p_kendall > 0)
+print(v_NA_5in10_OTU1)
 
-#Create a data frame with the faceting variables
-# and some dummy data (that will be overwritten)
-tp <- res_NA_5in10_musk_HNA
-tp$FL1.H <- tp$FL3.H <- 1
-
-v_musk_5in10_HNA <- res_NA_5in10_musk_HNA %>% 
+v_NA_5in10_OTU2 <- res_NA_5in10_fix %>% 
+  dplyr::filter(taxa == "Otu000025" & Environment == "Lake Michigan") %>% 
   ggplot2::ggplot(ggplot2::aes(`FL1.H`, `FL3.H`, z = cor))+
-  geom_rect(data = subset(tp, cor_sign == "TRUE"), fill = "#9CB991", xmin = -Inf, xmax = Inf,
-            ymin = -Inf,ymax = Inf, alpha = 0.09) +
-  geom_rect(data = subset(tp, cor_sign == "FALSE"), fill = "#FBD5D7", xmin = -Inf, xmax = Inf,
-            ymin = -Inf,ymax = Inf, alpha = 0.09) +
-  ggplot2::geom_tile(ggplot2::aes(fill=cor))+
-  ggplot2::scale_fill_distiller("Kendall's\ntau-b\n", palette="RdBu", na.value="white", limits = c(-0.6,0.6),
-                                breaks = round(seq(-0.6,0.6,0.3), 1)) + 
+  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
+  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
+                      # color = "transparent")+
+  ggplot2::scale_fill_distiller("",
+                                palette="RdYlBu", na.value="white", 
+                                limits = c(-0.5, 0.5), oob=squish) + 
   # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
   ggplot2::theme_bw()+
   # ggplot2::geom_contour(color = "white", alpha = 1)+
-  facet_wrap(~taxa, ncol = 5)+
-  ylim(0,150)+
-  xlim(40,150)+
-    theme(axis.title=element_text(size=16), strip.text=element_text(size=16),
-        legend.text=element_text(size=14),
-        axis.text = element_text(size=14),title=element_text(size = 20),
-        strip.background=element_rect(fill=adjustcolor("lightgray",0.2)),
-        panel.grid.major = element_line(colour = "black"),
-        panel.grid.minor = element_line(colour = "black"),
-        legend.title = element_text("Kendall's\ntau-b\n",size=15)
-        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
-        )+
-      ggtitle("")+
-  xlab("Green fluorescence intensity (FL1-H - a.u.)")+
-  ylab("Red fluorescence intensity (FL3-H - a.u.)")
-
-print(v_musk_5in10_HNA)
-
-#Create a data frame with the faceting variables
-# and some dummy data (that will be overwritten)
-tp <- res_NA_5in10_musk_LNA
-tp$FL1.H <- tp$FL3.H <- 1
-
-v_musk_5in10_LNA <- res_NA_5in10_musk_LNA %>% 
-  ggplot2::ggplot(ggplot2::aes(`FL1.H`, `FL3.H`, z = cor))+
-  ggplot2::theme_bw()+
-  geom_rect(data = subset(tp, cor_sign == "TRUE"), fill = "#9CB991", xmin = -Inf, xmax = Inf,
-            ymin = -Inf,ymax = Inf, alpha = 0.09) +
-  geom_rect(data = subset(tp, cor_sign == "FALSE"), fill = "#FBD5D7", xmin = -Inf, xmax = Inf,
-            ymin = -Inf,ymax = Inf, alpha = 0.09) +
-  ggplot2::geom_tile(ggplot2::aes(fill=cor))+
-  ggplot2::scale_fill_distiller("Kendall's\ntau-b\n", palette="RdBu", na.value="white", limits = c(-0.6,0.6),
-                                breaks = round(seq(-0.6,0.6,0.3), 1), guide = "colourbar") + 
-  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
-  # ggplot2::geom_contour(color = "white", alpha = 1)+
-  facet_wrap(~taxa, ncol = 5)+
-  ylim(0,150)+
-  xlim(40,150)+ 
+  facet_wrap(~taxa, nrow = 1)+
+  scale_y_continuous(breaks = seq(0, 120, 20), labels = seq(0, 120, 20), limits = c(0,128))+
+  xlim(40,128)+
     theme(axis.title=element_text(size=16), strip.text=element_text(size=16),
         legend.title=element_text(size=15),legend.text=element_text(size=14),
-        axis.text = element_text(size=14),title=element_text(size = 20),
+        axis.text = element_text(size=14),title=element_text(size=20),
         strip.background=element_rect(fill=adjustcolor("lightgray",0.2)),
-        panel.grid.major = element_line(colour = "black"),
-        panel.grid.minor = element_line(colour = "black")
-        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank()
+        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = "white")
         )+
-      ggtitle("")+
-  xlab("Green fluorescence intensity (FL1-H - a.u.)")+
-  ylab("Red fluorescence intensity (FL3-H - a.u.)")
+  geom_vline(xintercept = 75.3, linetype = 2)+
+  labs(y = "Red fluorescence" , x = "Green fluorescence")
 
-# Export figures
-png(file = paste("./fingerprint_plots/FPcorSEQ_5in10_unique_notrans_LNA_muskegon.png", sep =""), width = 15, height = 8, 
-    units  = "in", res = 500, bg = "transparent")
-print(v_musk_5in10_LNA)
+print(v_NA_5in10_OTU2)
+
+v_NA_5in10_OTU3 <- res_NA_5in10_fix %>% 
+  dplyr::filter(taxa == "Otu000173" & Environment == "Muskegon Lake") %>% 
+  ggplot2::ggplot(ggplot2::aes(`FL1.H`, `FL3.H`, z = cor))+
+  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
+  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
+                      # color = "transparent")+
+  ggplot2::scale_fill_distiller("",
+                                palette="RdYlBu", na.value="white", 
+                                limits = c(-0.5, 0.5), oob=squish) + 
+  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
+  ggplot2::theme_bw()+
+  # ggplot2::geom_contour(color = "white", alpha = 1)+
+  facet_wrap(~taxa, nrow = 1)+
+  xlim(40,128)+
+  scale_y_continuous(breaks = seq(0, 120, 20), labels = seq(0, 120, 20), limits = c(0,128))+
+    theme(axis.title=element_text(size=16), strip.text=element_text(size=16),
+        legend.title=element_text(size=15),legend.text=element_text(size=14),
+        axis.text = element_text(size=14),title=element_text(size=20),
+        strip.background=element_rect(fill=adjustcolor("lightgray",0.2)),
+        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = "white")
+        )+
+    geom_vline(xintercept = 75.3, linetype = 2)+
+  labs(y = "Red fluorescence" , x = "Green fluorescence")
+print(v_NA_5in10_OTU3)
+
+# Plot all three in one row
+cowplot::plot_grid(v_NA_5in10_OTU1, v_NA_5in10_OTU2, v_NA_5in10_OTU3, align = "hv", nrow = 1)
+
+
+pdf("FPcorSEQ3_clr.pdf", width = 18, height = 5)
+cowplot::plot_grid(v_NA_5in10_OTU1, v_NA_5in10_OTU2, v_NA_5in10_OTU3, align = "hv", nrow = 1)
 dev.off()
 
-png(file = paste("./fingerprint_plots/FPcorSEQ_5in10_unique_notrans_HNA_muskegon.png", sep =""), width = 15, height = 8, 
-    units  = "in", res = 500, bg = "transparent")
-print(v_musk_5in10_HNA)
-dev.off()
+# Run identical analysis between fingerprint and productivity data for the three selected OTUs
+prod_data <- read.csv("./data/production_data.csv")
+prod_data <- prod_data %>% dplyr::filter(!is.na(tot_bacprod ))
 
-png(file = paste("./fingerprint_plots/FPcorSEQ_5in10_unique_notrans_shared_muskegon.png", sep =""), width = 15, height = 4, 
-    units  = "in", res = 500, bg = "transparent")
-print(v_musk_5in10_shared)
+# Replace 5th character in sample names with empty to match prod data
+str_sub(rownames(fbasis@basis), 5, 5) <- ""
+prod_data <- prod_data[prod_data$names %in% rownames(fbasis@basis), ]
+
+
+res_prod_NA_5in10 <- FPcorProd(prod = prod_data, fp = fbasis,
+                        cor_thresh = 0.05, fp_thresh = 1e-2,
+                        cor_m = "kendall")
+
+
+v_NA_5in10_PROD <- res_prod_NA_5in10 %>% 
+  ggplot2::ggplot(ggplot2::aes(`FL1-H`, `FL3-H`, z = cor))+
+  ggplot2::geom_tile(ggplot2::aes(fill=cor)) +
+  # ggplot2::geom_point(size = 1, ggplot2::aes(fill=cor), shape =22,
+                      # color = "transparent")+
+  ggplot2::scale_fill_distiller("",
+                                palette="RdYlBu", na.value="white", 
+                                limits = c(-0.5, 0.5), oob=squish) + 
+  # ggplot2::stat_contour(ggplot2::aes(fill=..level..), geom="polygon", binwidth=0.1)+
+  ggplot2::theme_bw()+
+  # ggplot2::geom_contour(color = "white", alpha = 1)+
+  # facet_wrap(~taxa, nrow = 1)+
+  xlim(40,128)+
+  scale_y_continuous(breaks = seq(0, 120, 20), labels = seq(0, 120, 20), limits = c(0,128))+
+    theme(axis.title=element_text(size=16), strip.text=element_text(size=16),
+        legend.title=element_text(size=15),legend.text=element_text(size=14),
+        axis.text = element_text(size=14),title=element_text(size=20),
+        strip.background=element_rect(fill=adjustcolor("lightgray",0.2)),
+        #,panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = "white")
+        )+
+    geom_vline(xintercept = 75.3, linetype = 2)+
+  labs(y = "Red fluorescence" , x = "Green fluorescence")
+print(v_NA_5in10_PROD)
+
+pdf("FPcorPROD.pdf", width = 7, height = 5)
+print(v_NA_5in10_PROD)
 dev.off()
 
 ```
+
