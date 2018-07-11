@@ -1,7 +1,7 @@
 ---
 title: "Analyses by Marian" 
 author: "Marian L. Schmidt, marschmi@umich.edu, @micro_marian"
-date: "May 29th, 2018"
+date: "July 3rd, 2018"
 output:
   html_document:
     code_folding: show
@@ -61,6 +61,8 @@ library(ggtree)     # Pretty ggplot-esque phylogenetic trees
 library(ape)        # Working with phylogenetic trees
 library(DT)         # Pretty Tables 
 library(gplots)     # Heatmap.2 function
+library(stringr)    # To replace zeros in OTU names
+library(adephylo)   # Testing phylogenetic autocorrelation
 source("code/set_colors.R")           # Set Colors for plotting
 
 # Set some global ggplot parameters
@@ -188,7 +190,7 @@ datatable(prop_stats, caption = "Statistics of the percentage of each flow cytom
 
 
 # Figure 1
-```{r fig-1, fig.width = 5.5, fig.height = 2.75}
+```{r boxplot, fig.width = 5.5, fig.height = 2.75}
 # Load in the data from each lake 
 musk_all_df <- read.table(file="data/Chloroplasts_removed/ByLake_Filtering/5in10/muskegon/muskegon_sampledata_5in10.tsv", header = TRUE) %>%
   mutate(norep_filter_name = paste(substr(Sample_16S,1,4), substr(Sample_16S,6,9), sep = "")) %>%
@@ -318,7 +320,7 @@ plot_grid(mich_corr_plot, inla_corr_plot, musk_corr_plot,
 
 
 # Figure 2: FCM vs Productivity
-```{r fig-2, fig.width = 6.5, fig.height = 2.75,}
+```{r prod-HNALNA, fig.width = 6.5, fig.height = 2.75,}
 ########################  Analysis of HNA/LNA/Total Cells vs Total Productivity
 # 1. Run the linear model 
 lm_HNA <- lm(tot_bacprod ~ HNA.cells, data = muskegon)
@@ -438,7 +440,7 @@ plot_grid(HNA_vs_prod + theme(legend.position = "none"),
 ```
 
 ## Alternative Figure 1: 
-```{r alt-fig-1, fig.width = 6.5, fig.height = 5.2}
+```{r fig1, fig.width = 6.5, fig.height = 5.2}
 first_row <- plot_grid(HNA_vs_prod + theme(legend.position = "none"), 
           LNA_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"), 
           Total_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"),
@@ -506,196 +508,70 @@ plot_grid(swap_row1, swap_row2,
 
 # Figure 4: Heatmap
 
-## Load RL Ranking data
-```{r load-RL-ranking}
-# Read in Data
-dfHNA_musk <- read.csv("Final/FS_Scores/Muskegon_fs_scores_HNA_5seq10.csv") %>%
-  dplyr::filter(RL.score > 0.09) %>%
-  mutate(RL.ranking = 1/RL.ranking, Lake = "Muskegon")%>%
-  rename(OTU = X, RL.ranking.HNA = RL.ranking) %>%
-  dplyr::select(OTU, RL.ranking.HNA)
-
-dfLNA_musk <- read.csv("Final/FS_Scores/Muskegon_fs_scores_LNA_5seq10.csv") %>%
-  dplyr::filter(RL.score > 0.09) %>%
-  mutate(RL.ranking = -1/RL.ranking, Lake = "Muskegon") %>%
-  rename(OTU = X, RL.ranking.LNA = RL.ranking) %>%
-  dplyr::select(OTU, RL.ranking.LNA)
-
-dfHNA_inland <- read.csv("Final/FS_Scores/Inland_fs_scores_HNA_5seq10.csv") %>%
-  dplyr::filter(RL.score > 0.13) %>%
-  mutate(RL.ranking = 1/RL.ranking, Lake = "Inland")%>%
-  rename(OTU = X, RL.ranking.HNA = RL.ranking) %>%
-  dplyr::select(OTU, RL.ranking.HNA)
-
-dfLNA_inland <- read.csv("Final/FS_Scores/Inland_fs_scores_LNA_5seq10.csv") %>%
-  dplyr::filter(RL.score > 0.108) %>%
-  mutate(RL.ranking = -1/RL.ranking, Lake = "Inland") %>%
-  rename(OTU = X, RL.ranking.LNA = RL.ranking) %>%
-  dplyr::select(OTU, RL.ranking.LNA)
-
-dfHNA_michigan <- read.csv("Final/FS_Scores/Michigan_fs_scores_HNA_5seq10.csv") %>%
-  dplyr::filter(RL.score > 0.248) %>%
-  mutate(RL.ranking = 1/RL.ranking, Lake = "Michigan")%>%
-  rename(OTU = X, RL.ranking.HNA = RL.ranking) %>%
-  dplyr::select(OTU, RL.ranking.HNA)
-
-dfLNA_michigan <- read.csv("Final/FS_Scores/Michigan_fs_scores_LNA_5seq10.csv") %>%
-  dplyr::filter(RL.score > 0.286) %>%
-  mutate(RL.ranking = -1/RL.ranking, Lake = "Michigan") %>%
-  rename(OTU = X, RL.ranking.LNA = RL.ranking) %>%
-  dplyr::select(OTU, RL.ranking.LNA)
-
-# Combine HNA and LNA datasets together
-muskegon_df <- full_join(dfHNA_musk, dfLNA_musk, by = "OTU") %>%   mutate(Lake = "Muskegon")
-inland_df <- full_join(dfHNA_inland, dfLNA_inland, by = "OTU") %>%  mutate(Lake = "Inland")
-michigan_df <- full_join(dfHNA_michigan, dfLNA_michigan, by = "OTU") %>%  mutate(Lake = "Michigan")
-
-# Combine all of the three lakes together into one dataframe! 
-lake_dfscores <-
-  bind_rows(muskegon_df, inland_df, michigan_df) %>%
-  rename(HNA = RL.ranking.HNA, LNA = RL.ranking.LNA) %>%
-  gather(key = FCM_type, value = RL.ranking, HNA:LNA)
-```
-
-
-## Plot figure 4: 1/RL Ranking
-```{r heatmap-ranking, fig.width = 8, fig.height = 10}
-# Reformat data to be matrix style for heatmapping
-# HNA/LNA: Inland: 0.13/0.108,  Michigan: 0.248/0.286,  Muskegon: 0.09/0.09
-musk_dat <- 
-  muskegon_df %>%
-  dplyr::select(-Lake) %>%
-  dplyr::filter(RL.ranking.HNA > 0.09 | RL.ranking.LNA < -0.09) %>%  # THIS IS A MISTAKE
-  rename(Muskegon_HNA = RL.ranking.HNA, 
-         Muskegon_LNA = RL.ranking.LNA)%>%
-  mutate(Muskegon_LNA = Muskegon_LNA * -1) 
-
-inland_dat <- 
-  inland_df %>%
-  dplyr::select(-Lake) %>%
-  dplyr::filter(RL.ranking.HNA > 0.13 | RL.ranking.LNA < -0.108) %>%  # THIS IS A MISTAKE
-  rename(Inland_HNA = RL.ranking.HNA, 
-         Inland_LNA = RL.ranking.LNA) %>%
-  mutate(Inland_LNA = Inland_LNA * -1)
-
-michigan_dat <- 
-  michigan_df %>%
-  dplyr::select(-Lake) %>%
-  dplyr::filter(RL.ranking.HNA > 0.248 | RL.ranking.LNA < -0.286) %>%  # THIS IS A MISTAKE
-  rename(Michigan_HNA = RL.ranking.HNA, 
-         Michigan_LNA = RL.ranking.LNA) %>%
-  mutate(Michigan_LNA = Michigan_LNA * -1)
-
-matrix_scores <- 
-  full_join(musk_dat, inland_dat, by = "OTU") %>%
-  full_join(michigan_dat, by = "OTU") %>%
-  tibble::column_to_rownames(var = "OTU") %>%
-  as.matrix()
-
-matrix_scores[is.na(matrix_scores)] <- 0
-
-breakers <- seq(min(matrix_scores, na.rm = T), max(matrix_scores, na.rm = T), length.out = 21)
-my_palette <- colorRampPalette(c("white","gray65", "red")) (n=20)
-
-colz <- c("#FF933F", "#FF933F", "#EC4863", "#EC4863", "#5C2849", "#5C2849")
-
-heatmap.2(matrix_scores, 
-          distfun = function(x) dist(x, method = "euclidean"),
-          hclustfun = function(x) hclust(x,method = "complete"),
-          col = my_palette, breaks=breakers, trace="none",
-          key=TRUE, symkey=FALSE, density.info="none", srtCol=30,
-          margins=c(5.5,7), cexRow=1.25,cexCol=1.25,
-          key.xlab="1/RL Score",
-          ColSideColors=colz)
-```
-
-
 ## Load RL Score data
 ```{r RL-scores}
 # Read in Data
-dfHNA_musk_scores <- read.csv("Final/FS_Scores/Muskegon_fs_scores_HNA_5seq10.csv") %>%
+dfHNA_musk_scores <- read.csv("FS_final/Muskegon_fs_scores_HNA_5seq10.csv") %>%
   dplyr::filter(RL.score > 0.09) %>%
   mutate(Lake = "Muskegon")%>%
   rename(OTU = X, RL.score.HNA = RL.score) %>%
   dplyr::select(OTU, RL.score.HNA)
 
-dfLNA_musk_scores <- read.csv("Final/FS_Scores/Muskegon_fs_scores_LNA_5seq10.csv") %>%
+dfLNA_musk_scores <- read.csv("FS_final/Muskegon_fs_scores_LNA_5seq10.csv") %>%
   dplyr::filter(RL.score > 0.09) %>%
   mutate(Lake = "Muskegon") %>%
   rename(OTU = X, RL.score.LNA = RL.score) %>%
   dplyr::select(OTU, RL.score.LNA)
 
-dfHNA_inland_scores <- read.csv("Final/FS_Scores/Inland_fs_scores_HNA_5seq10.csv") %>%
+dfHNA_inland_scores <- read.csv("FS_final/Inland_fs_scores_HNA_5seq10.csv") %>%
   dplyr::filter(RL.score > 0.13) %>%
   mutate(Lake = "Inland")%>%
   rename(OTU = X, RL.score.HNA = RL.score) %>%
   dplyr::select(OTU, RL.score.HNA)
 
-dfLNA_inland_scores <- read.csv("Final/FS_Scores/Inland_fs_scores_LNA_5seq10.csv") %>%
+dfLNA_inland_scores <- read.csv("FS_final/Inland_fs_scores_LNA_5seq10.csv") %>%
   dplyr::filter(RL.score > 0.108) %>%
   mutate(Lake = "Inland") %>%
   rename(OTU = X, RL.score.LNA = RL.score) %>%
   dplyr::select(OTU, RL.score.LNA)
 
-dfHNA_michigan_scores <- read.csv("Final/FS_Scores/Michigan_fs_scores_HNA_5seq10.csv") %>%
+dfHNA_michigan_scores <- read.csv("FS_final/Michigan_fs_scores_HNA_5seq10.csv") %>%
   dplyr::filter(RL.score > 0.248) %>%
   mutate(Lake = "Michigan")%>%
   rename(OTU = X, RL.score.HNA = RL.score) %>%
   dplyr::select(OTU, RL.score.HNA)
 
-dfLNA_michigan_scores <- read.csv("Final/FS_Scores/Michigan_fs_scores_LNA_5seq10.csv") %>%
+dfLNA_michigan_scores <- read.csv("FS_final/Michigan_fs_scores_LNA_5seq10.csv") %>%
   dplyr::filter(RL.score > 0.286) %>%
   mutate(Lake = "Michigan") %>%
   rename(OTU = X, RL.score.LNA = RL.score) %>%
   dplyr::select(OTU, RL.score.LNA)
 
 # Combine HNA and LNA datasets together
-muskegon_df_scores <- full_join(dfHNA_musk_scores, dfLNA_musk_scores, by = "OTU") %>%   mutate(Lake = "Muskegon")
-inland_df_scores <- full_join(dfHNA_inland_scores, dfLNA_inland_scores, by = "OTU") %>%  mutate(Lake = "Inland")
-michigan_df_scores <- full_join(dfHNA_michigan_scores, dfLNA_michigan_scores, by = "OTU") %>%  mutate(Lake = "Michigan")
+muskegon_df_scores <- full_join(dfHNA_musk_scores, dfLNA_musk_scores, by = "OTU") %>%
+  rename(Muskegon_HNA = RL.score.HNA, Muskegon_LNA = RL.score.LNA) # Rename the column to have the lake and FCM
+inland_df_scores <- full_join(dfHNA_inland_scores, dfLNA_inland_scores, by = "OTU") %>%
+  rename(Inland_HNA = RL.score.HNA, Inland_LNA = RL.score.LNA) # Rename the column to have the lake and FCM
+michigan_df_scores <- full_join(dfHNA_michigan_scores, dfLNA_michigan_scores, by = "OTU") %>%
+  rename(Michigan_HNA = RL.score.HNA, Michigan_LNA = RL.score.LNA) # Rename the column to have the lake and FCM
 
-# Combine all of the three lakes together into one dataframe! 
-scores_RL_df <-
-  bind_rows(muskegon_df_scores, inland_df_scores, michigan_df_scores) %>%
-  rename(HNA = RL.score.HNA, LNA = RL.score.LNA) %>%
-  gather(key = FCM_type, value = RL.ranking, HNA:LNA)
-```
-
-## Plot figure 4: 1/RL Ranking
-```{r heatmap-RLscore, fig.width = 8, fig.height = 20}
-# Reformat data to be matrix style for heatmapping
-# HNA/LNA: Inland: 0.13/0.108,  Michigan: 0.248/0.286,  Muskegon: 0.09/0.09
-musk_dat_scores <- 
-  muskegon_df_scores %>%
-  dplyr::select(-Lake) %>%
-  dplyr::filter(RL.score.HNA > 0.09 | RL.score.LNA < 0.09) %>%
-  rename(Muskegon_HNA = RL.score.HNA, 
-         Muskegon_LNA = RL.score.LNA)
-
-inland_dat_scores <- 
-  inland_df_scores %>%
-  dplyr::select(-Lake) %>%
-  dplyr::filter(RL.score.HNA > 0.13 | RL.score.LNA < 0.108) %>%
-  rename(Inland_HNA = RL.score.HNA, 
-         Inland_LNA = RL.score.LNA) 
-
-michigan_dat_scores <- 
-  michigan_df_scores %>%
-  dplyr::select(-Lake) %>%
-  dplyr::filter(RL.score.HNA > 0.248 | RL.score.LNA < 0.286) %>%
-  rename(Michigan_HNA = RL.score.HNA, 
-         Michigan_LNA = RL.score.LNA) 
-
-matrix_RLscores <- 
-  full_join(musk_dat_scores, inland_dat_scores, by = "OTU") %>%
-  full_join(michigan_dat_scores, by = "OTU") %>%
+# Combine into a full dataset
+df_RLscores <- 
+  full_join(muskegon_df_scores, inland_df_scores, by = "OTU") %>%
+  full_join(michigan_df_scores, by = "OTU") 
+  
+matrix_RLscores <- df_RLscores %>%
   tibble::column_to_rownames(var = "OTU") %>%
   as.matrix()
 
-matrix_RLscores[is.na(matrix_RLscores)] <- 0
+# Replace the NA values with 0 
+matrix_RLscores[is.na(matrix_RLscores)] <- 0  
+```
 
+## Plot figure 4: RL Scores
+```{r fig4-allOTUs, fig.width = 8, fig.height = 20}
 breakers <- seq(min(matrix_RLscores, na.rm = T), max(matrix_RLscores, na.rm = T), length.out = 21)
-my_palette <- colorRampPalette(c("white","gray65", "red")) (n=20)
+my_palette <- colorRampPalette(c("white", "red")) (n=20)
 
 # Set the colors of the different columns going in
 colz <- c("#FF933F", "#FF933F", "#EC4863", "#EC4863", "#5C2849", "#5C2849")
@@ -710,18 +586,122 @@ heatmap.2(matrix_RLscores,
           lhei = c(1,9))
 ```
 
+### Top 10 from Fig 4 Scores
+```{r fig4-top10-noclust, fig.width=6, fig.height=8}
+# Extract the top 10 OTUs 
+mich_top10_OTUs <- michigan_df_scores %>%
+  top_n(., 10, Michigan_HNA) %>%
+  dplyr::select(OTU)
+
+inland_top10_HNA_OTUs <- inland_df_scores %>%
+  dplyr::select(OTU, Inland_HNA) %>%
+  top_n(., 10, Inland_HNA) %>%
+  dplyr::select(OTU)
+
+inland_top10_LNA_OTUs <- inland_df_scores %>%
+  dplyr::select(OTU, Inland_LNA) %>%
+  top_n(., 10, Inland_LNA) %>%
+  dplyr::select(OTU) 
+  
+musk_top10_HNA_OTUs <- muskegon_df_scores %>%
+  dplyr::select(OTU, Muskegon_HNA) %>%
+  top_n(., 10, Muskegon_HNA) %>%
+  dplyr::select(OTU)
+
+musk_top10_LNA_OTUs <- muskegon_df_scores %>%
+  dplyr::select(OTU, Muskegon_LNA) %>%
+  top_n(., 10, Muskegon_LNA) %>%
+  dplyr::select(OTU)
+
+# The above code pulls out the OTUs and we'll match this with the data from the full dataset
+df_OTUs <- bind_rows(mich_top10_OTUs, inland_top10_HNA_OTUs, inland_top10_LNA_OTUs, musk_top10_HNA_OTUs, musk_top10_LNA_OTUs) %>%
+  unique()
+
+# Do a filtering join 
+df_top10 <- df_OTUs %>%
+  left_join(df_RLscores, by = "OTU")
+
+matrix_top10 <- df_top10 %>%
+  # Remove the zeros in the OTU names 
+  mutate(OTU = str_replace(OTU, "00", "")) %>%
+  tibble::column_to_rownames(var = "OTU") %>%
+  as.matrix()
+
+# The heatmap won't work with NAs 
+matrix_top10[is.na(matrix_top10)] <- 0
+
+#png("Analysis_Figures/clustering_top10.png", units = "in", width = 6, height = 8, res = 300)
+
+heatmap.2(matrix_top10, 
+        distfun = function(x) dist(x, method = "euclidean"),
+        hclustfun = function(x) hclust(x,method = "complete"),
+        col = my_palette, breaks = breakers, trace = "none",
+        key = TRUE, symkey = FALSE, density.info = "none", srtCol = 30,
+        margins=c(5.5,7), cexRow = 1.25,cexCol = 1.25,
+        key.xlab = "RL Score",ColSideColors = colz,
+        lhei = c(1.5,9), key.title=NA)
+
+#dev.off()
+
+# WITHOUT the clustering!
+heatmap.2(matrix_top10,
+        dendrogram = "none", Rowv = FALSE, Colv = FALSE,
+        col = my_palette, breaks = breakers, trace = "none",
+        key = TRUE, symkey = FALSE, density.info = "none", srtCol = 30,
+        margins=c(5.5,7), cexRow = 1.25,cexCol = 1.25,
+        key.xlab = "RL Score",ColSideColors = colz,
+        lhei = c(1,9), #lmat = rbind(1,2),
+        key.title=NA)
+```
+
+```{r fig4-columns-only, fig.width=6, fig.height=8}
+# Only cluster the columns
+heatmap.2(matrix_top10, 
+        distfun = function(x) dist(x, method = "euclidean"),
+        hclustfun = function(x) hclust(x,method = "complete"),
+        # Do not cluster based on rows
+        dendrogram = "column",Rowv = FALSE, 
+        col = my_palette, breaks = breakers, trace = "none",
+        key = TRUE, symkey = FALSE, density.info = "none", srtCol = 30,
+        margins=c(5.5,7), cexRow = 1.25,cexCol = 1.25,
+        key.xlab = "RL Score",ColSideColors = colz,
+        lhei = c(1.5,9), key.title=NA)
+```
+
+### ggplot heatmap 
+```{r fig4-ggheat-top10, fig.width=5, fig.height=7}
+# In the order of OTUs without 
+lake_ordered_OTUs <- row.names(matrix_top10)
+
+df_top10 %>% 
+  mutate(OTU = str_replace(OTU, "00", ""),
+         OTU = as.factor(OTU),
+         OTU = fct_relevel(OTU, lake_ordered_OTUs)) %>% 
+  gather(Lake_FCM, RL_score, Muskegon_HNA:Inland_LNA) %>%
+  ggplot(aes(x=Lake_FCM, y= fct_rev(OTU))) +
+    geom_tile(aes(fill=RL_score)) +
+    scale_fill_gradient2(na.value = "white", low = "grey", high = "red") +
+    #scale_y_discrete(limits=OTU) +
+    theme(axis.title = element_blank(), axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
+```
 
 # Figure 5: Phylogenetic Tree
-```{r phylo-tree}
+```{r fig5-all, fig.width=11, fig.height=18}
 #### PHYLOGENETIC ANALYSIS
 load("data/phyloseq.RData")
 physeq.otu
 
-otu_scores_df <- matrix_scores %>%
+# With all of the OTUs that pass the RL score threshold
+otu_scores_df <- matrix_RLscores %>%
   as.data.frame() %>%
   tibble::rownames_to_column("OTU")
 
+# Subset the vector with names of the OTUs
 vector_of_otus <- as.vector(otu_scores_df$OTU)
+
+# Write to a file
+#write(vector_of_otus, file = "data/fasttree/Figure5/OTUnames_RLscores_258.txt",
+#      ncolumns = 1, append = FALSE, sep = "\n")
 
 physeq <- physeq.otu %>%
   subset_taxa(., taxa_names(physeq.otu) %in% vector_of_otus)  
@@ -731,11 +711,13 @@ setdiff(sort(vector_of_otus), sort(taxa_names(physeq)))
 setdiff(sort(taxa_names(physeq)), sort(vector_of_otus))
 
 ######################################### FASTTREE
-fast_tree <- read.tree(file="data/fasttree/fasttree_newick_tree_HNALNA_rmN.tre")
+fast_tree <- read.tree(file="data/fasttree/Figure5/newick_tree_OTUs258.tre")
 
 fast_tree_tip_order <- data.frame(fast_tree$tip.label) %>%
   rename(OTU = fast_tree.tip.label)
 
+# Make sure the OTUs match 
+stopifnot(sort(vector_of_otus)==sort(as.character(fast_tree_tip_order$OTU)))
 
 fasttree_physeq <- merge_phyloseq(physeq, phy_tree(fast_tree))
 
@@ -759,52 +741,251 @@ tax_table(fasttree_physeq) <- t
 fasttree_tax <- data.frame(tax_table(fasttree_physeq)) %>%
   tibble::rownames_to_column(var = "OTU")
 
-fasttree_df2 <- read.csv("data/fasttree/OTUnames_based_on_RLscores_MANUAL.csv") %>%
-  left_join(., fasttree_tax, by = "OTU") %>%
-  tibble::column_to_rownames("OTU") %>%
-  dplyr::select(Phylum)
-
 
 ## Let's root the tree
 is.rooted(fast_tree)
-test_tree <- root(fast_tree, outgroup = "Otu001533", resolve.root = TRUE)
-is.rooted(test_tree)
+rooted_tree <- root(fast_tree, outgroup = "Otu001533", resolve.root = TRUE)
+is.rooted(rooted_tree) # Sanity Check
 
+# Need to make a manual file based off of FIgure 4 - it starts with OTU names
+# write.csv(df_RLscores, file = "data/fasttree/Figure5/OTUs258_MANUAL.csv", row.names = FALSE)
+# Next I manually filled in the fcm_type and lake columns :/ 
 
-phyfcm_fasttree_df3 <- read.csv("data/fasttree/OTUnames_based_on_RLscores_MANUAL.csv") %>%
+phyfcm_fasttree_df <- read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
   left_join(., fasttree_tax, by = "OTU") %>%
   tibble::column_to_rownames("OTU") %>%
-  dplyr::rename(FCM = fcm_type) %>%
   dplyr::select(Phylum, FCM)
 
-rooted_tree <- 
-  ggplot(test_tree, aes(x, y)) + geom_tree() + theme_tree() +
+rooted_tree_plot <- 
+  ggplot(rooted_tree, aes(x, y)) + geom_tree() + theme_tree() +
   geom_tiplab(size=3, align=TRUE, linesize=.5) #+
   #geom_nodelab(vjust=-.5, size=3) 
 
-  
-gheatmap(rooted_tree, phyfcm_fasttree_df3, offset = 0.1, width=0.3, font.size=3, colnames_angle=0, hjust=0.5) +
-  scale_fill_manual(values = phylum_colors,  
-                    breaks = c("Actinobacteria", "Alphaproteobacteria", "Bacteria_unclassified", "Bacteroidetes", "Betaproteobacteria",
-                               "Cyanobacteria","Deltaproteobacteria", "Firmicutes", "Gammaproteobacteria","Omnitrophica", "Planctomycetes",
-                               "Proteobacteria_unclassified", "unknown_unclassified", "Verrucomicrobia", "Both", "HNA", "LNA"))
+gheatmap(rooted_tree_plot, phyfcm_fasttree_df, offset = 0.1, width=0.3, font.size=3, colnames_angle=0, hjust=0.5) +
+  scale_fill_manual(values = phylum_colors, 
+                    breaks = c("Acidobacteria","Actinobacteria", "Alphaproteobacteria", "Bacteria_unclassified", "Bacteroidetes", "Betaproteobacteria", 
+                               "Chlorobi", "Chloroflexi","Cyanobacteria","Deltaproteobacteria", "Epsilonproteobacteria", "Firmicutes", 
+                               "Gammaproteobacteria","Gemmatimonadetes","Omnitrophica","Parcubacteria","Planctomycetes",
+                               "Proteobacteria_unclassified", "TA18","unknown_unclassified", "Verrucomicrobia", 
+                               # FCM Groups
+                               "Both", "HNA", "LNA")) +
+  guides(fill=guide_legend(ncol=1))
 ```
 
 
-```{r test-phylo, include=FALSE}
-test <- ggplot(test_tree, aes(x, y)) + geom_tree() + theme_tree() +
-  geom_tiplab(size=3, align=TRUE, linesize=.5) #+
-  #geom_nodelab(vjust=-.5, size=3) 
 
+
+```{r iTOL, eval=FALSE}
+OTU258_and_phylum <- read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
+  left_join(., fasttree_tax, by = "OTU") %>%
+  dplyr::select(OTU, Phylum) 
+
+OTU258_and_FCM <- read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
+  left_join(., fasttree_tax, by = "OTU") %>%
+  dplyr::select(OTU, FCM) %>%
+  rename(Phylum = FCM) # To extract from phylum_colors
+
+itol_colors <- 
+  phylum_colors %>%
+  as.list() %>%
+  as.matrix() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("Phylum") %>%
+  rename(color_name = V1) %>%
+  mutate(hex = col2hex(color_name)) %>%
+  dplyr::select(hex, Phylum)
+
+itol_phylum_df <- left_join(OTU258_and_phylum, itol_colors, by = "Phylum") %>%
+  mutate(itol_label = "range") %>%
+  dplyr::select(OTU, itol_label, hex, Phylum)
+
+#write.csv(itol_phylum_df, file = "data/fasttree/Figure5/itol_df.csv", row.names = FALSE)
+
+#itol_phylum_df %>%
+#  dplyr::select(OTU, hex, Phylum) %>%
+#  write.csv(file = "data/fasttree/Figure5/itol_PHYLUM_df.csv", row.names = FALSE)
+
+itol_FCM_df <- left_join(OTU258_and_FCM, itol_colors, by = "Phylum") %>%
+  rename(FCM = Phylum) %>% 
+  dplyr::select(OTU, hex, FCM)
+#write.csv(itol_FCM_df, file = "data/fasttree/Figure5/itol_FCM_df.csv", row.names = FALSE)
+
+
+
+# FOR RL SCORE in iTOL
+# Write a file for HNA
+#read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
+#  dplyr::select(OTU, Muskegon_HNA, Inland_HNA, Michigan_HNA) %>%
+#  write.csv(file = "data/fasttree/Figure5/HNA_RLscores.csv", row.names = FALSE)
+# Write a file for LNA
+#read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
+#  dplyr::select(OTU, Muskegon_LNA, Inland_LNA, Michigan_LNA) %>%
+#  write.csv(file = "data/fasttree/Figure5/LNA_RLscores.csv", row.names = FALSE)
+
+read.csv("data/fasttree/Figure5/LNA_RLscores.csv") %>%
+  dplyr::select(OTU, RL_score) %>%
+  rename(LNA_score = RL_score) %>%
+#  write.csv(file = "data/fasttree/Figure5/iTOL_LNA_RLscores.csv", row.names = FALSE)
+
+#read.csv("data/fasttree/Figure5/HNA_RLscores.csv") %>%
+#  dplyr::select(OTU, RL_score) %>%
+#  rename(HNA_score = RL_score) %>%  
+#  write.csv(file = "data/fasttree/Figure5/iTOL_HNA_RLscores.csv", row.names = FALSE)
+
+LNA_lake <- read.csv("data/fasttree/Figure5/LNA_RLscores.csv") %>%
+  dplyr::select(OTU, lake) %>%
+  mutate(lake = as.character(lake)) %>%
+  rename(LNA_Lake = lake)
   
-gheatmap(test, phyfcm_fasttree_df3, offset = 0.1, width=0.3, font.size=3, colnames_angle=0, hjust=0.5) +
-  scale_fill_manual(values = phylum_colors,  
-                    breaks = c("Actinobacteria", "Alphaproteobacteria", "Bacteria_unclassified", "Bacteroidetes", "Betaproteobacteria",
-                               "Cyanobacteria","Deltaproteobacteria", "Firmicutes", "Gammaproteobacteria","Omnitrophica", "Planctomycetes",
-                               "Proteobacteria_unclassified", "unknown_unclassified", "Verrucomicrobia", "Both", "HNA", "LNA"))
+HNA_lake <- read.csv("data/fasttree/Figure5/HNA_RLscores.csv") %>%
+  dplyr::select(OTU, lake) %>%
+  mutate(lake = as.character(lake)) %>%
+  rename(HNA_Lake = lake)
+
+OTU_preferred_lake <- HNA_lake %>%
+  left_join(LNA_lake, by = "OTU") %>%
+  mutate(lake = ifelse(is.na(LNA_Lake), HNA_Lake,
+                       ifelse(is.na(HNA_Lake), LNA_Lake,
+                              ifelse(HNA_Lake == LNA_Lake, HNA_Lake,
+                                     "Mismatch")))) %>%
+  dplyr::select(OTU, lake)
+
+
+itol_lake_colors <- c(
+  "Muskegon" = "#FF933F",  
+  "Michigan" =  "#EC4863", 
+  "Inland" =  "#5C2849",
+  "All" = "#8b6914",
+  "Muskegon-Inland" = "#FFD3B5",
+  "Mismatch" = "#CD0000")  
+
+lake_col_df <- 
+  itol_lake_colors %>%
+  as.list() %>%
+  as.matrix() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("lake") %>%
+  rename(color_name = V1) %>%
+  mutate(color_name = as.character(color_name))
+
+
+#OTU_preferred_lake %>%
+#  left_join(lake_col_df, by = "lake") %>%
+#  dplyr::select(OTU, color_name, lake) %>%
+#  write.csv(file = "data/fasttree/Figure5/iTOL_Lake.csv", row.names = FALSE)
+
 ```
 
 
+# Phylogenetic Signal
+```{r phylo-sig-dataprep}
+LNA_scores_df <- read.csv("data/fasttree/Figure5/LNA_RLscores.csv") %>%
+  dplyr::select(OTU, RL_score) %>%
+  rename(LNA_score = RL_score)
+
+HNA_scores_df <- read.csv("data/fasttree/Figure5/HNA_RLscores.csv") %>%
+  dplyr::select(OTU, RL_score) %>%
+  rename(HNA_score = RL_score)
+
+stopifnot(dim(LNA_scores_df) == dim(HNA_scores_df))
+
+# Put them into one 
+summarized_RL_scores <- HNA_scores_df %>%
+  left_join(LNA_scores_df, by = "OTU") 
+
+# For simpliclity, make sure the vectors of OTUs match the OTU order in the phylogeny
+summarized_RL_scores <- summarized_RL_scores[match(rooted_tree$tip.label, summarized_RL_scores$OTU),]
+stopifnot(rooted_tree$tip.label == summarized_RL_scores$OTU)
+```
+
+## Pagel's Lambda
+```{r pagels-lambda}
+# Pagels lambda 
+# We chose HNA and LNA RL Score as the trait we are testing for phylogenetic signal, with 999 randomizations:
+# Does the HNA RL Score have phylogenetic signal?
+HNAscores <- summarized_RL_scores$HNA_score
+names(HNAscores) <- summarized_RL_scores$OTU
+phylosig(rooted_tree, HNAscores, method = "lambda", test = TRUE, nsim = 999)
+
+# Does the LNA RL Score have phylogenetic signal?
+LNAscores <- summarized_RL_scores$LNA_score
+names(LNAscores) <- summarized_RL_scores$OTU
+phylosig(rooted_tree, LNAscores, method = "lambda", test = TRUE, nsim = 999)
+```
+
+## Blomberg's K
+```{r blombergs-k}
+# Blomberg's K
+# HNA
+phylosig(tree = rooted_tree, x = HNAscores, method = "K", test = TRUE, nsim = 999)
+
+# LNA
+phylosig(tree = rooted_tree, x = LNAscores, method = "K", test = TRUE, nsim = 999)
+```
+
+## Moran's I
+```{r morans-I, fig.width=3,fig.height=3}
+# HNA
+# Subset all of the HNA OTUs
+HNA_df_phydist <- summarized_RL_scores %>%
+  select(OTU, HNA_score) %>%
+  na.omit()
+
+# Trip the larger tree to only have the HNA OTUs
+HNA_rooted_tree <- drop.tip(phy = rooted_tree, tip = rooted_tree$tip.label[-match(HNA_df_phydist$OTU, rooted_tree$tip.label)])
+
+# Make sure OTUs are in the same order for the test 
+HNA_df_phydist <- HNA_df_phydist[match(HNA_rooted_tree$tip.label, HNA_df_phydist$OTU),]
+stopifnot(HNA_df_phydist$OTU == HNA_rooted_tree$tip.label)
+
+# Calculate the pairwise distances of the OTUs in the HNA phylogeny
+HNA_rooted_phy_dist <- cophenetic(HNA_rooted_tree)
+
+# Do HNA OTUs have phylogenetic autocorrelation? 
+# Moran's I test 
+moran_HNA_test <- abouheif.moran(x = HNA_df_phydist$HNA_score, W = HNA_rooted_phy_dist, method = "Abouheif", nrepet = 999)
+moran_HNA_test
+plot(moran_HNA_test)
+
+
+
+# LNA
+# Subset all of the HNA OTUs
+LNA_df_phydist <- summarized_RL_scores %>%
+  select(OTU, LNA_score) %>%
+  na.omit()
+
+# Trip the larger tree to only have the HNA OTUs
+LNA_rooted_tree <- drop.tip(phy = rooted_tree, tip = rooted_tree$tip.label[-match(LNA_df_phydist$OTU, rooted_tree$tip.label)])
+
+# Make sure OTUs are in the same order for the test 
+LNA_df_phydist <- LNA_df_phydist[match(LNA_rooted_tree$tip.label, LNA_df_phydist$OTU),]
+stopifnot(LNA_df_phydist$OTU == LNA_rooted_tree$tip.label)
+
+# Calculate the pairwise distances of the OTUs in the HNA phylogeny
+LNA_rooted_phy_dist <- cophenetic(LNA_rooted_tree)
+
+# Do LNA OTUs have phylogenetic autocorrelation? 
+# Moran's I
+moran_LNA_test <- abouheif.moran(x = LNA_df_phydist$LNA_score, W = LNA_rooted_phy_dist, method = "Abouheif", nrepet = 999)
+moran_LNA_test
+plot(moran_LNA_test)
+```
+
+## Abouheif's Cmean
+```{r abouheif-C, fig.width=3,fig.height=3}
+# HNA
+# Perform an Abouheif moran test using Monte Carlo simulations (default is 999 randomizations)
+abouheif_HNA_test <- abouheif.moran(x = HNA_df_phydist$HNA_score, W = HNA_rooted_phy_dist, method = "oriAbouheif", nrepet = 999)
+abouheif_HNA_test
+plot(abouheif_HNA_test)
+
+# LNA
+# Perform an Abouheifmoran test using Monte Carlo simulations (default is 999 randomizations)
+abouheif_LNA_test <- abouheif.moran(x = LNA_df_phydist$LNA_score, W = LNA_rooted_phy_dist, method = "oriAbouheif", nrepet = 999)
+abouheif_LNA_test
+plot(abouheif_LNA_test)
+```
 
 # Session Information 
 ```{r session-info}
