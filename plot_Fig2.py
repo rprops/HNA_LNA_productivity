@@ -121,15 +121,11 @@ def plot_R2CV_HNA_Lake_Bor(df_inl,df_mich,df_mus):
     return df
 
 def plot_R2CV_Lake(df): 
-    #df = pd.concat([df_inl_RL,df_mich_RL,df_mus_RL,df_inl_Bor,df_mich_Bor,df_mus_Bor],ignore_index=True,axis=0)
     df.loc[:,'Number of taxa'] = df.loc[:,'Number of taxa'].astype(int)
     df = pd.melt(df,id_vars=['Number of taxa','Lake','Target'], value_vars=['R2_CV'], var_name='Functional group', value_name='R2')
     g = sns.lmplot(x='Number of taxa',y='R2',data=df, hue='Target', col='Lake', fit_reg=False, sharex=False, legend=False)
-    #new_labels = ['Randomized Lasso', 'Boruta']
-    #for t, l in zip(g._legend.texts, new_labels): t.set_text(l)
     col_order = ['A','B','C']
     for ax, title in zip(g.axes.flat, col_order):
-        #ax.set_title(title)
         ax.text(-25.0, 0.98, title, fontsize=18, weight='bold')
     x_coord = [56,13,102]
     y_coord = [0.92,0.52,0.85]
