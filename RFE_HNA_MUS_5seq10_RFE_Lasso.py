@@ -50,7 +50,7 @@ unique_scores_hna_RL_, r2_cv_hna_RL_ = get_r2_scores_Lasso(data_stand.loc[index,
 unique_scores_lna_RL_, r2_cv_lna_RL_ = get_r2_scores_Lasso(data_stand.loc[index,otus], lna_rel, otus, fs.loc[otus,'RL ranking'], cv, le_values)
 
 final_RL = pd.DataFrame({'RL ranking': unique_scores_hna_RL_, 'RL HNA': r2_cv_hna_RL_, 'RL LNA': r2_cv_lna_RL_})
-final_RL.to_csv('RFE/R2CV_RFE_Lasso_MUS_5seq10_HNA_RLRanking.csv')
+#final_RL.to_csv('RFE/R2CV_RFE_Lasso_MUS_5seq10_HNA_RLRanking.csv')
 
 target.loc[index,'spatiotemporal'] = target.loc[index,'Year'].astype(str) + target.loc[index,'Site']
 le = LabelEncoder()
@@ -62,4 +62,4 @@ unique_scores_hna_, r2_cv_hna_ = get_r2_scores_Lasso(data_stand.loc[index,otus],
 unique_scores_lna_, r2_cv_lna_ = get_r2_scores_Lasso(data_stand.loc[index,otus], lna_rel, otus, fs.loc[otus,'Boruta ranking'], cv, le_values)
 
 final_Boruta = pd.DataFrame({'Boruta ranking': unique_scores_hna_, 'Boruta HNA': r2_cv_hna_, 'Boruta LNA': r2_cv_lna_})
-final_Boruta.to_csv('RFE/R2CV_RFE_Lasso_MUS_5seq10_HNA_BorutaRanking.csv')
+#final_Boruta.to_csv('RFE/R2CV_RFE_Lasso_MUS_5seq10_HNA_BorutaRanking.csv')
