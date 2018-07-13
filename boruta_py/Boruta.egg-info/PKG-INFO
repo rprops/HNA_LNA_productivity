@@ -1,0 +1,13 @@
+Metadata-Version: 1.1
+Name: Boruta
+Version: 0.1.5
+Summary: Python Implementation of Boruta Feature Selection
+Home-page: https://github.com/danielhomola/boruta_py
+Author: Daniel Homola
+Author-email: dani.homola@gmail.com
+License: BSD 3 clause
+Download-URL: https://github.com/danielhomola/boruta_py/tarball/0.1.5
+Description-Content-Type: UNKNOWN
+Description: UNKNOWN
+Keywords: feature selection,machine learning,random forest
+Platform: UNKNOWN
