@@ -4,4 +4,4 @@
 
 
 ## [Link to Analysis for Figures 1, 4, 5, and Phylogenetic Signal](Analysis.html) 
-**NOTE:** This file needs to be downloaded and opened in a browser
+**NOTE:** This file needs to be downloaded and opened in a browserspot

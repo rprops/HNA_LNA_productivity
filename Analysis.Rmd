@@ -126,7 +126,6 @@ df_cells <- data %>%
   gather(key = FCM_type, value = num_cells, Total:LNA)
 ```
 
-
 # Summary & Descriptive Statistics
 ```{r}
 # Number of cells in HNA and LNA across all samples 
@@ -188,9 +187,8 @@ prop_stats <- df_cells %>%
 datatable(prop_stats, caption = "Statistics of the percentage of each flow cytometry group across the systems", rownames = FALSE)
 ```
 
-
-# Figure 1
-```{r boxplot, fig.width = 5.5, fig.height = 2.75}
+## Number of cells per system
+```{r cell-num-boxplot, fig.width = 3, fig.height = 2.75}
 # Load in the data from each lake 
 musk_all_df <- read.table(file="data/Chloroplasts_removed/ByLake_Filtering/5in10/muskegon/muskegon_sampledata_5in10.tsv", header = TRUE) %>%
   mutate(norep_filter_name = paste(substr(Sample_16S,1,4), substr(Sample_16S,6,9), sep = "")) %>%
@@ -209,7 +207,7 @@ stopifnot(colnames(musk_all_df) == colnames(inla_all_df))
 
 lakes <- bind_rows(musk_all_df, mich_all_df, inla_all_df)
 
-p1 <- ggplot(df_cells, aes(x = FCM_type, y = num_cells, fill = Lake, color = Lake, shape = Lake)) + 
+ggplot(df_cells, aes(x = FCM_type, y = num_cells, fill = Lake, color = Lake, shape = Lake)) + 
   geom_point(size = 1.5, position = position_jitterdodge(), color = "black") + 
   geom_boxplot(alpha = 0.7, outlier.shape = NA, show.legend = FALSE, color = "black") +
   scale_color_manual(values = lake_colors,  guide = "none") +
@@ -220,7 +218,69 @@ p1 <- ggplot(df_cells, aes(x = FCM_type, y = num_cells, fill = Lake, color = Lak
   guides(colour = guide_legend(override.aes = list(size=2.5)),
          shape = guide_legend(override.aes = list(size=2.5)),
          fill = guide_legend(override.aes = list(size=2.5)))
+```
 
+
+# Figure 1
+```{r fig1, fig.width = 7, fig.height = 5.75}
+########################  Analysis of HNA/LNA/Total Cells vs Total Productivity
+# 1. Run the linear model 
+lm_HNA <- lm(tot_bacprod ~ HNA.cells, data = muskegon)
+
+## 2. Extract the R2 and p-value from the linear model: 
+lm_HNA_stats <- paste("atop(R^2 ==", round(summary(lm_HNA)$adj.r.squared, digits = 2), ",",
+                                    "p ==", round(unname(summary(lm_HNA)$coefficients[,4][2]), digits = 5), ")")
+
+# 3. Plot it
+HNA_vs_prod <- ggplot(muskegon, aes(x = HNA.cells, y = tot_bacprod)) + 
+  geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey", alpha = 0.8) + 
+  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey", alpha = 0.8) + 
+  geom_point(size = 2, shape = 22, fill = "deepskyblue4") + 
+  geom_smooth(method = "lm", color = "deepskyblue4") + 
+  labs(y = "Bacterial Production \n (μg C/L/day)", x = "HNA Cell Density \n(cells/mL)") +
+  scale_x_continuous(labels = function(x) format(x, scientific = TRUE), 
+                     breaks = c(2e+06, 3e+06)) +
+  annotate("text", x=1.65e+06, y=60, label=lm_HNA_stats, parse = TRUE, color = "black", size = 3) +
+  mytheme
+
+# 1. Run the linear model 
+lm_LNA <- lm(tot_bacprod ~ LNA.cells, data = muskegon)
+
+## 2. Extract the R2 and p-value from the linear model: 
+lm_LNA_stats <- paste("atop(R^2 ==", round(summary(lm_LNA)$adj.r.squared, digits = 3), ",",
+                      "p ==", round(unname(summary(lm_LNA)$coefficients[,4][2]), digits = 2), ")")
+
+# 3. Plot it
+LNA_vs_prod <- ggplot(muskegon, aes(x = LNA.cells, y = tot_bacprod)) + 
+  geom_errorbarh(aes(xmin = LNA.cells - LNA.sd, xmax = LNA.cells + LNA.sd), color = "grey", alpha = 0.8) + 
+  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey", alpha = 0.8) + 
+  geom_point(size = 2.5, shape = 22, fill = "darkgoldenrod1") + 
+  labs(y = "Bacterial Production \n (μg C/L/day)", x = "LNA Cell Density \n(cells/mL)") +
+  geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "darkgoldenrod1") + 
+  annotate("text", x=2.75e+06, y=60, label=lm_LNA_stats, parse = TRUE, color = "red", size = 3) +
+  mytheme
+
+# 1. Run the linear model 
+lm_total <- lm(tot_bacprod ~ Total.cells, data = muskegon)
+
+## 2. Extract the R2 and p-value from the linear model: 
+lm_total_stats <- paste("atop(R^2 ==", round(summary(lm_total)$adj.r.squared, digits = 2), ",",
+                      "p ==", round(unname(summary(lm_total)$coefficients[,4][2]), digits = 2), ")")
+
+# 3. Plot it 
+Total_vs_prod <- ggplot(muskegon, aes(x = Total.cells, y = tot_bacprod)) + 
+  geom_errorbarh(aes(xmin = Total.cells - Total.count.sd, xmax = Total.cells + Total.count.sd), color = "grey", alpha = 0.8) + 
+  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey", alpha = 0.8) + 
+  scale_shape_manual(values = lake_shapes) +
+  geom_point(size = 2.5, shape = 22, fill = "black") + 
+  labs(y = "Bacterial Production \n (μg C/L/day)", x = "Total Cell Density \n(cells/mL)") +
+  geom_smooth(method = "lm", color = "black") + 
+  #geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "red") + 
+  annotate("text", x=5.25e+06, y=60, label=lm_total_stats, parse = TRUE, color = "black", size = 3) +
+  mytheme
+
+###### ###### ###### ###### ###### ###### ###### ###### ###### ###### 
+###### Correlation between HNA and LNA Across the three systems ###### 
 ## Is there a corrlation between HNA and LNA across ecosystems?
 # 1. Run the linear model 
 lm_allNA_corr <- lm(LNA.cells ~ HNA.cells, data = lakes)
@@ -244,12 +304,55 @@ p2 <- ggplot(lakes, aes(x = HNA.cells, y = LNA.cells)) +
   annotate("text", x=5e+06, y=0.8e+06, label=lm_allNA_corr_stats, parse = TRUE, color = "black", size = 3) +
   mytheme + theme(legend.position = "none") #theme(legend.title = element_blank(), legend.position = c(0.01, 0.95))
 
-# Figure 1
-plot_grid(p1, p2, ncol = 2, nrow =1, labels = c("A","B"), rel_widths = c(0.95, 1))
+###### MAKE THE PLOT 
+## Extract legends for plotting 
+plot_for_legend <- 
+  ggplot(df_cells, aes(x = Lake, y = num_cells, fill = FCM_type, color = FCM_type)) + 
+  geom_point(size = 1, shape = 22, position = position_jitterdodge()) + 
+  scale_fill_manual(values = fcm_colors) + 
+  scale_color_manual(values = fcm_colors, guide = "none") + 
+  scale_shape_manual(values = 22) +
+  scale_y_continuous(labels = function(x) format(x, scientific = TRUE)) +
+  labs(y = "Number of Cells \n (cells/mL)", x = "Lake") +
+  theme(legend.position = "right",
+           legend.title = element_text(size = 12, face = "bold"), 
+           legend.text = element_text(size = 12),
+           legend.key.width=unit(1,"line"), 
+           legend.key.height=unit(1,"line")) +
+  guides(fill = guide_legend(override.aes = list(size=3.5)))
+
+legend1 <- get_legend(plot_for_legend)
+
+legend2 <- get_legend(p2 + theme(legend.position = "right",
+           legend.title = element_text(size = 12, face = "bold"), 
+           legend.text = element_text(size = 12),
+           legend.key.width=unit(1,"line"), 
+           legend.key.height=unit(1,"line")) +
+  guides(fill = guide_legend(override.aes = list(size=3.5))))
+
+# place the legends
+legend_positions <- plot_grid(legend1, legend2, nrow = 2, ncol = 1)
+
+# Place the legends next to figure 1A
+row1 <- plot_grid(NULL, p2, legend_positions, 
+                        labels = c("", "A", ""),
+                        ncol = 3, nrow = 1,
+                        rel_widths = c(0.5, 1, 0.5))
+
+# Add Figures 1B, 1C, and 1D
+row2 <- plot_grid(HNA_vs_prod + theme(legend.position = "none"), 
+          LNA_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"), 
+          Total_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"),
+          labels = c("B", "C", "D"), 
+          ncol = 3, nrow = 1, 
+          rel_widths = c(0.95, 0.8, 0.8))
+
+# Final Figure 1
+plot_grid(row1, row2,
+          nrow = 2, ncol = 1)
 ```
 
-
-## Figure 1B: Plotted By Lake System
+## Figure 1A: Plotted By Lake System
 ```{r perlake-HNALNA-corr, fig.width = 10, fig.height = 3.5}
 ### MUSKEGON ONLY ANALYSIS
 # 1. Run the linear model 
@@ -318,77 +421,7 @@ plot_grid(mich_corr_plot, inla_corr_plot, musk_corr_plot,
           labels = c("A", "B", "C"), nrow = 1, ncol = 3)
 ```
 
-
-# Figure 2: FCM vs Productivity
-```{r prod-HNALNA, fig.width = 6.5, fig.height = 2.75,}
-########################  Analysis of HNA/LNA/Total Cells vs Total Productivity
-# 1. Run the linear model 
-lm_HNA <- lm(tot_bacprod ~ HNA.cells, data = muskegon)
-
-## 2. Extract the R2 and p-value from the linear model: 
-lm_HNA_stats <- paste("atop(R^2 ==", round(summary(lm_HNA)$adj.r.squared, digits = 2), ",",
-                                    "p ==", round(unname(summary(lm_HNA)$coefficients[,4][2]), digits = 5), ")")
-
-
-# 3. Plot it
-HNA_vs_prod <- ggplot(muskegon, aes(x = HNA.cells, y = tot_bacprod)) + 
-  geom_errorbarh(aes(xmin = HNA.cells - HNA.sd, xmax = HNA.cells + HNA.sd), color = "grey", alpha = 0.8) + 
-  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey", alpha = 0.8) + 
-  geom_point(size = 2, shape = 22, fill = "deepskyblue4") + 
-  geom_smooth(method = "lm", color = "deepskyblue4") + 
-  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "HNA Cell Density \n(cells/mL)") +
-  scale_x_continuous(labels = function(x) format(x, scientific = TRUE), 
-                     breaks = c(2e+06, 3e+06)) +
-  annotate("text", x=1.65e+06, y=60, label=lm_HNA_stats, parse = TRUE, color = "black", size = 3) +
-  mytheme
-
-# 1. Run the linear model 
-lm_LNA <- lm(tot_bacprod ~ LNA.cells, data = muskegon)
-
-## 2. Extract the R2 and p-value from the linear model: 
-lm_LNA_stats <- paste("atop(R^2 ==", round(summary(lm_LNA)$adj.r.squared, digits = 3), ",",
-                      "p ==", round(unname(summary(lm_LNA)$coefficients[,4][2]), digits = 2), ")")
-
-# 3. Plot it
-LNA_vs_prod <- ggplot(muskegon, aes(x = LNA.cells, y = tot_bacprod)) + 
-  geom_errorbarh(aes(xmin = LNA.cells - LNA.sd, xmax = LNA.cells + LNA.sd), color = "grey", alpha = 0.8) + 
-  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey", alpha = 0.8) + 
-  geom_point(size = 2.5, shape = 22, fill = "darkgoldenrod1") + 
-  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "LNA Cell Density \n(cells/mL)") +
-  geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "darkgoldenrod1") + 
-  annotate("text", x=2.75e+06, y=60, label=lm_LNA_stats, parse = TRUE, color = "red", size = 3) +
-  mytheme
-
-# 1. Run the linear model 
-lm_total <- lm(tot_bacprod ~ Total.cells, data = muskegon)
-
-## 2. Extract the R2 and p-value from the linear model: 
-lm_total_stats <- paste("atop(R^2 ==", round(summary(lm_total)$adj.r.squared, digits = 2), ",",
-                      "p ==", round(unname(summary(lm_total)$coefficients[,4][2]), digits = 2), ")")
-
-# 3. Plot it 
-Total_vs_prod <- ggplot(muskegon, aes(x = Total.cells, y = tot_bacprod)) + 
-  geom_errorbarh(aes(xmin = Total.cells - Total.count.sd, xmax = Total.cells + Total.count.sd), color = "grey", alpha = 0.8) + 
-  geom_errorbar(aes(ymin = tot_bacprod - SD_tot_bacprod, max = tot_bacprod + SD_tot_bacprod), color = "grey", alpha = 0.8) + 
-  scale_shape_manual(values = lake_shapes) +
-  geom_point(size = 2.5, shape = 22, fill = "black") + 
-  labs(y = "Total Bacterial Production \n (μg C/L/day)", x = "Total Cell Density \n(cells/mL)") +
-  geom_smooth(method = "lm", color = "black") + 
-  #geom_smooth(method = "lm", se = FALSE, linetype = "longdash", color = "red") + 
-  annotate("text", x=5.25e+06, y=60, label=lm_total_stats, parse = TRUE, color = "black", size = 3) +
-  mytheme
-
-
-#### ONLY THE THREE PLOTS 
-# Put all three plots together into one 
-plot_grid(HNA_vs_prod + theme(legend.position = "none"), 
-          LNA_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"), 
-          Total_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"),
-          labels = c("A", "B", "C"), 
-          ncol = 3, rel_widths = c(0.95, 0.8, 0.8))
-```
-
-## Fraction HNA vs Productivity
+## Figure 1B & 1D: Fraction HNA vs Productivity
 ```{r fracHNA-vs-prod, fig.width = 7, fig.height = 6.5}
 ## Plot the fraction of HNA
 fmusk <- muskegon %>% 
@@ -439,75 +472,8 @@ plot_grid(HNA_vs_prod + theme(legend.position = "none"),
           align = "h") 
 ```
 
-## Alternative Figure 1: 
-```{r fig1, fig.width = 6.5, fig.height = 5.2}
-first_row <- plot_grid(HNA_vs_prod + theme(legend.position = "none"), 
-          LNA_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"), 
-          Total_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"),
-          labels = c("A", "B", "C"), 
-          ncol = 3, nrow = 1, 
-          rel_widths = c(0.95, 0.8, 0.8))
-
-plot_for_legend <- 
-  ggplot(df_cells, aes(x = Lake, y = num_cells, fill = FCM_type, color = FCM_type)) + 
-  geom_point(size = 1, shape = 22, position = position_jitterdodge()) + 
-  scale_fill_manual(values = fcm_colors) + 
-  scale_color_manual(values = fcm_colors, guide = "none") + 
-  scale_shape_manual(values = 22) +
-  scale_y_continuous(labels = function(x) format(x, scientific = TRUE)) +
-  labs(y = "Number of Cells \n (cells/mL)", x = "Lake") +
-  theme(legend.position = "right",
-           legend.title = element_text(size = 12, face = "bold"), 
-           legend.text = element_text(size = 12),
-           legend.key.width=unit(1,"line"), 
-           legend.key.height=unit(1,"line")) +
-  guides(fill = guide_legend(override.aes = list(size=3.5)))
-
-legend1 <- get_legend(plot_for_legend)
-
-legend2 <- get_legend(p2 + theme(legend.position = "right",
-           legend.title = element_text(size = 12, face = "bold"), 
-           legend.text = element_text(size = 12),
-           legend.key.width=unit(1,"line"), 
-           legend.key.height=unit(1,"line")) +
-  guides(fill = guide_legend(override.aes = list(size=3.5))))
-
-
-leg_positions <- plot_grid(legend1, legend2, nrow = 2, ncol = 1)
-
-second_row <- plot_grid(NULL, p2, leg_positions, 
-                        labels = c("", "D", ""),
-                        ncol = 3, nrow = 1,
-                        rel_widths = c(0.5, 1, 0.5))
-
-## PLOT THE FIGURE 
-plot_grid(first_row, second_row,
-          nrow = 2, ncol = 1)
-
-
-# REPOSITION PLOTS FOR NEW ORDER OF TEXT
-
-new_leg_positions <- plot_grid(legend2, legend1, nrow = 2, ncol = 1)
-
-
-swap_row1 <- plot_grid(NULL, p2, new_leg_positions, 
-                        labels = c("", "A", ""),
-                        ncol = 3, nrow = 1,
-                        rel_widths = c(0.5, 1, 0.5))
-
-swap_row2 <- plot_grid(HNA_vs_prod + theme(legend.position = "none"), 
-          LNA_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"), 
-          Total_vs_prod + theme(axis.title.y = element_blank(), legend.position = "none"),
-          labels = c("B", "C", "D"), 
-          ncol = 3, nrow = 1, 
-          rel_widths = c(0.95, 0.8, 0.8))
-
-plot_grid(swap_row1, swap_row2,
-          nrow = 2, ncol = 1)
-```
 
 # Figure 4: Heatmap
-
 ## Load RL Score data
 ```{r RL-scores}
 # Read in Data
@@ -585,6 +551,54 @@ heatmap.2(matrix_RLscores,
           key.xlab = "RL Score",ColSideColors = colz,
           lhei = c(1,9))
 ```
+
+### How many OTUs per system?
+```{r RL-OTU-count, fig.width=5, fig.height=3.5}
+# Number of OTUs per system and FCM group
+num_OTUs <- c(nrow(dfHNA_musk_scores), nrow(dfLNA_musk_scores), nrow(dfHNA_inland_scores), nrow(dfLNA_inland_scores), 
+              nrow(dfHNA_michigan_scores), nrow(dfLNA_michigan_scores))
+lake_names <- as.vector(c("Muskegon", "Muskegon", "Inland", "Inland", "Michigan", "Michigan"))
+fcm_names <- as.vector(c("HNA", "LNA", "HNA", "LNA", "HNA", "LNA"))
+
+summary_OTU_df <- as.data.frame(num_OTUs) %>%
+  mutate(lake = c("Muskegon", "Muskegon", "Inland", "Inland", "Michigan", "Michigan"),
+         fcm = c("HNA", "LNA", "HNA", "LNA", "HNA", "LNA"))
+summary_OTU_df
+
+ggplot(summary_OTU_df, aes(x = fcm, y = num_OTUs, fill = fcm)) + 
+  geom_bar(stat = "identity", color = "black") +
+  scale_fill_manual(values = fcm_colors) + 
+  scale_y_continuous(expand = c(0,0), limits = c(0, 125)) +
+  labs(x = "Flow Cytometry Group", y = "Number of Selected OTUs") + 
+  facet_grid(.~lake) + mytheme +
+  theme(legend.title = element_blank(), 
+        legend.key.width = unit(0.5, "cm"),
+        legend.key.height = unit(0.5, "cm"))
+  
+```
+
+
+```{r total-OTUsperLake, fig.width=3.5, fig.height=3}
+lake_OTU_nums <- summary_OTU_df %>%
+  group_by(lake) %>%
+  summarise(sum(num_OTUs))
+lake_OTU_nums
+
+
+
+
+ggplot(lake_OTU_nums, aes(x = lake, y = `sum(num_OTUs)`, fill = lake)) + 
+  geom_bar(stat = "identity", color = "black") + 
+  labs(x = "Lake", y = "Total Number of Selected OTUs") + 
+  scale_fill_manual(values = lake_colors) + 
+  scale_y_continuous(expand = c(0,0), limits = c(0, 200)) +
+  mytheme +
+  theme(legend.title = element_blank(), 
+        legend.key.width = unit(0.5, "cm"),
+        legend.key.height = unit(0.5, "cm"))
+```
+
+
 
 ### Top 10 from Fig 4 Scores
 ```{r fig4-top10-noclust, fig.width=6, fig.height=8}
@@ -668,22 +682,6 @@ heatmap.2(matrix_top10,
         lhei = c(1.5,9), key.title=NA)
 ```
 
-### ggplot heatmap 
-```{r fig4-ggheat-top10, fig.width=5, fig.height=7}
-# In the order of OTUs without 
-lake_ordered_OTUs <- row.names(matrix_top10)
-
-df_top10 %>% 
-  mutate(OTU = str_replace(OTU, "00", ""),
-         OTU = as.factor(OTU),
-         OTU = fct_relevel(OTU, lake_ordered_OTUs)) %>% 
-  gather(Lake_FCM, RL_score, Muskegon_HNA:Inland_LNA) %>%
-  ggplot(aes(x=Lake_FCM, y= fct_rev(OTU))) +
-    geom_tile(aes(fill=RL_score)) +
-    scale_fill_gradient2(na.value = "white", low = "grey", high = "red") +
-    #scale_y_discrete(limits=OTU) +
-    theme(axis.title = element_blank(), axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
-```
 
 # Figure 5: Phylogenetic Tree
 ```{r fig5-all, fig.width=11, fig.height=18}
@@ -771,8 +769,6 @@ gheatmap(rooted_tree_plot, phyfcm_fasttree_df, offset = 0.1, width=0.3, font.siz
                                "Both", "HNA", "LNA")) +
   guides(fill=guide_legend(ncol=1))
 ```
-
-
 
 
 ```{r iTOL, eval=FALSE}
@@ -896,6 +892,13 @@ summarized_RL_scores <- HNA_scores_df %>%
 # For simpliclity, make sure the vectors of OTUs match the OTU order in the phylogeny
 summarized_RL_scores <- summarized_RL_scores[match(rooted_tree$tip.label, summarized_RL_scores$OTU),]
 stopifnot(rooted_tree$tip.label == summarized_RL_scores$OTU)
+
+# Load FCM data that is categorical
+FCM_categorical_df <- read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
+   dplyr::select(OTU, FCM)
+
+FCM_categorical_df <- FCM_categorical_df[match(rooted_tree$tip.label, FCM_categorical_df$OTU),]
+stopifnot(rooted_tree$tip.label == FCM_categorical_df$OTU)
 ```
 
 ## Pagel's Lambda
@@ -911,6 +914,17 @@ phylosig(rooted_tree, HNAscores, method = "lambda", test = TRUE, nsim = 999)
 LNAscores <- summarized_RL_scores$LNA_score
 names(LNAscores) <- summarized_RL_scores$OTU
 phylosig(rooted_tree, LNAscores, method = "lambda", test = TRUE, nsim = 999)
+
+
+
+# Discrete
+
+
+# Calculating Pagel's lambda in geiger
+library(geiger)
+
+fitContinuous(rooted_tree, HNAscores, model = "lambda")
+fitContinuous(rooted_tree, LNAscores, model = "lambda")
 ```
 
 ## Blomberg's K
