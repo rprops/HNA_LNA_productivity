@@ -1,7 +1,7 @@
 ---
 title: "Analyses by Marian" 
 author: "Marian L. Schmidt, marschmi@umich.edu, @micro_marian"
-date: "July 3rd, 2018"
+date: "July 25th, 2018"
 output:
   html_document:
     code_folding: show
@@ -63,6 +63,7 @@ library(DT)         # Pretty Tables
 library(gplots)     # Heatmap.2 function
 library(stringr)    # To replace zeros in OTU names
 library(adephylo)   # Testing phylogenetic autocorrelation
+library(geiger)     # Phylogenetic signal 
 source("code/set_colors.R")           # Set Colors for plotting
 
 # Set some global ggplot parameters
@@ -552,53 +553,6 @@ heatmap.2(matrix_RLscores,
           lhei = c(1,9))
 ```
 
-### How many OTUs per system?
-```{r RL-OTU-count, fig.width=5, fig.height=3.5}
-# Number of OTUs per system and FCM group
-num_OTUs <- c(nrow(dfHNA_musk_scores), nrow(dfLNA_musk_scores), nrow(dfHNA_inland_scores), nrow(dfLNA_inland_scores), 
-              nrow(dfHNA_michigan_scores), nrow(dfLNA_michigan_scores))
-lake_names <- as.vector(c("Muskegon", "Muskegon", "Inland", "Inland", "Michigan", "Michigan"))
-fcm_names <- as.vector(c("HNA", "LNA", "HNA", "LNA", "HNA", "LNA"))
-
-summary_OTU_df <- as.data.frame(num_OTUs) %>%
-  mutate(lake = c("Muskegon", "Muskegon", "Inland", "Inland", "Michigan", "Michigan"),
-         fcm = c("HNA", "LNA", "HNA", "LNA", "HNA", "LNA"))
-summary_OTU_df
-
-ggplot(summary_OTU_df, aes(x = fcm, y = num_OTUs, fill = fcm)) + 
-  geom_bar(stat = "identity", color = "black") +
-  scale_fill_manual(values = fcm_colors) + 
-  scale_y_continuous(expand = c(0,0), limits = c(0, 125)) +
-  labs(x = "Flow Cytometry Group", y = "Number of Selected OTUs") + 
-  facet_grid(.~lake) + mytheme +
-  theme(legend.title = element_blank(), 
-        legend.key.width = unit(0.5, "cm"),
-        legend.key.height = unit(0.5, "cm"))
-  
-```
-
-
-```{r total-OTUsperLake, fig.width=3.5, fig.height=3}
-lake_OTU_nums <- summary_OTU_df %>%
-  group_by(lake) %>%
-  summarise(sum(num_OTUs))
-lake_OTU_nums
-
-
-
-
-ggplot(lake_OTU_nums, aes(x = lake, y = `sum(num_OTUs)`, fill = lake)) + 
-  geom_bar(stat = "identity", color = "black") + 
-  labs(x = "Lake", y = "Total Number of Selected OTUs") + 
-  scale_fill_manual(values = lake_colors) + 
-  scale_y_continuous(expand = c(0,0), limits = c(0, 200)) +
-  mytheme +
-  theme(legend.title = element_blank(), 
-        legend.key.width = unit(0.5, "cm"),
-        legend.key.height = unit(0.5, "cm"))
-```
-
-
 
 ### Top 10 from Fig 4 Scores
 ```{r fig4-top10-noclust, fig.width=6, fig.height=8}
@@ -771,6 +725,7 @@ gheatmap(rooted_tree_plot, phyfcm_fasttree_df, offset = 0.1, width=0.3, font.siz
 ```
 
 
+### Prepare files for iTOL - Figure 5
 ```{r iTOL, eval=FALSE}
 OTU258_and_phylum <- read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
   left_join(., fasttree_tax, by = "OTU") %>%
@@ -805,7 +760,6 @@ itol_FCM_df <- left_join(OTU258_and_FCM, itol_colors, by = "Phylum") %>%
   rename(FCM = Phylum) %>% 
   dplyr::select(OTU, hex, FCM)
 #write.csv(itol_FCM_df, file = "data/fasttree/Figure5/itol_FCM_df.csv", row.names = FALSE)
-
 
 
 # FOR RL SCORE in iTOL
@@ -846,7 +800,6 @@ OTU_preferred_lake <- HNA_lake %>%
                                      "Mismatch")))) %>%
   dplyr::select(OTU, lake)
 
-
 itol_lake_colors <- c(
   "Muskegon" = "#FF933F",  
   "Michigan" =  "#EC4863", 
@@ -855,8 +808,7 @@ itol_lake_colors <- c(
   "Muskegon-Inland" = "#FFD3B5",
   "Mismatch" = "#CD0000")  
 
-lake_col_df <- 
-  itol_lake_colors %>%
+lake_col_df <- itol_lake_colors %>%
   as.list() %>%
   as.matrix() %>%
   as.data.frame() %>%
@@ -864,16 +816,120 @@ lake_col_df <-
   rename(color_name = V1) %>%
   mutate(color_name = as.character(color_name))
 
-
 #OTU_preferred_lake %>%
 #  left_join(lake_col_df, by = "lake") %>%
 #  dplyr::select(OTU, color_name, lake) %>%
 #  write.csv(file = "data/fasttree/Figure5/iTOL_Lake.csv", row.names = FALSE)
+```
 
+
+### How many OTUs per system?
+```{r RL-OTU-count, fig.width=5, fig.height=3.5}
+# Number of OTUs per system and FCM group
+num_OTUs <- c(nrow(dfHNA_musk_scores), nrow(dfLNA_musk_scores), nrow(dfHNA_inland_scores), nrow(dfLNA_inland_scores), 
+              nrow(dfHNA_michigan_scores), nrow(dfLNA_michigan_scores))
+lake_names <- as.vector(c("Muskegon", "Muskegon", "Inland", "Inland", "Michigan", "Michigan"))
+fcm_names <- as.vector(c("HNA", "LNA", "HNA", "LNA", "HNA", "LNA"))
+
+summary_OTU_df <- as.data.frame(num_OTUs) %>%
+  mutate(lake = c("Muskegon", "Muskegon", "Inland", "Inland", "Michigan", "Michigan"),
+         fcm = c("HNA", "LNA", "HNA", "LNA", "HNA", "LNA"))
+summary_OTU_df
+
+ggplot(summary_OTU_df, aes(x = fcm, y = num_OTUs, fill = fcm)) + 
+  geom_bar(stat = "identity", color = "black") +
+  scale_fill_manual(values = fcm_colors) + 
+  scale_y_continuous(expand = c(0,0), limits = c(0, 125)) +
+  labs(x = "Flow Cytometry Group", y = "Number of Selected OTUs") + 
+  facet_grid(.~lake) + mytheme +
+  theme(legend.title = element_blank(), 
+        legend.key.width = unit(0.5, "cm"),
+        legend.key.height = unit(0.5, "cm"))
+  
+```
+
+
+```{r total-OTUsperLake, fig.width=3.5, fig.height=3}
+lake_OTU_nums <- summary_OTU_df %>%
+  group_by(lake) %>%
+  summarise(sum(num_OTUs))
+lake_OTU_nums
+
+ggplot(lake_OTU_nums, aes(x = lake, y = `sum(num_OTUs)`, fill = lake)) + 
+  geom_bar(stat = "identity", color = "black") + 
+  labs(x = "Lake", y = "Total Number of Selected OTUs") + 
+  scale_fill_manual(values = lake_colors) + 
+  scale_y_continuous(expand = c(0,0), limits = c(0, 200)) +
+  mytheme +
+  theme(legend.title = element_blank(), 
+        legend.key.width = unit(0.5, "cm"),
+        legend.key.height = unit(0.5, "cm"))
+```
+
+## Number of OTUs per phylum
+```{r num-selectedOTUs}
+# How many selected OTUs in total?
+nrow(phyfcm_fasttree_df)
+
+# How many selected OTUs are in each Phylum? 
+phyfcm_fasttree_df %>%
+  mutate(OTU = row.names(.)) %>%
+  count(Phylum) %>%
+  datatable()
+
+# How many selected OTUs within each phylum are HNA, LNA, or Both? 
+phyfcm_fasttree_df %>%
+  mutate(OTU = row.names(.)) %>%
+  group_by(Phylum) %>%
+  count(FCM) %>%
+  datatable()
+```
+
+
+### Specific Bacterial Phyla 
+```{r num-selectedOTUs-per-phylum}
+# Bacteroidetes 
+bacteroidetes <- phyfcm_fasttree_df %>%
+  mutate(OTU = row.names(.)) %>%
+  dplyr::filter(Phylum == "Bacteroidetes") %>%
+  count(FCM) %>% 
+  mutate(percent = n/sum(n)); bacteroidetes
+
+# Betaproteobacteria 
+betaproteobacteria <- phyfcm_fasttree_df %>%
+  mutate(OTU = row.names(.)) %>%
+  dplyr::filter(Phylum == "Betaproteobacteria") %>%
+  count(FCM) %>% 
+  mutate(percent = n/sum(n)); betaproteobacteria
+
+# Alphaproteobacteria 
+alphaproteobacteria <- phyfcm_fasttree_df %>%
+  mutate(OTU = row.names(.)) %>%
+  dplyr::filter(Phylum == "Alphaproteobacteria") %>%
+  count(FCM) %>% 
+  mutate(percent = n/sum(n)); alphaproteobacteria
+
+# Verrucomicrobia 
+verrucomicrobia <- phyfcm_fasttree_df %>%
+  mutate(OTU = row.names(.)) %>%
+  dplyr::filter(Phylum == "Verrucomicrobia") %>%
+  count(FCM) %>%
+  mutate(percent = n/sum(n)); verrucomicrobia
+
+# How many of the total OTUs were Bacteroidetes
+top4_phyla <- sum(bacteroidetes$n)+sum(betaproteobacteria$n)+sum(alphaproteobacteria$n)+sum(verrucomicrobia$n)
+sum(top4_phyla)/nrow(phyfcm_fasttree_df) # % of total OTUs selected
+
+# Percent of total selected OTUs by each phylum
+sum(bacteroidetes$n)/nrow(phyfcm_fasttree_df) # % of Bacteroidetes 
+sum(betaproteobacteria$n)/nrow(phyfcm_fasttree_df) # % of Betaproteobacteria 
+sum(alphaproteobacteria$n)/nrow(phyfcm_fasttree_df) # % of Alphaproteobacteria 
+sum(verrucomicrobia$n)/nrow(phyfcm_fasttree_df) # % of Verrucomicrobia 
 ```
 
 
 # Phylogenetic Signal
+### Prepare data 
 ```{r phylo-sig-dataprep}
 LNA_scores_df <- read.csv("data/fasttree/Figure5/LNA_RLscores.csv") %>%
   dplyr::select(OTU, RL_score) %>%
@@ -902,6 +958,34 @@ stopifnot(rooted_tree$tip.label == FCM_categorical_df$OTU)
 ```
 
 ## Pagel's Lambda
+### Discrete Character Evolution
+```{r discrete-phylosig}
+# Discrete models: https://www.r-phylo.org/wiki/HowTo/InferringModelsForDiscreteData
+discrete_FCM <- FCM_categorical_df$FCM
+names(discrete_FCM) <- FCM_categorical_df$OTU
+
+# Equal transition rates model with a Juke's Cantor Model 
+discrete_ER_fit <- fitDiscrete(rooted_tree, discrete_FCM, model = "ER")
+# Asymmetrical transition rates (ARD = "all rates different")
+discrete_ARD_fit <- fitDiscrete(rooted_tree, discrete_FCM, model = "ARD")
+1-pchisq(2*(discrete_ARD_fit$opt$lnL-discrete_ER_fit$opt$lnL),1) # ARD fit is better than ER
+# Discrete Pagel's Lambda
+discrete_lambda_fit <- fitDiscrete(rooted_tree, discrete_FCM, treeTransform = "lambda")
+1-pchisq(2*(discrete_lambda_fit$opt$lnL-discrete_ARD_fit$opt$lnL),1) # ARD and Pagel's lambda don't differ in the log likelihoods
+
+optimal <- fitDiscrete(rooted_tree, discrete_FCM, treeTransform = "lambda")
+lambda0_phy <- rescale(rooted_tree, "lambda", 0) # A big polytomy tree 
+zero <- fitDiscrete(lambda0_phy, discrete_FCM)
+
+d.lambda=2*(optimal$opt$lnL-zero$opt$lnL)
+
+p.lambda <- pchisq(d.lambda, 1, lower.tail=FALSE); 
+p.lambda
+```
+
+
+
+#### Continuous 
 ```{r pagels-lambda}
 # Pagels lambda 
 # We chose HNA and LNA RL Score as the trait we are testing for phylogenetic signal, with 999 randomizations:
@@ -915,16 +999,16 @@ LNAscores <- summarized_RL_scores$LNA_score
 names(LNAscores) <- summarized_RL_scores$OTU
 phylosig(rooted_tree, LNAscores, method = "lambda", test = TRUE, nsim = 999)
 
-
-
-# Discrete
-
-
 # Calculating Pagel's lambda in geiger
-library(geiger)
+BM_HNA <- fitContinuous(rooted_tree, HNAscores, model = "BM")
+lambda_HNA <- fitContinuous(rooted_tree, HNAscores, model = "lambda")
+pchisq(-2*(lambda_HNA$opt$lnL - BM_HNA$opt$lnL),1,lower.tail=F)
 
-fitContinuous(rooted_tree, HNAscores, model = "lambda")
-fitContinuous(rooted_tree, LNAscores, model = "lambda")
+plot(lambdaTree(rooted_tree, lambda = 2))
+
+BM_LNA <- fitContinuous(rooted_tree, LNAscores, model = "BM")
+lambda_LNA <- fitContinuous(rooted_tree, LNAscores, model = "lambda")
+pchisq(-2*(lambda_LNA$opt$lnL - BM_LNA$opt$lnL),1,lower.tail=F)
 ```
 
 ## Blomberg's K
