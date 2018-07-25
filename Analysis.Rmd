@@ -929,19 +929,18 @@ sum(verrucomicrobia$n)/nrow(phyfcm_fasttree_df) # % of Verrucomicrobia
 
 
 # Phylogenetic Signal
-### Prepare data 
+## Prepare data 
 ```{r phylo-sig-dataprep}
+# Load in the scores 
 LNA_scores_df <- read.csv("data/fasttree/Figure5/LNA_RLscores.csv") %>%
   dplyr::select(OTU, RL_score) %>%
   rename(LNA_score = RL_score)
-
 HNA_scores_df <- read.csv("data/fasttree/Figure5/HNA_RLscores.csv") %>%
   dplyr::select(OTU, RL_score) %>%
   rename(HNA_score = RL_score)
-
 stopifnot(dim(LNA_scores_df) == dim(HNA_scores_df))
 
-# Put them into one 
+# Put them into one data frame
 summarized_RL_scores <- HNA_scores_df %>%
   left_join(LNA_scores_df, by = "OTU") 
 
@@ -952,68 +951,73 @@ stopifnot(rooted_tree$tip.label == summarized_RL_scores$OTU)
 # Load FCM data that is categorical
 FCM_categorical_df <- read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
    dplyr::select(OTU, FCM)
-
 FCM_categorical_df <- FCM_categorical_df[match(rooted_tree$tip.label, FCM_categorical_df$OTU),]
 stopifnot(rooted_tree$tip.label == FCM_categorical_df$OTU)
+
+####### TREEs for only HNA and LNA
+# HNA: Subset all of the HNA OTUs
+HNA_df_phydist <- summarized_RL_scores %>%
+  select(OTU, HNA_score) %>%
+  na.omit()
+HNAscores <- HNA_df_phydist$HNA_score
+names(HNAscores) <- HNA_df_phydist$OTU
+# Subset the larger tree to only have the HNA OTUs
+HNA_rooted_tree <- ape::drop.tip(phy = rooted_tree, tip = rooted_tree$tip.label[-match(HNA_df_phydist$OTU, rooted_tree$tip.label)])
+# Make sure OTUs are in the same order for the test 
+HNA_df_phydist <- HNA_df_phydist[match(HNA_rooted_tree$tip.label, HNA_df_phydist$OTU),]
+stopifnot(HNA_df_phydist$OTU == HNA_rooted_tree$tip.label)
+stopifnot(names(HNAscores) == HNA_rooted_tree$tip.label)
+
+# LNA: Subset all of the HNA OTUs
+LNA_df_phydist <- summarized_RL_scores %>%
+  select(OTU, LNA_score) %>%
+  na.omit()
+LNAscores <- LNA_df_phydist$LNA_score
+names(LNAscores) <- LNA_df_phydist$OTU
+# Subset the larger tree to only have the LNA OTUs
+LNA_rooted_tree <- ape::drop.tip(phy = rooted_tree, tip = rooted_tree$tip.label[-match(LNA_df_phydist$OTU, rooted_tree$tip.label)])
+# Make sure OTUs are in the same order for the test 
+LNA_df_phydist <- LNA_df_phydist[match(LNA_rooted_tree$tip.label, LNA_df_phydist$OTU),]
+stopifnot(LNA_df_phydist$OTU == LNA_rooted_tree$tip.label)
+stopifnot(names(LNAscores) == LNA_rooted_tree$tip.label)
 ```
 
 ## Pagel's Lambda
 ### Discrete Character Evolution
 ```{r discrete-phylosig}
-# Discrete models: https://www.r-phylo.org/wiki/HowTo/InferringModelsForDiscreteData
+# Discrete models: From Samantha Price & Roi Holzman: http://www.eve.ucdavis.edu/~wainwrightlab/Roi/Site/Teaching_files/Intro2Phylo_S4.R
 discrete_FCM <- FCM_categorical_df$FCM
 names(discrete_FCM) <- FCM_categorical_df$OTU
 
-# Equal transition rates model with a Juke's Cantor Model 
-discrete_ER_fit <- fitDiscrete(rooted_tree, discrete_FCM, model = "ER")
-# Asymmetrical transition rates (ARD = "all rates different")
-discrete_ARD_fit <- fitDiscrete(rooted_tree, discrete_FCM, model = "ARD")
-1-pchisq(2*(discrete_ARD_fit$opt$lnL-discrete_ER_fit$opt$lnL),1) # ARD fit is better than ER
-# Discrete Pagel's Lambda
+# Discrete Pagel's Lambda Model
 discrete_lambda_fit <- fitDiscrete(rooted_tree, discrete_FCM, treeTransform = "lambda")
-1-pchisq(2*(discrete_lambda_fit$opt$lnL-discrete_ARD_fit$opt$lnL),1) # ARD and Pagel's lambda don't differ in the log likelihoods
 
-optimal <- fitDiscrete(rooted_tree, discrete_FCM, treeTransform = "lambda")
-lambda0_phy <- rescale(rooted_tree, "lambda", 0) # A big polytomy tree 
-zero <- fitDiscrete(lambda0_phy, discrete_FCM)
+# To test for significant phylogenetic signal, compare the negative log likelihood when there is no signal with rescale
+lambda0_tree <- rescale(rooted_tree, "lambda", 0) # A big polytomy tree 
+lambda0_fit <- fitDiscrete(lambda0_tree, discrete_FCM)
 
-d.lambda=2*(optimal$opt$lnL-zero$opt$lnL)
-
-p.lambda <- pchisq(d.lambda, 1, lower.tail=FALSE); 
-p.lambda
+# Is there a significant difference? NO 
+# Using a likelihood ratio test
+pchisq(2*(lambda0_fit$opt$lnL-discrete_lambda_fit$opt$lnL), 1, lower.tail=FALSE) 
 ```
 
+### Continuous Character Evolution  
+From [Roi Holzman & Samantha Price](http://www.eve.ucdavis.edu/~wainwrightlab/Roi/Site/Teaching_files/Intro2Phylo_S5.R):  
 
+- Pagel's lambda is a tree transformation that assesses the degree of phylogenetic signal within the trait by multiplying the internal branches of the tree by values between 0 and 1 (the lambda parameter).  
+    - lambda=1 indicates complete phylogenetic patterning as it returns the branch lengths untransformed.  
+    - lambda=0 indicates no patterning as it leads the tree collapsing to a single large polytomy.  
 
-#### Continuous 
 ```{r pagels-lambda}
-# Pagels lambda 
-# We chose HNA and LNA RL Score as the trait we are testing for phylogenetic signal, with 999 randomizations:
+# # We chose HNA and LNA RL Score as the trait we are testing for phylogenetic signal, with 999 randomizations:
 # Does the HNA RL Score have phylogenetic signal?
-HNAscores <- summarized_RL_scores$HNA_score
-names(HNAscores) <- summarized_RL_scores$OTU
-phylosig(rooted_tree, HNAscores, method = "lambda", test = TRUE, nsim = 999)
-
+phylosig(HNA_rooted_tree, HNAscores, method = "lambda", test = TRUE, nsim = 999)
 # Does the LNA RL Score have phylogenetic signal?
-LNAscores <- summarized_RL_scores$LNA_score
-names(LNAscores) <- summarized_RL_scores$OTU
-phylosig(rooted_tree, LNAscores, method = "lambda", test = TRUE, nsim = 999)
-
-# Calculating Pagel's lambda in geiger
-BM_HNA <- fitContinuous(rooted_tree, HNAscores, model = "BM")
-lambda_HNA <- fitContinuous(rooted_tree, HNAscores, model = "lambda")
-pchisq(-2*(lambda_HNA$opt$lnL - BM_HNA$opt$lnL),1,lower.tail=F)
-
-plot(lambdaTree(rooted_tree, lambda = 2))
-
-BM_LNA <- fitContinuous(rooted_tree, LNAscores, model = "BM")
-lambda_LNA <- fitContinuous(rooted_tree, LNAscores, model = "lambda")
-pchisq(-2*(lambda_LNA$opt$lnL - BM_LNA$opt$lnL),1,lower.tail=F)
+phylosig(LNA_rooted_tree, LNAscores, method = "lambda", test = TRUE, nsim = 999)
 ```
 
 ## Blomberg's K
 ```{r blombergs-k}
-# Blomberg's K
 # HNA
 phylosig(tree = rooted_tree, x = HNAscores, method = "K", test = TRUE, nsim = 999)
 
@@ -1023,66 +1027,30 @@ phylosig(tree = rooted_tree, x = LNAscores, method = "K", test = TRUE, nsim = 99
 
 ## Moran's I
 ```{r morans-I, fig.width=3,fig.height=3}
-# HNA
-# Subset all of the HNA OTUs
-HNA_df_phydist <- summarized_RL_scores %>%
-  select(OTU, HNA_score) %>%
-  na.omit()
-
-# Trip the larger tree to only have the HNA OTUs
-HNA_rooted_tree <- drop.tip(phy = rooted_tree, tip = rooted_tree$tip.label[-match(HNA_df_phydist$OTU, rooted_tree$tip.label)])
-
-# Make sure OTUs are in the same order for the test 
-HNA_df_phydist <- HNA_df_phydist[match(HNA_rooted_tree$tip.label, HNA_df_phydist$OTU),]
-stopifnot(HNA_df_phydist$OTU == HNA_rooted_tree$tip.label)
-
-# Calculate the pairwise distances of the OTUs in the HNA phylogeny
+# HNA: Calculate the pairwise distances of the OTUs in the HNA phylogeny
 HNA_rooted_phy_dist <- cophenetic(HNA_rooted_tree)
 
-# Do HNA OTUs have phylogenetic autocorrelation? 
-# Moran's I test 
+# Do HNA OTUs have phylogenetic autocorrelation with the Moran's I test?
 moran_HNA_test <- abouheif.moran(x = HNA_df_phydist$HNA_score, W = HNA_rooted_phy_dist, method = "Abouheif", nrepet = 999)
 moran_HNA_test
-plot(moran_HNA_test)
 
-
-
-# LNA
-# Subset all of the HNA OTUs
-LNA_df_phydist <- summarized_RL_scores %>%
-  select(OTU, LNA_score) %>%
-  na.omit()
-
-# Trip the larger tree to only have the HNA OTUs
-LNA_rooted_tree <- drop.tip(phy = rooted_tree, tip = rooted_tree$tip.label[-match(LNA_df_phydist$OTU, rooted_tree$tip.label)])
-
-# Make sure OTUs are in the same order for the test 
-LNA_df_phydist <- LNA_df_phydist[match(LNA_rooted_tree$tip.label, LNA_df_phydist$OTU),]
-stopifnot(LNA_df_phydist$OTU == LNA_rooted_tree$tip.label)
-
-# Calculate the pairwise distances of the OTUs in the HNA phylogeny
+# LNA: Calculate the pairwise distances of the OTUs in the HNA phylogeny
 LNA_rooted_phy_dist <- cophenetic(LNA_rooted_tree)
 
-# Do LNA OTUs have phylogenetic autocorrelation? 
-# Moran's I
+# Do LNA OTUs have phylogenetic autocorrelation with the Moran's I test?
 moran_LNA_test <- abouheif.moran(x = LNA_df_phydist$LNA_score, W = LNA_rooted_phy_dist, method = "Abouheif", nrepet = 999)
 moran_LNA_test
-plot(moran_LNA_test)
 ```
 
 ## Abouheif's Cmean
 ```{r abouheif-C, fig.width=3,fig.height=3}
-# HNA
-# Perform an Abouheif moran test using Monte Carlo simulations (default is 999 randomizations)
+# HNA: Perform an Abouheif moran test using Monte Carlo simulations (default is 999 randomizations)
 abouheif_HNA_test <- abouheif.moran(x = HNA_df_phydist$HNA_score, W = HNA_rooted_phy_dist, method = "oriAbouheif", nrepet = 999)
 abouheif_HNA_test
-plot(abouheif_HNA_test)
 
-# LNA
-# Perform an Abouheifmoran test using Monte Carlo simulations (default is 999 randomizations)
+# LNA: Perform an Abouheifmoran test using Monte Carlo simulations (default is 999 randomizations)
 abouheif_LNA_test <- abouheif.moran(x = LNA_df_phydist$LNA_score, W = LNA_rooted_phy_dist, method = "oriAbouheif", nrepet = 999)
 abouheif_LNA_test
-plot(abouheif_LNA_test)
 ```
 
 # Session Information 
