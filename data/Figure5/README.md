@@ -3,7 +3,7 @@
 ## July 3rd, 2018
 
 
-## For All OTUs that pass the RL score threshold: 155 OTUs
+## For All OTUs that pass the RL score threshold: 258 OTUs
 
 1. Create this repo in the fasttree folder.
 
