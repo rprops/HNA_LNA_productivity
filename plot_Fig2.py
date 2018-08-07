@@ -73,57 +73,13 @@ def calc_otus_ranking(fs_rank,mfe,fs_header,mfe_header):
        n_otus[i] = fs_rank[fs_rank.loc[:,fs_header] <= rank].shape[0]
        i+=1
     mfe.loc[:,'Number of taxa'] = n_otus
-    return mfe
-
-def plot_R2CV_HNA_Lake_RL(df_inl,df_mich,df_mus): 
-    df = pd.concat([df_inl,df_mich,df_mus],ignore_index=True,axis=0)
-    df.loc[:,'Number of taxa'] = df.loc[:,'Number of taxa'].astype(int)
-    g = sns.lmplot(x='Number of taxa',y='RL HNA',data=df, col='Lake', fit_reg=False, sharex=False)
-    g.set_titles(size=20)
-    plt.subplots_adjust(top=0.8)
-    g.fig.suptitle('Stability score HNA', size=22)
-    g.set_axis_labels('Number of taxa',r'$R^2_{CV}$')
-    g.set_xlabels(fontsize=18)
-    g.set_ylabels(fontsize=18)
-    plt.savefig('R2CV_HNA_Lasso_RL.png',bbox_inches='tight', dpi=500)
-    plt.show()
-    return df        
+    return mfe     
             
-def plot_R2CV_HNA_LNA_Lake_RL(df_inl,df_mich,df_mus): 
-    df = pd.concat([df_inl,df_mich,df_mus],ignore_index=True,axis=0)
-    df.loc[:,'Number of taxa'] = df.loc[:,'Number of taxa'].astype(int)
-    df = pd.melt(df,id_vars=['Number of taxa','Lake'], value_vars=['RL HNA', 'RL LNA'], var_name='Functional group', value_name='R2')
-    g = sns.lmplot(x='Number of taxa',y='R2',data=df, hue='Functional group', col='Lake', fit_reg=False, sharex=False)
-    new_labels = ['HNA', 'LNA']
-    for t, l in zip(g._legend.texts, new_labels): t.set_text(l)
-    plt.subplots_adjust(top=0.8)
-    g.fig.suptitle('Stability score HNA', size=22)
-    g.set_titles(size=20)
-    g.set_axis_labels('Number of taxa',r'$R^2_{CV}$')
-    g.set_xlabels(fontsize=18)
-    g.set_ylabels(fontsize=18)
-    plt.savefig('R2CV_HNA_LNA_Lasso_RL.png',bbox_inches='tight', dpi=500)
-    plt.show()
-    return df
-
-def plot_R2CV_HNA_Lake_Bor(df_inl,df_mich,df_mus): 
-    df = pd.concat([df_inl,df_mich,df_mus],ignore_index=True,axis=0)
-    df.loc[:,'Number of taxa'] = df.loc[:,'Number of taxa'].astype(int)
-    g = sns.lmplot(x='Number of taxa',y='Boruta HNA',data=df, col='Lake', fit_reg=False, sharex=False)
-    g.set_titles(size=20)
-    plt.subplots_adjust(top=0.8)
-    g.fig.suptitle('Boruta ranking HNA', size=22)
-    g.set_axis_labels('Number of taxa',r'$R^2_{CV}$')
-    g.set_xlabels(fontsize=18)
-    g.set_ylabels(fontsize=18)
-    plt.savefig('R2CV_HNA_Lasso_Bor.png',bbox_inches='tight', dpi=500)
-    plt.show()
-    return df
 
 def plot_R2CV_Lake(df): 
     df.loc[:,'Number of taxa'] = df.loc[:,'Number of taxa'].astype(int)
     df = pd.melt(df,id_vars=['Number of taxa','Lake','Target'], value_vars=['R2_CV'], var_name='Functional group', value_name='R2')
-    g = sns.lmplot(x='Number of taxa',y='R2',data=df, hue='Target', col='Lake', fit_reg=False, sharex=False, legend=False)
+    g = sns.lmplot(x='Number of taxa',y='R2',data=df, hue='Target', col='Lake', fit_reg=False, sharex=False, legend=False, scatter_kws=dict(edgecolor="k", linewidth=1))
     col_order = ['A','B','C']
     for ax, title in zip(g.axes.flat, col_order):
         ax.text(-25.0, 0.98, title, fontsize=18, weight='bold')
