@@ -85,7 +85,7 @@ def calc_otus_ranking(fs_rank,mfe,fs_header,mfe_header):
 def plot_R2CV_HNA_RL_TAX(df): 
     df.loc[:,'Number of taxa'] = df.loc[:,'Number of taxa'].astype(int)
     df = pd.melt(df,id_vars=['Number of taxa','Taxonomic rank','Target'], value_vars=['R2_CV'], var_name='Functional group', value_name='R2')
-    g = sns.lmplot(x='Number of taxa',y='R2',data=df, hue='Target', col='Taxonomic rank', col_wrap=4, fit_reg=False, sharey=True, sharex=False, legend=False, scatter_kws=dict(edgecolor="k", linewidth=1))
+    g = sns.lmplot(x='Number of taxa',y='R2',data=df, hue='Target', col='Taxonomic rank', col_wrap=4, fit_reg=False, sharey=True, sharex=False, legend=False, scatter_kws=dict(edgecolor="k", linewidth=0.5))
     plt.subplots_adjust(top=0.9)
     g.set_xlabels(fontsize=20)
     g.set_ylabels(fontsize=20)
