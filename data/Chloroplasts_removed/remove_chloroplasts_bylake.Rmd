@@ -29,6 +29,9 @@ library("ggplot2")    # Pretty Plotting
 library("dplyr")      # Data Manipulation
 library("phyloseq")   # Easy microbiome analysis
 library("cowplot")    # For multiple plotting
+
+# Set Workding directory: HNA_LNA_productivity/data/Chloroplasts_removed
+#setwd("data/Chloroplasts_removed")
 ```
 
 

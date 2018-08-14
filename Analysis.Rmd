@@ -110,6 +110,7 @@ head(data)
 # Fix the metadata
 data$Month[data$Month == "Januari"] <- "June"
 data$Season[data$Season == "Winter"] <- "Summer"
+data$Lake[data$Site == "MLB"] <- "Muskegon"
 
 # Write out the file 
 #write.table(data, file="data/Chloroplasts_removed/productivity_data.tsv", row.names=TRUE)
@@ -420,6 +421,9 @@ mich_corr_plot <- ggplot(mich_all_df, aes(x = HNA.cells, y = LNA.cells)) +
 
 plot_grid(mich_corr_plot, inla_corr_plot, musk_corr_plot, 
           labels = c("A", "B", "C"), nrow = 1, ncol = 3)
+
+# Which sample is the outlier? And how does it compare from the other top 3 samples?
+mich_all_df %>% arrange(-Total.cells) %>% head(n=3)
 ```
 
 ## Figure 1B & 1D: Fraction HNA vs Productivity
