@@ -315,7 +315,7 @@ plot_for_legend <-
   scale_color_manual(values = fcm_colors, guide = "none") + 
   scale_shape_manual(values = 22) +
   scale_y_continuous(labels = function(x) format(x, scientific = TRUE)) +
-  labs(y = "Number of Cells \n (cells/mL)", x = "Lake") +
+  labs(y = "Number of Cells \n (cells/mL)", x = "Lake", fill = "FCM") +
   theme(legend.position = "right",
            legend.title = element_text(size = 12, face = "bold"), 
            legend.text = element_text(size = 12),
