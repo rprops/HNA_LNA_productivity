@@ -44,7 +44,8 @@ knitr::opts_chunk$set(eval = TRUE,
                       fig.path="Analysis_Figures/",  # Set the figure options
                       fig.align = "center", 
                       fig.width = 7, 
-                      fig.height = 7)
+                      fig.height = 7,
+                      dev=c('jpeg', 'png'))
 
 ```
 
