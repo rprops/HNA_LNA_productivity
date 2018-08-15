@@ -28,5 +28,7 @@ Please [click here for the code for Phylogenetic Signal](Analysis.html).
 The phylogenetic tree in Figure 5 was calculated using [fasttree](http://www.microbesonline.org/fasttree/) and was visualized in [iTOL](https://itol.embl.de/). Data files imported for tree construction can be found in [data/Figure5](data/Figure5).  
 
 ## Other Code  
-Please [click here for the code for Figures 1, 4, and 5.](Analysis.html).  
+Please [click here for the code for Figures 1, 4, and 5](Analysis.html).  
 
+## Supplemental Information  
+The supplemental tables and figures can be found in [supplemental_info/](supplemental_info/).
