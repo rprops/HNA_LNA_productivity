@@ -1,25 +1,32 @@
-DATASET_GRADIENT
-#In gradient datasets, each ID is associated to a single numeric value which is converted to a colored box based on the gradient defined.
-
+DATASET_HEATMAP
+#In heatmaps, each ID is associated to multiple numeric values, which are displayed as a set of colored boxes defined by a color gradient
 #lines starting with a hash are comments and ignored during parsing
-
 #=================================================================#
 #                    MANDATORY SETTINGS                           #
 #=================================================================#
-#select the separator which is used to delimit the data below (TAB,SPACE or COMMA).This separator must be used throught this file (except in the SEPARATOR line, which uses space).
+#select the separator which is used to delimit the data below (TAB,SPACE or COMMA).This separator must be used throughout this file (except in the SEPARATOR line, which uses space).
 #SEPARATOR TAB
 #SEPARATOR SPACE
 SEPARATOR COMMA
 
 #label is used in the legend table (can be changed later)
-DATASET_LABEL,HNA_gradient
+DATASET_LABEL,HNA-Score
 
 #dataset color (can be changed later)
 COLOR,#00688B
 
+#define labels for each individual field column
+FIELD_LABELS,  
+
 #=================================================================#
 #                    OPTIONAL SETTINGS                            #
 #=================================================================#
+
+
+#Heatmaps can have an optional Newick formatted tree assigned. Its leaf IDs must exactly match the dataset FIELD_LABELS.
+#The tree will be used to sort the dataset fields, and will be displayed above the dataset. It can have branch lengths defined.
+#All newlines and spaces should be stripped from the tree, and COMMA cannot be used as the dataset separator if a FIELD_TREE is provided.
+#FIELD_TREE (((f1:0.2,f5:0.5):1,(f2:0.2,f3:0.3):1.2):0.5,(f4:0.1,f6:0.5):0.8):1;
 
 #each dataset can have a legend, which is defined below
 #for each row in the legend, there should be one shape, color and label
@@ -31,38 +38,46 @@ COLOR,#00688B
 #5: left pointing triangle
 #6: checkmark
 
-#LEGEND_TITLE HNA-RLscore
-#LEGEND_SHAPES 1 
-#LEGEND_COLORS #00688B #ffffff 
-#LEGEND_LABELS 0.382 0.092
+#LEGEND_TITLE,Dataset legend
+#LEGEND_SHAPES,1,2,3
+#LEGEND_COLORS,#ff0000,#00ff00,#0000ff
+#LEGEND_LABELS,value1,value2,value3
 
 #=================================================================#
 #     all other optional settings can be set or changed later     #
 #           in the web interface (under 'Datasets' tab)           #
 #=================================================================#
 
-#width of the gradient strip
+#left margin, used to increase/decrease the spacing to the next dataset. Can be negative, causing datasets to overlap.
+#MARGIN 0
+
+#width of the individual boxes
 STRIP_WIDTH,75
 
-#left margin, used to increase/decrease the spacing to the next dataset. Can be negative, causing datasets to overlap.
-#MARGIN,0
+#always show internal values; if set, values associated to internal nodes will be displayed even if these nodes are not collapsed. It could cause overlapping in the dataset display.
+#SHOW_INTERNAL 0
 
-#border width; if set above 0, a border of specified width (in pixels) will be drawn around the gradient strip
-#BORDER_WIDTH,0
+#if a FIELD_TREE is present, it can be hidden by setting this option to 0
+#SHOW_TREE 1
 
-#border color; used whern BORDER_WIDTH is above 0
-#BORDER_COLOR,#ffffff
+#define the color for the NULL values in the dataset. Use the letter X in the data to define the NULL values
+COLOR_NAN,#ffffff
 
-#define the gradient colors. Values in the dataset will be mapped onto the corresponding color gradient.
-COLOR_MIN,#ffffff
+#automatically create and display a legend based on the color gradients and values defined below
+AUTO_LEGEND,1
+
+#define the heatmap gradient colors. Values in the dataset will be mapped onto the corresponding color gradient.
+COLOR_MIN,#daf5ff
 COLOR_MAX,#00688B
 
 #you can specify a gradient with three colors (e.g red to yellow to green) by setting 'USE_MID_COLOR' to 1, and specifying the midpoint color
-#USE_MID_COLOR,1
-#COLOR_MID,#ffff00
+#USE_MID_COLOR 1
+#COLOR_MID #ffff00
 
-#always show internal values; if set, values associated to internal nodes will be displayed even if these nodes are not collapsed. It could cause overlapping in the dataset display.
-#SHOW_INTERNAL 1
+#By default, color gradients will be calculated based on dataset values. You can force different values to use in the calculation by setting the values below:
+#USER_MIN_VALUE 0
+#USER_MID_VALUE 500
+#USER_MAX_VALUE 1000
 
 #Internal tree nodes can be specified using IDs directly, or using the 'last common ancestor' method described in iTOL help pages
 #=================================================================#
@@ -170,55 +185,55 @@ Otu000283,0.102
 Otu002831,0.132
 Otu000655,0.122
 Otu000615,0.126
-Otu000005,NA
-Otu000113,NA
-Otu000027,NA
+Otu000005,X
+Otu000113,X
+Otu000027,X
 Otu000030,0.178
-Otu000682,NA
-Otu000379,NA
-Otu001580,NA
-Otu000277,NA
-Otu000160,NA
-Otu000471,NA
-Otu000517,NA
-Otu000050,NA
-Otu000193,NA
-Otu000099,NA
-Otu000203,NA
-Otu000172,NA
-Otu000456,NA
-Otu002374,NA
-Otu000218,NA
-Otu000985,NA
-Otu001273,NA
-Otu000893,NA
-Otu000259,NA
-Otu000223,NA
-Otu000240,NA
-Otu001210,NA
-Otu000749,NA
-Otu000898,NA
-Otu001329,NA
-Otu000163,NA
-Otu000408,NA
-Otu000460,NA
-Otu000144,NA
-Otu000014,NA
-Otu000090,NA
-Otu000917,NA
-Otu000536,NA
-Otu000159,NA
-Otu000154,NA
-Otu000796,NA
-Otu000425,NA
-Otu001018,NA
-Otu000132,NA
-Otu001366,NA
-Otu000681,NA
-Otu000392,NA
-Otu000422,NA
-Otu001664,NA
-Otu000084,NA
+Otu000682,X
+Otu000379,X
+Otu001580,X
+Otu000277,X
+Otu000160,X
+Otu000471,X
+Otu000517,X
+Otu000050,X
+Otu000193,X
+Otu000099,X
+Otu000203,X
+Otu000172,X
+Otu000456,X
+Otu002374,X
+Otu000218,X
+Otu000985,X
+Otu001273,X
+Otu000893,X
+Otu000259,X
+Otu000223,X
+Otu000240,X
+Otu001210,X
+Otu000749,X
+Otu000898,X
+Otu001329,X
+Otu000163,X
+Otu000408,X
+Otu000460,X
+Otu000144,X
+Otu000014,X
+Otu000090,X
+Otu000917,X
+Otu000536,X
+Otu000159,X
+Otu000154,X
+Otu000796,X
+Otu000425,X
+Otu001018,X
+Otu000132,X
+Otu001366,X
+Otu000681,X
+Otu000392,X
+Otu000422,X
+Otu001664,X
+Otu000084,X
 Otu001092,0.276
 Otu000363,0.152
 Otu000369,0.382
@@ -264,59 +279,59 @@ Otu000745,0.134
 Otu000329,0.152
 Otu001498,0.178
 Otu000066,0.158
-Otu000523,NA
-Otu000120,NA
-Otu000269,NA
-Otu000053,NA
-Otu001301,NA
-Otu000108,NA
-Otu000067,NA
-Otu000307,NA
-Otu000501,NA
-Otu000637,NA
-Otu001215,NA
-Otu000555,NA
-Otu000006,NA
-Otu002163,NA
-Otu001341,NA
-Otu001414,NA
-Otu000582,NA
-Otu000297,NA
-Otu000650,NA
-Otu000140,NA
-Otu000378,NA
-Otu000093,NA
-Otu000274,NA
-Otu000597,NA
-Otu000105,NA
-Otu000660,NA
-Otu000189,NA
-Otu001643,NA
-Otu001134,NA
-Otu002185,NA
-Otu000073,NA
-Otu001709,NA
-Otu000706,NA
-Otu001250,NA
-Otu000222,NA
-Otu000315,NA
-Otu000311,NA
-Otu000856,NA
-Otu000358,NA
-Otu001793,NA
-Otu001175,NA
-Otu000156,NA
-Otu000579,NA
-Otu000680,NA
-Otu001645,NA
-Otu000720,NA
-Otu000522,NA
-Otu000401,NA
-Otu001118,NA
-Otu002596,NA
-Otu002082,NA
-Otu001707,NA
-Otu000634,NA
+Otu000523,X
+Otu000120,X
+Otu000269,X
+Otu000053,X
+Otu001301,X
+Otu000108,X
+Otu000067,X
+Otu000307,X
+Otu000501,X
+Otu000637,X
+Otu001215,X
+Otu000555,X
+Otu000006,X
+Otu002163,X
+Otu001341,X
+Otu001414,X
+Otu000582,X
+Otu000297,X
+Otu000650,X
+Otu000140,X
+Otu000378,X
+Otu000093,X
+Otu000274,X
+Otu000597,X
+Otu000105,X
+Otu000660,X
+Otu000189,X
+Otu001643,X
+Otu001134,X
+Otu002185,X
+Otu000073,X
+Otu001709,X
+Otu000706,X
+Otu001250,X
+Otu000222,X
+Otu000315,X
+Otu000311,X
+Otu000856,X
+Otu000358,X
+Otu001793,X
+Otu001175,X
+Otu000156,X
+Otu000579,X
+Otu000680,X
+Otu001645,X
+Otu000720,X
+Otu000522,X
+Otu000401,X
+Otu001118,X
+Otu002596,X
+Otu002082,X
+Otu001707,X
+Otu000634,X
 Otu000216,0.264
 Otu000025,0.362
 Otu000081,0.356
@@ -327,5 +342,6 @@ Otu000249,0.358
 Otu000225,0.26
 Otu000330,0.274
 Otu001497,0.26
-Otu000540,NA
-Otu001300,NA
+Otu000540,X
+Otu001300,X
+
