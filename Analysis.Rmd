@@ -334,7 +334,7 @@ legend2 <- get_legend(p2 + theme(legend.position = "right",
   guides(fill = guide_legend(override.aes = list(size=3.5))))
 
 # place the legends
-legend_positions <- plot_grid(legend1, legend2, nrow = 2, ncol = 1)
+legend_positions <- plot_grid(legend2, legend1, nrow = 2, ncol = 1)
 
 # Place the legends next to figure 1A
 row1 <- plot_grid(NULL, p2, legend_positions, 
