@@ -1,0 +1,134 @@
+---
+title: "WGCNA Tutorial"
+author: "Marian L Schmidt"
+date: "`r format(Sys.time(), '%Y %B, %d')`"
+output:
+  html_document:
+    code_folding: show
+    highlight: default
+    keep_md: no
+    theme: journal
+    toc: yes
+    toc_float:  
+      collapsed: no
+      smooth_scroll: yes
+      toc_depth: 3
+    number_sections: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
+```
+
+
+
+# Data Input/Cleaning
+
+## Download Packages
+
+```{r packages}
+# Install Packages
+#install.packages("HelpersMG")
+#install.packages("WGCNA")
+
+# The GO.db package will not let me load WGCNA, so let's download it
+#if (!requireNamespace("BiocManager", quietly = TRUE))
+#    install.packages("BiocManager")
+#BiocManager::install("GO.db", version = "3.8")
+
+# Load the packages
+library(HelpersMG)
+library(WGCNA)
+library(tidyverse)
+
+# Set the working directory
+current_directory <- getwd()
+paste("Working in directory:", current_directory)
+```
+
+
+## Load Data
+```{r load-data}
+# Load data
+load("data/Chloroplasts_removed/ByLake_Filtering/5in10/muskegon/muskegon_5in10_physeqs.RData")
+rare_muskegon_physeq_5in10_abs
+
+# The following setting is important, do not omit.
+options(stringsAsFactors = FALSE)
+
+# Prepare CLR transformed OTU Table 
+clr_otu <- read.csv("data/Chloroplasts_removed/ByLake_Filtering/5in10/muskegon/muskegon_clr_otu_5in10.csv") %>%
+  tibble::column_to_rownames(var = "X") 
+# Prepare Taxonomy Table 
+clr_tax <- tax_table(rare_muskegon_physeq_5in10_abs)
+# Prepare Metadata file 
+clr_metadata <- 
+  sample_data(rare_muskegon_physeq_5in10_abs) %>%
+  mutate(norep_filter_name = paste(substr(Sample_16S, 1,4), substr(Sample_16S, 6, 9), sep=""),
+         # duplicate Sample_16S column to move it to the rownames
+         names = Sample_16S) %>%
+  tibble::column_to_rownames(var = "names") 
+
+# Create the phyloseq object
+clr_physeq <- merge_phyloseq(otu_table(clr_otu, taxa_are_rows = FALSE), clr_tax, sample_data(clr_metadata))
+
+# Read in the producutivity data
+prod_data <- read.csv("data/production_data.csv") %>%
+  dplyr::filter(fraction == "Free" & limnion == "Surface") %>%  # Select only rows that are free-living
+  dplyr::select(names, tot_bacprod, SD_tot_bacprod) %>%         # Select relevant columns for total productivity
+  mutate(tot_bacprod = round(tot_bacprod, digits = 2),          # Round to 2 decimals
+         SD_tot_bacprod = round(SD_tot_bacprod, digits = 2) ) %>%      
+  dplyr::rename(norep_filter_name = names) %>%                  # Rename to match other data frame
+  arrange(norep_filter_name)
+
+# Put together a dataframe with metadata and production data
+meta_prod_dat <-
+  prod_data %>%
+  left_join(clr_metadata ,by = "norep_filter_name")
+
+meta_prod_dat$Sample_16S
+
+
+###### FINAL PHYLOSEQ OBJECT
+prod_clr_physeq <- subset_samples(clr_physeq, Sample_16S %in% meta_prod_dat$Sample_16S)
+
+# Pull out the information and clean up the data
+prod_clr_otu <- otu_table(prod_clr_physeq)
+prod_clr_otu_mat <- as.matrix(prod_clr_otu)
+datProdClr <- as.data.frame(t(prod_clr_otu_mat))
+```
+
+
+## Data Cleaning 
+```{r clean-data, fig.height=9, fig.width=12}
+# Check for OTUs and samples with too many missing values
+good_otus <- goodSamplesGenes(clr_otu, verbose = 3);
+good_otus$allOK
+
+# Search the data for outliers via clustering
+sampleTree <- hclust(dist(clr_otu), method = "average")
+sampleTree
+
+# Plot it 
+sizeGrWindow(12, 9) # Set plotting window to be 12 by 9 inches
+par(cex = 0.6, mar = c(0,4,2,0))
+plot(sampleTree, main = "Sample Clustering: Detect Outliers", 
+     sub = "", xlab = "", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+
+# Remove sample F2_221 by cutting the tree
+# plot a line to show the cut
+abline(h = 16, col = "red")
+
+# Determine cluster uner the line
+clust <- cutreeStatic(sampleTree, cutHeight = 15, minSize = 10)
+table(clust) 
+# Clust contains the samples we want to keep
+keepSamples <- clust==1
+datExpr <- datExpr0[keepSamples, ]
+nGenes <- ncol(datExpr)
+paste("There are", nGenes, "genes in the dataset.")
+nSamples = nrow(datExpr)
+paste("There are", nSamples, "samples in the dataset.")
+```
