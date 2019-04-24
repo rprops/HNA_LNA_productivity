@@ -86,49 +86,155 @@ prod_data <- read.csv("data/production_data.csv") %>%
 # Put together a dataframe with metadata and production data
 meta_prod_dat <-
   prod_data %>%
-  left_join(clr_metadata ,by = "norep_filter_name")
-
-meta_prod_dat$Sample_16S
-
+  left_join(clr_metadata ,by = "norep_filter_name") %>%
+  mutate(names = Sample_16S) %>%
+  tibble::column_to_rownames(var = "names")
 
 ###### FINAL PHYLOSEQ OBJECT
-prod_clr_physeq <- subset_samples(clr_physeq, Sample_16S %in% meta_prod_dat$Sample_16S)
+prod_clr_physeq_orig <- subset_samples(clr_physeq, Sample_16S %in% meta_prod_dat$Sample_16S)
+# Overwrite the sample data to include productivity data
+prod_clr_physeq <- merge_phyloseq(otu_table(prod_clr_physeq_orig), tax_table(prod_clr_physeq_orig), sample_data(meta_prod_dat))
+prod_clr_physeq
 
 # Pull out the information and clean up the data
 prod_clr_otu <- otu_table(prod_clr_physeq)
-prod_clr_otu_mat <- as.matrix(prod_clr_otu)
-datProdClr <- as.data.frame(t(prod_clr_otu_mat))
+datOTUClr <- as.data.frame(prod_clr_otu)
+
+# Metadata 
+prod_clr_dat <- data.frame(sample_data(prod_clr_physeq))
+
+# Select only the numeric traits
+datContinuous <- 
+  prod_clr_dat %>%
+  dplyr::select(c(tot_bacprod, SD_tot_bacprod, Total.cells, HNA.cells, LNA.cells, Total_Sequences))
+head(datContinuous)
 ```
 
 
 ## Data Cleaning 
+
+Below is an analysis to find out whether there are outliers. Thankfully, there are none!
 ```{r clean-data, fig.height=9, fig.width=12}
 # Check for OTUs and samples with too many missing values
-good_otus <- goodSamplesGenes(clr_otu, verbose = 3);
+good_otus <- goodSamplesGenes(datOTUClr, verbose = 3);
 good_otus$allOK
 
 # Search the data for outliers via clustering
-sampleTree <- hclust(dist(clr_otu), method = "average")
-sampleTree
+#sampleTree <- hclust(dist(datOTUClr), method = "average")
+#sampleTree
 
 # Plot it 
-sizeGrWindow(12, 9) # Set plotting window to be 12 by 9 inches
-par(cex = 0.6, mar = c(0,4,2,0))
-plot(sampleTree, main = "Sample Clustering: Detect Outliers", 
-     sub = "", xlab = "", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+#sizeGrWindow(12, 9) # Set plotting window to be 12 by 9 inches
+#par(cex = 1, mar = c(0,4,2,0))
+#plot(sampleTree, main = "Sample Clustering: No Outliers", 
+#     sub = "", xlab = "", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
 
-# Remove sample F2_221 by cutting the tree
-# plot a line to show the cut
-abline(h = 16, col = "red")
-
-# Determine cluster uner the line
-clust <- cutreeStatic(sampleTree, cutHeight = 15, minSize = 10)
-table(clust) 
 # Clust contains the samples we want to keep
-keepSamples <- clust==1
-datExpr <- datExpr0[keepSamples, ]
-nGenes <- ncol(datExpr)
-paste("There are", nGenes, "genes in the dataset.")
-nSamples = nrow(datExpr)
-paste("There are", nSamples, "samples in the dataset.")
+paste("There are", ntaxa(prod_clr_physeq), "genes in the dataset.")
+paste("There are", nsamples(prod_clr_physeq), "samples in the dataset.")
+
+# Re-cluster samples
+sampleTree2 <- hclust(dist(datOTUClr), method = "average")
+
+# Convert traits to a color representation: white means low, red means high, grey means missing entry
+traitColors <- numbers2colors(datContinuous, signed = FALSE);
+
+# Plot the sample dendrogram and the colors underneath.
+plotDendroAndColors(sampleTree2, traitColors,
+                    groupLabels = names(datContinuous),
+                    main = "Sample dendrogram and trait heatmap")
 ```
+
+
+## Save the data
+```{r data-save}
+save(prod_clr_physeq, datOTUClr, datContinuous, file = "data/WGCNA/WGCNA_data.RData")
+```
+
+
+
+
+# Automatic network construction & Model Detection
+
+## Choosing the soft-thresholding power: analysis of network topology
+```{r soft-threshold, fig.width=9, fig.height=5}
+# Choose a set of soft-thresholding powers
+powers <- c(c(1:10), seq(from = 12, to=20, by=2))
+
+# Call the network topology analysis function
+sft <- pickSoftThreshold(datOTUClr, powerVector = powers, verbose = 5)
+
+# Plot the results:
+sizeGrWindow(9, 5)
+par(mfrow = c(1,2))
+
+# Set some parameters
+cex1 = 0.9
+
+# Scale-free topology fit index as a function of the soft-thresholding power
+plot(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2], 
+     xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n", 
+     main = paste("Scale independence"))
+
+text(sft$fitIndices[,1], -sign(sft$fitIndices[,3]) * sft$fitIndices[,2],
+     labels=powers,cex=cex1,col="red")
+
+# this line corresponds to using an R^2 cut-off of h
+abline(h=0.90,col="red")
+
+# Mean connectivity as a function of the soft-thresholding power
+plot(sft$fitIndices[,1], sft$fitIndices[,5], 
+     xlab="Soft Threshold (power)",ylab="Mean Connectivity", type="n",
+     main = paste("Mean connectivity"))
+text(sft$fitIndices[,1], sft$fitIndices[,5], labels=powers, cex=cex1,col="red")
+```
+
+
+
+## One-step network construction & module detection
+
+```{r module-detection, fig.height=9, fig.width=12}
+# WARNING:
+    # When performing this function with your own data:
+        # you will NEED TO CHANGE THE PARAMETER OPTIONS
+        # Blocksize = maxBlockSize = tells the function how loarge the largest block can be that the reader's computer can handle. Default is 5,000 BUT this can break the later code. 
+
+net <- blockwiseModules(datOTUClr, TOMType = "unsigned", verbose = 3,
+                        reassignThreshold = 0, mergeCutHeight = 0.25,
+                        numeicLabels = TRUE, pamRespectsDendro = FALSE, saveTOMs = TRUE,
+                        
+                        # CHANGE THESE PARAMETERS!
+                        power = 3, deepSplit = 2, 
+                        maxBlockSize = 400, minModuleSize = 10,
+                        saveTOMFileBase = "data/WGCNA/prodOTU_TOM")
+
+# Can pull out information from object
+net$colors
+net$MEs
+table(net$colors)
+
+#How many modules?
+length(unique(net$colors))
+
+# open a graphics window
+sizeGrWindow(12, 9)
+
+# Convert labels to colors for plotting
+mergedColors = labels2colors(net$colors)
+# Plot the dendrogram and the module colors underneath
+plotDendroAndColors(net$dendrograms[[1]], mergedColors[net$blockGenes[[1]]],
+"Module colors",
+dendroLabels = FALSE, hang = 0.03,
+addGuide = TRUE, guideHang = 0.05)
+
+# ADVICE: See recutBlockwiseTrees function to modify the criteria without having to recomput the network and clustering dendogram.
+
+
+# Save the data!
+moduleLabels = net$colors
+moduleColors = labels2colors(net$colors)
+MEs = net$MEs;
+geneTree = net$dendrograms[[1]];
+save(MEs, moduleLabels, moduleColors, geneTree, file = "FemaleLiver-02-networkConstruction-auto.RData")
+```
+
