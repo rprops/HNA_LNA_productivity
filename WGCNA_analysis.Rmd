@@ -346,18 +346,13 @@ Using GS and MM, let's identify genes with a high significance for bacterial pro
 
 
 ```{r GS-MM-corr, fig.height=12, fig.width=8}
-# Create a for loop
-length(names(geneModuleMembership))
-
 # Fix the names so that they match the actual color
 names(geneModuleMembership) <- substring(names(geneModuleMembership), 3) # Remove the first two letters in string
-
 
 par(mfrow = c(4,2))  
   
 # Initialize for loop
       # NEED: modNames
-
 for (i in names(geneModuleMembership)) {
   
   # Pull out the module we're working on
@@ -495,23 +490,10 @@ names(bacprod) = "__bacprod"
 # Add the weight to existing module eigengenes
 MET <- orderMEs(cbind(MEs, bacprod))
 names(MET) <- substring(names(MET), 3)
-
-#Plot the relationships among the eigengenes and the trait 
-sizeGrWindow(5, 7.5)
-par(cex = 0.9)
-plotEigengeneNetworks(MET, "", marDendro = c(0,4,1,2), marHeatmap = c(3, 4, 1, 2),
-                      cex.lab = 0.8, xLabelsAngle = 90)
 ```
 
 
 ```{r dendogram, fig.width=6, fig.height=6}
-# Plot the dendogram
-sizeGrWindow(6,6)
-par(cex = 1.0)
-plotEigengeneNetworks(MET, "Eigengene dendogram", marDendro = c(0,4,2,0),
-                      plotHeatmaps = FALSE)
-
-
 # Plot the heatmap 
 par(cex = 1.0)
 plotEigengeneNetworks(MET, "Eigengene adjacency heatmap", marHeatmap = c(3,4,2,2),
