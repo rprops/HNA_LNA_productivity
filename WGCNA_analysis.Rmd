@@ -494,6 +494,13 @@ names(MET) <- substring(names(MET), 3)
 
 
 ```{r dendogram, fig.width=6, fig.height=6}
+# Plot the dendogram
+sizeGrWindow(6,6)
+par(cex = 1.0)
+plotEigengeneNetworks(MET, "Eigengene dendogram", marDendro = c(0,4,2,0),
+                      plotHeatmaps = FALSE)
+
+
 # Plot the heatmap 
 par(cex = 1.0)
 plotEigengeneNetworks(MET, "Eigengene adjacency heatmap", marHeatmap = c(3,4,2,2),
