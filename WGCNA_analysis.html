@@ -4205,8 +4205,8 @@ save(MEs, moduleLabels, moduleColors, hclustGeneTree, file = &quot;data/WGCNA/dy
 </div>
 </div>
 </div>
-<div id="relating-modules-to-external-clinical-traits" class="section level1">
-<h1><span class="header-section-number">3</span> Relating modules to external clinical traits</h1>
+<div id="relating-modules-to-environmental-traits" class="section level1">
+<h1><span class="header-section-number">3</span> Relating modules to environmental traits</h1>
 <p><a href="https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/Tutorials/FemaleLiver-03-relateModsToExt.pdf">Relating Modules to Traits Tutorial Here</a></p>
 <div id="quantifying-module-trait-associations" class="section level2">
 <h2><span class="header-section-number">3.1</span> Quantifying module-trait associations</h2>
@@ -4250,11 +4250,11 @@ labeledHeatmap(Matrix = moduleTraitCor,
 <li>Blue, correlation = -0.52</li>
 </ul>
 </div>
-<div id="gene-relationship-to-trait-and-important-modules" class="section level2">
-<h2><span class="header-section-number">3.2</span> Gene relationship to trait and important modules</h2>
-<div id="gene-significance-and-module-membership" class="section level3">
-<h3><span class="header-section-number">3.2.1</span> Gene significance and module membership</h3>
-<p><strong>Goal:</strong> Quantify associations of individual genes with trait of interest (tot_bacprod)</p>
+<div id="otu-relationship-to-trait-and-important-modules" class="section level2">
+<h2><span class="header-section-number">3.2</span> OTU relationship to trait and important modules</h2>
+<div id="otu-significance-and-module-membership" class="section level3">
+<h3><span class="header-section-number">3.2.1</span> OTU significance and module membership</h3>
+<p><strong>Goal:</strong> Quantify associations of individual OTU with trait of interest (tot_bacprod)</p>
 <p><strong>How?</strong></p>
 <ol style="list-style-type: decimal">
 <li>Define OTU significance (<strong>GS</strong>, <em>originally called gene significance</em>) as the absolute value of the correlation between the gene and the trait.<br />

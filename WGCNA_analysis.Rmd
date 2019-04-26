@@ -302,7 +302,7 @@ excellent agreement between the single-block and block-wise network construction
 
 
 
-# Relating modules to external clinical traits
+# Relating modules to environmental traits
 
 [Relating Modules to Traits Tutorial Here](https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/Tutorials/FemaleLiver-03-relateModsToExt.pdf)
 
@@ -355,11 +355,11 @@ From the plot above, we can see that the following modules as significantly (pva
 
 
 
-## Gene relationship to trait and important modules 
+## OTU relationship to trait and important modules 
 
-### Gene significance and module membership
+### OTU significance and module membership
 
-**Goal:** Quantify associations of individual genes with trait of interest (tot_bacprod)
+**Goal:** Quantify associations of individual OTU with trait of interest (tot_bacprod)
 
 **How?**  
 
