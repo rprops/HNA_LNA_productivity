@@ -149,6 +149,7 @@ plotDendroAndColors(sampleTree2, traitColors,
                     main = "Sample dendrogram and trait heatmap")
 ```
 
+**Figure:** Clustering dendrogram of samples based on their Euclidean distance.
 
 ## Save the data
 ```{r data-save}
@@ -294,6 +295,11 @@ MEs <- mergedMEs
 save(MEs, moduleLabels, moduleColors, hclustGeneTree, file = "data/WGCNA/dynamic-prodOTU-02-networkConstruction.RData")
 
 ```
+
+**Figure:** Clustering dendrogram of genes obtained in the single-block analysis, together with module
+colors determined in the single-block analysis and the module colors determined in the block-wise analysis. There is
+excellent agreement between the single-block and block-wise network construction and module detection.
+
 
 
 # Relating modules to external clinical traits
@@ -539,7 +545,10 @@ diag(plotDiss) = NA;
 TOMplot(plotDiss, selectTree, selectColors, main = "Network heatmap plot, selected genes")
 ```
 
-
+**Figure:** Visualizing the OTU network using a heatmap plot. The heatmap depicts the Topological Overlap Matrix
+(TOM) among all OTUs in the analysis. Light color represents low overlap and progressively darker red color
+represents higher overlap. Blocks of darker colors along the diagonal are the modules. The gene dendrogram and
+module assignment are also shown along the left side and the top.
 
 ## Visualizing the network of eigengenes
 
