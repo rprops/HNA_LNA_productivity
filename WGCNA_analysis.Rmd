@@ -231,15 +231,18 @@ table(dynamicMods)
 # Convert numeric lables into colors
 dynamicColors <- labels2colors(dynamicMods)
 table(dynamicColors)
+```
 
+```{r plot-dendo-underneath, fig.width=8, fig.width=6}
 # Plot the dendrogram and colors underneath
 sizeGrWindow(8,6)
 plotDendroAndColors(hclustGeneTree, dynamicColors, "Dynamic Tree Cut", 
                     dendroLabels = FALSE, hang = 0.03, 
                     addGuide = TRUE, guideHang = 0.05, 
                     main = "Gene dendrogram and module colors")
+```
 
-
+```{r MM-hclust}
 # Calculate eigengenes
 dynamic_MEList <- moduleEigengenes(datOTUClr, colors = dynamicColors)
 dynamic_MEs <- dynamic_MEList$eigengenes
@@ -247,19 +250,18 @@ dynamic_MEs <- dynamic_MEList$eigengenes
 # Calculate dissimilarity of module eigengenes
 dynamic_MEDiss <- 1-cor(dynamic_MEs)
 dynamic_METree <- hclust(as.dist(dynamic_MEDiss))
-
 # Plot the hclust
 sizeGrWindow(7,6)
 plot(dynamic_METree, main = "Dynamic Clustering of module eigengenes",
      xlab = "", sub = "")
+```
 
-
-
+```{r dendo-merged, fig.width=12, fig.height=9}
 ######################## MERGE SIMILAR MODULES
 dynamic_MEDissThres <- 0.25
 
 # Plot the cut line
-abline(h = dynamic_MEDissThres, col = "red")
+#abline(h = dynamic_MEDissThres, col = "red")
 
 # Call an automatic merging function
 merge_dynamic_MEDs <- mergeCloseModules(datOTUClr, dynamicColors, cutHeight = dynamic_MEDissThres, verbose = 3)
@@ -289,7 +291,7 @@ colorOrder <- c("grey", standardColors(50))
 moduleLabels <- match(moduleColors, colorOrder)-1
 MEs <- mergedMEs
 
-save(MEs, moduleLabels, moduleColors, hclustGeneTree, file = "dynamic-prodOTU-02-networkConstruction.RData")
+save(MEs, moduleLabels, moduleColors, hclustGeneTree, file = "data/WGCNA/dynamic-prodOTU-02-networkConstruction.RData")
 
 ```
 
