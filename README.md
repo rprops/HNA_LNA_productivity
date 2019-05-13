@@ -32,3 +32,5 @@ Please [click here for the code for Figures 1, 4, and 5](Analysis.html).
 
 ## Supplemental Information  
 The supplemental tables and figures can be found in [supplemental_info/](supplemental_info/).
+
+For a supplemental analysis testing which groups of OTUs correlate with bacterial production using weighted gene correlation network analysis (WGCNA), please see [this link](WGCNA_analysis.html). 
