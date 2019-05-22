@@ -34,3 +34,5 @@ Another approach to link OTUs to productivity through a [WGCNA analysis can be f
 
 ## Supplemental Information  
 The supplemental tables and figures can be found in [supplemental_info/](supplemental_info/).
+
+For a supplemental analysis testing which groups of OTUs correlate with bacterial production using weighted gene correlation network analysis (WGCNA), please see [this link](WGCNA_analysis.html). 
