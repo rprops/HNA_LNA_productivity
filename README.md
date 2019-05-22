@@ -30,5 +30,7 @@ The phylogenetic tree in Figure 5 was calculated using [fasttree](http://www.mic
 ## Other Code  
 Please [click here for the code for Figures 1, 4, and 5](Analysis.html).  
 
+Another approach to link OTUs to productivity through a [WGCNA analysis can be found here](WGCNA_analysis.html). 
+
 ## Supplemental Information  
 The supplemental tables and figures can be found in [supplemental_info/](supplemental_info/).
