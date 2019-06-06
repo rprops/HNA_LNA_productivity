@@ -1,0 +1,44 @@
+####  PBS preamble
+#PBS -N raxml.batch
+#PBS -M marschmi@umich.edu
+#PBS -m abe
+
+#PBS -l nodes=1:ppn=10,mem=250gb,walltime=320:00:00
+#PBS -V
+
+#PBS -A vdenef_fluxm
+#PBS -l qos=flux
+#PBS -q fluxm
+####  End PBS preamble
+
+#  Show list of CPUs you ran on, if you're running under PBS
+if [ -n "$PBS_NODEFILE" ]; then cat $PBS_NODEFILE; fi
+
+#  Change to the directory you submitted from
+if [ -n "$PBS_O_WORKDIR" ]; then cd $PBS_O_WORKDIR; fi
+pwd
+
+# Run
+## NOTE: -T should always be equal to or LESS than the number of ppn specified above!!!
+# arguments:
+	# -m GTRGAMMA = Model of binary Nucleotide, Multi State, or Amino Acid Substitution using the GTR GAMMA model
+	# -p 777 = Specify a random number seed for theparsimony inferences. This allows you to reproduce your results and will help me debug the program.
+	# -o = To specify the name of an outgroup
+	# -f a = rapid Bootstrap analysis and search for best-scoring ML tree in one program run
+	# -s = specify the name of the input alignment data file in PHYLIP or FASTA format 
+	# -T = PTHREADS VERSION ONLY! Specify the number of threads/ppn/nodes you'd like to run. Make sure it's less than ppn!
+	# -x = Specify an interger number (random seed) and turn on rapid bootstrapping 
+	# -N = Specify the number of alternative runs on distinct starting trees. In combination with the "-b" or "-f a" option, this will invoke a multiple bootstrap analysis
+	# -n = specifies the name of the output file
+
+raxmlHPC-PTHREADS-SSE3 -m GTRGAMMA -p 333 -f a -s HNA_LNA_OTUs_rmN.fasta -T 10 -x 777 -N 1000 -n newick_tree_HNALNA_rmN.tre
+
+
+# The above funtion will output three files - It is recommended to use File #3 for analysis.
+	# 1. RAxML_bestTree.filename = The single best-scoring ML tree, which does not include branch labels 
+	# 2. RAxML_bipartitions.filename = When -f a -x is specified, at the end of the	analysis, will draw the	bootstrapped support values on the best	tree found during ML search.
+	# 3. RAxML_bipartitionsBranchLabels.filename  = Same file as #2 but support values are correctly displayed as NEWICK branch labels and not node lables!
+		# Support values always refer to branches/splits of tree and never to nodes (like in file #2)
+	# 4. RAxML_bootstrap.filename = If multiple bootstrap is executed by -N, all final bootstrapped trees will be written to this one, single file.
+	# 5. RAxML_info.filename = Contains info about the model and algorithm used and how RAxML was called. 
+		# MOST IMPORTANT OUTPUT FILE because it tell yous what RAxML did

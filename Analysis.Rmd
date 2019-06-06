@@ -1,7 +1,7 @@
 ---
-title: "Analyses by Marian" 
+title: "Analyses by Marian: Figures 1, 3, & 4" 
 author: "Marian L. Schmidt, marschmi@umich.edu, @micro_marian"
-date: "July 25th, 2018"
+date: "`r format(Sys.time(), '%Y %B, %d')`"
 output:
   html_document:
     code_folding: show
@@ -45,7 +45,7 @@ knitr::opts_chunk$set(eval = TRUE,
                       fig.align = "center", 
                       fig.width = 7, 
                       fig.height = 7,
-                      dev=c('jpeg', 'png'))
+                      dev=c('png', 'tiff'))
 
 ```
 
@@ -482,7 +482,7 @@ plot_grid(HNA_vs_prod + theme(legend.position = "none"),
 ```
 
 
-# Figure 4: Heatmap
+# Figure 3: Heatmap
 ## Load RL Score data
 ```{r RL-scores}
 # Read in Data
@@ -543,8 +543,8 @@ matrix_RLscores <- df_RLscores %>%
 matrix_RLscores[is.na(matrix_RLscores)] <- 0  
 ```
 
-## Plot figure 4: RL Scores
-```{r fig4-allOTUs, fig.width = 8, fig.height = 20}
+## Plot figure 3: RL Scores
+```{r fig3-allOTUs, fig.width = 8, fig.height = 20}
 breakers <- seq(min(matrix_RLscores, na.rm = T), max(matrix_RLscores, na.rm = T), length.out = 21)
 my_palette <- colorRampPalette(c("white", "red")) (n=20)
 
@@ -562,8 +562,8 @@ heatmap.2(matrix_RLscores,
 ```
 
 
-### Top 10 from Fig 4 Scores
-```{r fig4-top10-noclust, fig.width=6, fig.height=8}
+### Top 10 from Fig 3 Scores
+```{r fig3-top10-noclust, fig.width=6, fig.height=8}
 # Extract the top 10 OTUs 
 mich_top10_OTUs <- michigan_df_scores %>%
   top_n(., 10, Michigan_HNA) %>%
@@ -630,7 +630,7 @@ heatmap.2(matrix_top10,
         key.title=NA)
 ```
 
-```{r fig4-columns-only, fig.width=6, fig.height=8}
+```{r fig3-columns-only, fig.width=6, fig.height=8}
 # Only cluster the columns
 heatmap.2(matrix_top10, 
         distfun = function(x) dist(x, method = "euclidean"),
@@ -645,8 +645,8 @@ heatmap.2(matrix_top10,
 ```
 
 
-# Figure 5: Phylogenetic Tree
-```{r fig5-all, fig.width=11, fig.height=18}
+# Figure 4: Phylogenetic Tree
+```{r fig4-all, fig.width=11, fig.height=18}
 #### PHYLOGENETIC ANALYSIS
 load("data/phyloseq.RData")
 physeq.otu
@@ -671,7 +671,7 @@ setdiff(sort(vector_of_otus), sort(taxa_names(physeq)))
 setdiff(sort(taxa_names(physeq)), sort(vector_of_otus))
 
 ######################################### FASTTREE
-fast_tree <- read.tree(file="data/fasttree/Figure5/newick_tree_OTUs258.tre")
+fast_tree <- read.tree(file="data/Figure4/newick_tree_OTUs258.tre")
 
 fast_tree_tip_order <- data.frame(fast_tree$tip.label) %>%
   rename(OTU = fast_tree.tip.label)
@@ -711,7 +711,7 @@ is.rooted(rooted_tree) # Sanity Check
 # write.csv(df_RLscores, file = "data/fasttree/Figure5/OTUs258_MANUAL.csv", row.names = FALSE)
 # Next I manually filled in the fcm_type and lake columns :/ 
 
-phyfcm_fasttree_df <- read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
+phyfcm_fasttree_df <- read.csv("data/Figure4/OTUs258_MANUAL.csv") %>%
   left_join(., fasttree_tax, by = "OTU") %>%
   tibble::column_to_rownames("OTU") %>%
   dplyr::select(Phylum, FCM)
@@ -733,7 +733,7 @@ gheatmap(rooted_tree_plot, phyfcm_fasttree_df, offset = 0.1, width=0.3, font.siz
 ```
 
 
-### Prepare files for iTOL - Figure 5
+### Prepare files for iTOL - Figure 4
 ```{r iTOL, eval=FALSE}
 OTU258_and_phylum <- read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
   left_join(., fasttree_tax, by = "OTU") %>%
@@ -940,10 +940,10 @@ sum(verrucomicrobia$n)/nrow(phyfcm_fasttree_df) # % of Verrucomicrobia
 ## Prepare data 
 ```{r phylo-sig-dataprep}
 # Load in the scores 
-LNA_scores_df <- read.csv("data/fasttree/Figure5/LNA_RLscores.csv") %>%
+LNA_scores_df <- read.csv("data/Figure4/LNA_RLscores.csv") %>%
   dplyr::select(OTU, RL_score) %>%
   rename(LNA_score = RL_score)
-HNA_scores_df <- read.csv("data/fasttree/Figure5/HNA_RLscores.csv") %>%
+HNA_scores_df <- read.csv("data/Figure4/HNA_RLscores.csv") %>%
   dplyr::select(OTU, RL_score) %>%
   rename(HNA_score = RL_score)
 stopifnot(dim(LNA_scores_df) == dim(HNA_scores_df))
@@ -957,7 +957,7 @@ summarized_RL_scores <- summarized_RL_scores[match(rooted_tree$tip.label, summar
 stopifnot(rooted_tree$tip.label == summarized_RL_scores$OTU)
 
 # Load FCM data that is categorical
-FCM_categorical_df <- read.csv("data/fasttree/Figure5/OTUs258_MANUAL.csv") %>%
+FCM_categorical_df <- read.csv("data/Figure4/OTUs258_MANUAL.csv") %>%
    dplyr::select(OTU, FCM)
 FCM_categorical_df <- FCM_categorical_df[match(rooted_tree$tip.label, FCM_categorical_df$OTU),]
 stopifnot(rooted_tree$tip.label == FCM_categorical_df$OTU)
@@ -1065,3 +1065,4 @@ abouheif_LNA_test
 ```{r session-info}
 devtools::session_info() # This will include session info with all R package version information
 ```
+

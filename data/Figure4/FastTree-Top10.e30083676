@@ -1,0 +1,34 @@
+
+Currently Loaded Modules:
+  1) fasttree/2.1.9
+
+FastTree Version 2.1.9 No SSE3
+Alignment: standard input
+Nucleotide distances: Jukes-Cantor Joins: balanced Support: SH-like 1000
+Search: Fastest+2nd +NNI +SPR (2 rounds range 10) +ML-NNI opt-each=1
+TopHits: 1.00*sqrtN close=default refresh=0.50
+ML Model: Generalized Time-Reversible, CAT approximation with 20 rate categories
+Initial topology in 0.01 seconds
+Refining topology: 22 rounds ME-NNIs, 2 rounds ME-SPRs, 11 rounds ML-NNIs
+      0.10 seconds: ME NNI round 8 of 22, 1 of 41 splits
+Total branch-length 5.597 after 0.20 sec
+      0.22 seconds: ML NNI round 1 of 11, 1 of 41 splits
+ML-NNI round 1: LogLk = -6716.913 NNIs 9 max delta 8.32 Time 0.31
+      0.33 seconds: Optimizing GTR model, step 2 of 12
+      0.44 seconds: Optimizing GTR model, step 9 of 12
+GTR Frequencies: 0.2813 0.1752 0.3253 0.2182
+GTR rates(ac ag at cg ct gt) 0.5192 1.5185 1.5523 0.6582 3.2079 1.0000
+      0.54 seconds: Site likelihoods with rate category 16 of 20
+Switched to using 20 rate categories (CAT approximation)
+Rate categories were divided by 0.760 so that average rate = 1.0
+CAT-based log-likelihoods may not be comparable across runs
+Use -gamma for approximate but comparable Gamma(20) log-likelihoods
+ML-NNI round 2: LogLk = -5726.611 NNIs 2 max delta 0.94 Time 0.64
+ML-NNI round 3: LogLk = -5724.623 NNIs 2 max delta 1.09 Time 0.69
+      0.68 seconds: ML NNI round 4 of 11, 1 of 41 splits
+ML-NNI round 4: LogLk = -5724.533 NNIs 0 max delta 0.00 Time 0.71
+Turning off heuristics for final round of ML NNIs (converged)
+ML-NNI round 5: LogLk = -5723.033 NNIs 1 max delta 0.04 Time 0.82 (final)
+      0.81 seconds: ML Lengths 1 of 41 splits
+Optimize all lengths: LogLk = -5722.964 Time 0.85
+Total time: 0.97 seconds Unique: 43/43 Bad splits: 0/40
