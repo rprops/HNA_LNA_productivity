@@ -10,12 +10,13 @@ import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib import rcParams
-from matplotlib.ticker import MaxNLocator
+#from PIL import Image
+#from io import BytesIO
 
 #plt.style.use('ggplot')
 from os import listdir
 import scipy as sc
+from scipy.stats import pearsonr, spearmanr
 from statsmodels.graphics.boxplots import violinplot
 import seaborn as sns
 sns.set_color_codes()
@@ -97,7 +98,7 @@ def plot_R2CV_Lake(df):
     g.set_axis_labels('Number of taxa',r'$R^2_{CV}$')
     g.set_xlabels(fontsize=18)
     g.set_ylabels(fontsize=18)
-    plt.savefig('Analysis_Figures/R2CV_HNA_LNA_Lasso_RL.png',bbox_inches='tight', dpi=500)
+    plt.savefig('Analysis_Figures/R2CV_HNA_LNA_Lasso_RL.eps',bbox_inches='tight',dpi=500)
     plt.show()
     return df
 
@@ -114,3 +115,61 @@ mfe_lna = pd.concat([mfe_lassoRL_INL_lna,mfe_lassoRL_MICH_lna,mfe_lassoRL_MUS_ln
 mfe_lna = mfe_lna.rename(columns={'RL LNA': 'R2_CV'})
 mfe = pd.concat([mfe_hna,mfe_lna],axis=0)
 df = plot_R2CV_Lake(mfe)
+
+r_hnalna_inl, p_hnalna_inl = pearsonr(fs_INL_hna.loc[:,'RL score'],fs_INL_lna.loc[fs_INL_hna.index,'RL score'])
+r_hnalna_mich, p_hnalna_mich = pearsonr(fs_MICH_hna.loc[:,'RL score'],fs_MICH_lna.loc[fs_MICH_hna.index,'RL score'])
+r_hnalna_mus, p_hnalna_mus = pearsonr(fs_MUS_hna.loc[:,'RL score'],fs_MUS_lna.loc[fs_MUS_hna.index,'RL score'])
+
+otus_hna_inl = fs_INL_hna.loc[fs_INL_hna.loc[:,'RL score'] >= 0.13].index
+otus_lna_inl = fs_INL_lna.loc[fs_INL_lna.loc[:,'RL score'] >= 0.10].index
+otus_hna_mich = fs_MICH_hna.loc[fs_MICH_hna.loc[:,'RL score'] >= 0.248].index
+otus_lna_mich = fs_MICH_lna.loc[fs_MICH_lna.loc[:,'RL score'] >= 0.286].index
+otus_hna_mus = fs_MUS_hna.loc[fs_MUS_hna.loc[:,'RL score'] >= 0.09].index
+otus_lna_mus = fs_MUS_lna.loc[fs_MUS_lna.loc[:,'RL score'] >= 0.09].index
+
+otus_inl_common = otus_hna_inl.intersection(otus_lna_inl)
+otus_inl = otus_hna_inl.union(otus_lna_inl)
+otus_inl_common_frac = len(otus_inl_common)/len(otus_inl)
+otus_mich_common = otus_hna_mich.intersection(otus_lna_mich)
+otus_mich = otus_hna_mich.union(otus_lna_mich)
+otus_mich_common_frac = len(otus_mich_common)/len(otus_mich)
+otus_mus_common = otus_hna_mus.intersection(otus_lna_mus)
+otus_mus = otus_hna_mus.union(otus_lna_mus)
+otus_mus_common_frac = len(otus_mus_common)/len(otus_mus)
+
+otus_hna_common = otus_hna_inl.intersection(otus_hna_mich).intersection(otus_hna_mus)
+otus_hna = otus_hna_inl.union(otus_hna_mich).union(otus_hna_mus)
+otus_hna_common_frac = len(otus_hna_common)/len(otus_hna)
+otus_lna_common = otus_lna_inl.intersection(otus_lna_mich).intersection(otus_lna_mus)
+otus_lna = otus_lna_inl.union(otus_lna_mich).union(otus_lna_mus)
+otus_lna_common_frac = len(otus_lna_common)/len(otus_lna)
+
+otus_hna_common_inl_mich = otus_hna_inl.intersection(otus_hna_mich)
+otus_hna_common_inl_mus = otus_hna_inl.intersection(otus_hna_mus)
+otus_hna_common_mich_mus = otus_hna_mich.intersection(otus_hna_mus)
+otus_hna_inl_mich = otus_hna_inl.union(otus_hna_mich)
+otus_hna_inl_mus = otus_hna_inl.union(otus_hna_mus)
+otus_hna_mich_mus = otus_hna_mich.union(otus_hna_mus)
+otus_hna = otus_hna_inl.union(otus_hna_mich).union(otus_hna_mus)
+otus_hna_common_frac_inl_mich = len(otus_hna_common_inl_mich)/len(otus_hna_inl_mich)
+otus_hna_common_frac_inl_mus = len(otus_hna_common_inl_mus)/len(otus_hna_inl_mus)
+otus_hna_common_frac_mich_mus = len(otus_hna_common_mich_mus)/len(otus_hna_mich_mus)
+
+otus_lna_common_inl_mich = otus_lna_inl.intersection(otus_lna_mich)
+otus_lna_common_inl_mus = otus_lna_inl.intersection(otus_lna_mus)
+otus_lna_common_mich_mus = otus_lna_mich.intersection(otus_lna_mus)
+otus_lna_inl_mich = otus_lna_inl.union(otus_lna_mich)
+otus_lna_inl_mus = otus_lna_inl.union(otus_lna_mus)
+otus_lna_mich_mus = otus_lna_mich.union(otus_lna_mus)
+otus_lna = otus_lna_inl.union(otus_lna_mich).union(otus_lna_mus)
+otus_lna_common_frac_inl_mich = len(otus_lna_common_inl_mich)/len(otus_lna_inl_mich)
+otus_lna_common_frac_inl_mus = len(otus_lna_common_inl_mus)/len(otus_lna_inl_mich)
+otus_lna_common_frac_mich_mus = len(otus_lna_common_mich_mus)/len(otus_lna_mich_mus)
+
+otus_common_inl_mich_mus = fs_INL_hna.index.intersection(fs_MICH_hna.index.intersection(fs_MUS_hna.index))
+r_hna_inlmich, p_hna_inlmich = pearsonr(fs_INL_hna.loc[otus_common_inl_mich_mus,'RL score'],fs_MICH_hna.loc[otus_common_inl_mich_mus,'RL score'])
+r_lna_inlmich, p_lna_inlmich = pearsonr(fs_INL_lna.loc[otus_common_inl_mich_mus,'RL score'],fs_MICH_lna.loc[otus_common_inl_mich_mus,'RL score'])
+r_hna_inlmus, p_hna_inlmus = pearsonr(fs_INL_hna.loc[otus_common_inl_mich_mus,'RL score'],fs_MUS_hna.loc[otus_common_inl_mich_mus,'RL score'])
+r_lna_inlmus, p_lna_inlmus = pearsonr(fs_INL_lna.loc[otus_common_inl_mich_mus,'RL score'],fs_MUS_lna.loc[otus_common_inl_mich_mus,'RL score'])
+r_hna_michmus, p_hna_michmus = pearsonr(fs_MUS_hna.loc[otus_common_inl_mich_mus,'RL score'],fs_MICH_hna.loc[otus_common_inl_mich_mus,'RL score'])
+r_lna_michmus, p_lna_michmus = pearsonr(fs_MUS_lna.loc[otus_common_inl_mich_mus,'RL score'],fs_MICH_lna.loc[otus_common_inl_mich_mus,'RL score'])
