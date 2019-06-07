@@ -80,7 +80,7 @@ def calc_otus_ranking(fs_rank,mfe,fs_header,mfe_header):
 def plot_R2CV_Lake(df): 
     df.loc[:,'Number of taxa'] = df.loc[:,'Number of taxa'].astype(int)
     df = pd.melt(df,id_vars=['Number of taxa','Lake','Target'], value_vars=['R2_CV'], var_name='Functional group', value_name='R2')
-    g = sns.lmplot(x='Number of taxa',y='R2',data=df, hue='Target', col='Lake', fit_reg=False, sharex=False, legend=False, scatter_kws=dict(edgecolor="k", linewidth=0.5))
+    g = sns.lmplot(x='Number of taxa',y='R2',data=df, hue='Target', col='Lake', fit_reg=False, sharex=False, legend=False, scatter_kws=dict(alpha = 0.7, edgecolor="k", linewidth=0.5))
     col_order = ['A','B','C']
     for ax, title in zip(g.axes.flat, col_order):
         ax.text(-25.0, 0.98, title, fontsize=18, weight='bold')
